@@ -53,6 +53,12 @@
     <ClCompile Include="strnatcmp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="version.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

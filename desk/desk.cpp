@@ -3,6 +3,7 @@
 #include "theme.h"
 #include "uxtheme.h"
 #include "stringhelper.h"
+#include "version.h"
 
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
@@ -89,32 +90,31 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 			hTheme = OpenThemeData(NULL, L"Window");
 
 		// caption
-		RECT rect = { x, y, width, y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYSIZEFRAME) * 2 };
+		RECT rect = { x, y, width, y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)};
 		DrawThemeBackground(hTheme, hdcgraphic, WP_CAPTION, FS_ACTIVE, &rect, NULL);
 
 		// bottom frame
 		MARGINS mar;
-		GetThemeMargins(hTheme, hdcgraphic, WP_FRAMEBOTTOM, 0, TMT_SIZINGMARGINS, NULL, &mar);
 		rect.top = y + GetSystemMetrics(SM_CYCAPTION) + height + GetSystemMetrics(SM_CYFRAME);
-		rect.bottom = rect.top + GetSystemMetrics(SM_CYSIZEFRAME)+mar.cyBottomHeight;
+		rect.bottom = rect.top + GetSystemMetrics(SM_CYFRAME)+ GetSystemMetrics(SM_CXPADDEDBORDER);
 		DrawThemeBackground(hTheme, hdcgraphic, WP_FRAMEBOTTOM, 1, &rect, NULL);
 
 		// left frame
 		rect.left = x;
 		rect.top = y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
-		rect.right = x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXSIZEFRAME);
+		rect.right = x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXFRAME);
 		rect.bottom = y + GetSystemMetrics(SM_CYCAPTION) + height + GetSystemMetrics(SM_CYFRAME);
 		DrawThemeBackground(hTheme, hdcgraphic, WP_FRAMELEFT, FS_ACTIVE, &rect, NULL);
 
 		// right frame
-		rect.left = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXSIZEFRAME);
+		rect.left = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXFRAME);
 		rect.right = width;
 		DrawThemeBackground(hTheme, hdcgraphic, WP_FRAMERIGHT, FS_ACTIVE, &rect, NULL);
 
 		// window color
-		rect.left = x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXSIZEFRAME);
-		rect.right = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXSIZEFRAME);
-		rect.top += GetSystemMetrics(SM_CYSIZEFRAME);
+		rect.left = x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXFRAME);
+		rect.right = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXFRAME);
+		rect.top += GetSystemMetrics(SM_CXPADDEDBORDER);
 		RECT oldrect1 = rect;
 		COLORREF bgColor;
 		HRESULT hr = GetThemeColor(hTheme, 0, 0, TMT_FILLCOLOR, &bgColor);
@@ -132,7 +132,7 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 			hTheme1 = OpenThemeData(NULL, L"Scrollbar");
 
 		GetThemePartSize(hTheme1, hdcgraphic, SBP_THUMBBTNVERT, SCRBS_NORMAL, NULL, TS_TRUE, &size);
-		rect.left = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXSIZEFRAME) - size.cx;
+		rect.left = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXFRAME) - size.cx;
 		rect.right = rect.left + size.cx;
 		DrawThemeBackground(hTheme1, hdcgraphic, SBP_LOWERTRACKHORZ, SCRBS_NORMAL, &rect, 0);
 		int oldbot = rect.bottom;
@@ -152,10 +152,11 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		MARGINS btnMar;
 		GetThemeMargins(hTheme, hdcgraphic, WP_CLOSEBUTTON, 0, TMT_CONTENTMARGINS, NULL, &btnMar);
 		if (btnMar.cxLeftWidth==0) GetThemeMargins(hTheme, hdcgraphic, WP_CLOSEBUTTON, 0, TMT_SIZINGMARGINS, NULL, &btnMar);
-		size.cx = (static_cast<double>(size.cx) / (size.cy+btnMar.cxRightWidth)) * GetSystemMetrics(SM_CYCAPTION);
-		size.cy = GetSystemMetrics(SM_CYSIZE) - GetSystemMetrics(SM_CYEDGE) - GetSystemMetrics(SM_CYSIZEFRAME) + 2;
+
+		size.cx = (static_cast<double>(size.cx) / (size.cy+btnMar.cxRightWidth)) * GetSystemMetrics(SM_CYCAPTION) -2;
+		size.cy = GetSystemMetrics(SM_CYSIZE) - GetSystemMetrics(SM_CYEDGE) - GetSystemMetrics(SM_CYFRAME) + 2;
 		rect.left = rect.right - size.cx - btnMar.cxLeftWidth;
-		rect.top = y + GetSystemMetrics(SM_CYSIZE) + GetSystemMetrics(SM_CYSIZEFRAME) * 2 - 2 - size.cy;
+		rect.top = y + GetSystemMetrics(SM_CYSIZE) + GetSystemMetrics(SM_CYFRAME)- 2 - size.cy +GetSystemMetrics(SM_CXPADDEDBORDER);
 		rect.bottom = rect.top + size.cy;
 		rect.right -= btnMar.cxLeftWidth;
 		DrawThemeBackground(hTheme, hdcgraphic, WP_CLOSEBUTTON, CBS_NORMAL, &rect, NULL);
@@ -169,13 +170,14 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		// title
 		GetThemeMargins(hTheme, hdcgraphic, WP_CAPTION, 0, TMT_CAPTIONMARGINS, NULL, &mar);
 		COLORREF clr;
-		GetThemeColor(hTheme, WP_CAPTION, 0, TMT_TEXTCOLOR, &clr);
+		hr =GetThemeColor(hTheme, WP_CAPTION, 0, TMT_TEXTCOLOR, &clr);
 		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
 		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
 		HFONT fon = CreateFontIndirect(&ncm.lfCaptionFont);
 		SelectObject(hdcgraphic, fon);
 		SetBkMode(hdcgraphic, TRANSPARENT);
-		RECT rlc = { x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXSIZEFRAME) + mar.cxLeftWidth, y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYSIZE), 500.0f, GetSystemMetrics(SM_CYCAPTION) };
+		RECT rlc = { x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXFRAME) + mar.cxLeftWidth, 
+			rect.top + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME) +GetSystemMetrics(SM_CXPADDEDBORDER) , 500.0f, GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER) };
 		DrawThemeText(hTheme, hdcgraphic,0,0, L"Active Window", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &rlc);
 
 		HFONT font = CreateFontIndirect(&ncm.lfMessageFont);
@@ -208,7 +210,7 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 			if (ltf->hSharableSection) CloseHandle(ltf->hSharableSection);
 			if (ltf->hNsSection) CloseHandle(ltf->hNsSection);
 			free(ltf);
-			CloseHandle(hFile);
+			//CloseHandle(hFile);
 		}
 		return hBitmap;
 	}
@@ -226,10 +228,12 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		pThemeManager->GetThemeCount(&count);
 		for (auto i = 0; i < count; ++i)
 		{
-			ITheme* them;
-			pThemeManager->GetTheme(i, &them);
+			// same across all w10
+			IUnknown* the;
+			pThemeManager->GetTheme(i, &the);
+			ITheme10* them = (ITheme10*)the;
 			LPWSTR str = nullptr;
-			them->GetDisplayName(str);
+			them->get_DisplayName(&str);
 			SendMessage(GetDlgItem(hWnd, 1101), (UINT)CB_ADDSTRING, (WPARAM)0, (LPARAM)str);
 			them->Release();
 		}
@@ -266,16 +270,43 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				else
 					PropSheet_UnChanged(GetParent(hWnd), hWnd);
 
-				ITheme* th;
+				IUnknown* th;
 				pThemeManager->GetTheme(index, &th);
 				WCHAR* ws;
-				th->get_Background(&ws);
+				
+				if (g_osVersion.BuildNumber() >= 18362)
+				{
+					ITheme1903* th1903 = (ITheme1903*)th;
+					th1903->get_Background(&ws);
+				}	
+				else if (g_osVersion.BuildNumber() >= 17763)
+				{
+					ITheme1809* th1809 = (ITheme1809*)th;
+					th1809->get_Background(&ws);
+				}
+				else
+				{
+					ITheme10* th10 = (ITheme10*)th;
+					th10->get_Background(&ws);
+				}
+
 				RECT rect;
 				GetClientRect(GetDlgItem(hWnd, 1103), &rect);
 				width = rect.right - rect.left;
 				height = rect.bottom - rect.top;
+
 				LPWSTR path = nullptr;
-				th->get_VisualStyle(&path);
+				if (g_osVersion.BuildNumber() >= 17763)
+				{
+					// this func is same for 1809 and 1903
+					ITheme1809* th1809 = (ITheme1809*)th;
+					th1809->get_VisualStyle(&path);
+				}
+				else
+				{
+					ITheme10* th10 = (ITheme10*)th;
+					th10->get_VisualStyle(&path);
+				}
 				HBITMAP ebmp = ThemePreviewBmp(width, height, ws, LoadThemeFromFilePath(path));
 				SendMessage(GetDlgItem(hWnd, 1103), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)ebmp);
 				th->Release();
@@ -332,7 +363,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		//SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
 		//MessageBox(0, DecodeTranscodedImage().c_str(), 0, 0);
 
-		ITheme* th;
+		IUnknown* th;
 		int currThem{};
 		pThemeManager->GetCurrentTheme(&currThem);
 		pThemeManager->GetTheme(currThem, &th);
@@ -340,7 +371,22 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		// 1- enabled
 		// 0- disabled
 		int isEn = 0;
-		th->IsSlideshowEnabled(&isEn);
+		if (g_osVersion.BuildNumber() >= 18362)
+		{
+			ITheme1903* th1903 = (ITheme1903*)th;
+			th1903->IsSlideshowEnabled(&isEn);
+		}
+		else if (g_osVersion.BuildNumber() >= 17763)
+		{
+			ITheme1809* th1809 = (ITheme1809*)th;
+			th1809->IsSlideshowEnabled(&isEn);
+		}
+		else
+		{
+			ITheme10* th10 = (ITheme10*)th;
+			th10->IsSlideshowEnabled(&isEn);
+		}
+
 
 		GetClientRect(GetDlgItem(hWnd, 1202), &rect);
 		width = rect.right - rect.left-30;
@@ -365,7 +411,21 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		if (isEn == 1)
 		{
 			ISlideshowSettings* st;
-			th->get_SlideshowSettings(&st);
+			if (g_osVersion.BuildNumber() >= 18362)
+			{
+				ITheme1903* th1903 = (ITheme1903*)th;
+				th1903->get_SlideshowSettings(&st);
+			}
+			else if (g_osVersion.BuildNumber() >= 17763)
+			{
+				ITheme1809* th1809 = (ITheme1809*)th;
+				th1809->get_SlideshowSettings(&st);
+			}
+			else
+			{
+				ITheme10* th10 = (ITheme10*)th;
+				th10->get_SlideshowSettings(&st);
+			}
 			IWallpaperCollection* wlp;
 			st->GetAllMatchingWallpapers(&wlp);
 			int count = wlp->GetCount();
@@ -384,11 +444,27 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			k++;
 		}
 		const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
-		for (int i = 0; i < _countof(items); i++) {
+		for (int i = 0; i < _countof(items); i++)
+		{
 			SendMessage(GetDlgItem(hWnd, 1205), CB_ADDSTRING, 0, (LPARAM)items[i]);
 		}
 		DESKTOP_WALLPAPER_POSITION pos;
-		th->get_BackgroundPosition(&pos);
+
+		if (g_osVersion.BuildNumber() >= 18362)
+		{
+			ITheme1903* th1903 = (ITheme1903*)th;
+			th1903->get_BackgroundPosition(&pos);
+		}
+		else if (g_osVersion.BuildNumber() >= 17763)
+		{
+			ITheme1809* th1809 = (ITheme1809*)th;
+			th1809->get_BackgroundPosition(&pos);
+		}
+		else
+		{
+			ITheme10* th10 = (ITheme10*)th;
+			th10->get_BackgroundPosition(&pos);
+		}
 		SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)pos, (LPARAM)0);
 
 		LVFINDINFO findInfo = { 0 };

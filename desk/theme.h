@@ -33,100 +33,231 @@ struct ISlideshowSettings : IUnknown
 };
 
 // const CThemeFile::`vftable'{for `ITheme'}
-struct ITheme : IUnknown
+struct ITheme10 : IUnknown
 {
-public:
-    virtual HRESULT WINAPI get_DisplayName(LPWSTR*) = 0;
-    virtual HRESULT WINAPI put_DisplayName(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_ScreenSaver(unsigned short**) = 0;
-    virtual HRESULT WINAPI put_ScreenSaver(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_VisualStyle(LPWSTR*) = 0;
-    virtual HRESULT WINAPI put_VisualStyle(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_VisualStyleColor(unsigned short**) = 0;
-    virtual HRESULT WINAPI put_VisualStyleColor(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_VisualStyleSize(unsigned short**) = 0;
-    virtual HRESULT WINAPI put_VisualStyleSize(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_VisualStyleVersion(int*) = 0;
-    virtual HRESULT WINAPI put_VisualStyleVersion(int) = 0;
-    virtual HRESULT WINAPI get_ColorizationColor(unsigned long*) = 0;
-    virtual HRESULT WINAPI put_ColorizationColor(unsigned long) = 0;
-    virtual HRESULT WINAPI get_ThemeId(struct _GUID*) = 0;
-    virtual HRESULT WINAPI put_ThemeId(struct _GUID const&) = 0;
-    virtual HRESULT WINAPI get_Background(WCHAR**) = 0;
-    virtual HRESULT WINAPI put_Background(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_BackgroundPosition(enum  DESKTOP_WALLPAPER_POSITION*) = 0;
-    virtual HRESULT WINAPI put_BackgroundPosition(enum  DESKTOP_WALLPAPER_POSITION) = 0;
-    virtual HRESULT WINAPI get_BackgroundWriteTime(struct _FILETIME*) = 0;
-    virtual HRESULT WINAPI put_BackgroundWriteTime(struct _FILETIME const*) = 0;
-    virtual HRESULT WINAPI ClearBackgroundWriteTime(void) = 0;
-    virtual HRESULT WINAPI get_SlideshowSettings(struct ISlideshowSettings**) = 0;
-    virtual HRESULT WINAPI put_SlideshowSettings(struct ISlideshowSettings*) = 0;
-    virtual HRESULT WINAPI get_SlideshowSourceDirectory(LPWSTR*) = 0;
-    virtual HRESULT WINAPI put_SlideshowSourceDirectory(unsigned short*) = 0;
-    virtual HRESULT WINAPI get_RSSFeed(unsigned short**) = 0;
-    virtual HRESULT WINAPI IsSlideshowEnabled(int*) = 0;
-    virtual HRESULT WINAPI GetSlideshowSettingsWithoutFiles(struct ISlideshowSettings**) = 0;
-    virtual HRESULT WINAPI GetPath(short, unsigned short**) = 0;
-    virtual HRESULT WINAPI SetPath(unsigned short*) = 0;
-    virtual HRESULT WINAPI GetCursor(unsigned short*, unsigned short**) = 0;
-    virtual HRESULT WINAPI SetCursor(unsigned short*, unsigned short*) = 0;
-    virtual HRESULT WINAPI GetSoundSchemeName(unsigned short**) = 0;
-    virtual HRESULT WINAPI SetSoundSchemeName(unsigned short*) = 0;
-    virtual HRESULT WINAPI GetSound(unsigned short*, unsigned int, unsigned short**) = 0;
-    virtual HRESULT WINAPI SetSound(unsigned short*, unsigned short*) = 0;
-    virtual HRESULT WINAPI GetAllSoundEvents(unsigned short**) = 0;
-    virtual HRESULT WINAPI GetDesktopIcon(unsigned short*, int, unsigned short**) = 0;
-    virtual HRESULT WINAPI GetDefaultDesktopIcon(unsigned short*, unsigned short**) = 0;
-    virtual HRESULT WINAPI SetDesktopIcon(unsigned short*, unsigned short*) = 0;
-    virtual HRESULT WINAPI GetCategory(enum  tagTHEMECAT*) = 0;
-    virtual HRESULT WINAPI GetLogonBackgroundFlag(int*) = 0;
-    virtual HRESULT WINAPI SetLogonBackgroundFlag(void) = 0;
-    virtual HRESULT WINAPI ClearLogonBackgroundFlag(void) = 0;
-    virtual HRESULT WINAPI GetAutoColorization(int*) = 0;
-    virtual HRESULT WINAPI SetAutoColorization(int) = 0;
-    virtual HRESULT WINAPI GetMultimonBackgroundsEnabled(int*) = 0;
-    virtual HRESULT WINAPI SetMultimonBackgroundsEnabled(int) = 0;
-    virtual HRESULT WINAPI GetMultimonBackground(unsigned int, unsigned short**) = 0;
-    virtual HRESULT WINAPI SetMultimonBackground(unsigned int, unsigned short*) = 0;
-    virtual HRESULT WINAPI GetHighContrast(int*) = 0;
-    virtual HRESULT WINAPI SetHighContrast(int) = 0;
-    virtual HRESULT WINAPI GetThemeMagicValue(unsigned short**) = 0;
-    virtual HRESULT WINAPI SetThemeMagicValue(unsigned short*) = 0;
-    virtual HRESULT WINAPI GetThemeColor(unsigned short const*, unsigned short**) = 0;
-    virtual HRESULT WINAPI GetThemeImage(int, struct HBITMAP__**) = 0;
-    virtual HRESULT WINAPI GetWindowColorPreview(struct HBITMAP__**) = 0;
-    virtual HRESULT WINAPI GetBackgroundColor(unsigned long*) = 0;
-    virtual HRESULT WINAPI GetColor(unsigned int, unsigned long*) = 0;
-    virtual HRESULT WINAPI GetBrandLogo(unsigned short**) = 0;
-    virtual HRESULT WINAPI SetBrandLogo(unsigned short*) = 0;
-    virtual HRESULT WINAPI ClearBrandLogo(void) = 0;
-    virtual HRESULT WINAPI GetScreenSaverName(unsigned short**) = 0;
-    virtual HRESULT WINAPI GetBackgroundPreview(struct HBITMAP__**) = 0;
-    virtual HRESULT WINAPI Copy(struct ITheme**) = 0;
-    virtual HRESULT WINAPI SetThemeColor(unsigned short const*, unsigned long) = 0;
-
+    STDMETHOD(get_DisplayName)(LPWSTR*) PURE;
+    STDMETHOD(put_DisplayName)(LPWSTR) PURE;
+    STDMETHOD(get_ScreenSaver)(LPWSTR*) PURE;
+    STDMETHOD(put_ScreenSaver)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyle)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyle)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleColor)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleColor)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleSize)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleSize)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleVersion)(int*) PURE;
+    STDMETHOD(put_VisualStyleVersion)(int) PURE;
+    STDMETHOD(get_ColorizationColor)(unsigned long*) PURE;
+    STDMETHOD(put_ColorizationColor)(unsigned long) PURE;
+    STDMETHOD(get_ThemeId)(GUID*) PURE;
+    STDMETHOD(put_ThemeId)(GUID const&) PURE;
+    STDMETHOD(get_Background)(LPWSTR*) PURE;
+    STDMETHOD(put_Background)(LPWSTR) PURE;
+    STDMETHOD(get_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION*) PURE;
+    STDMETHOD(put_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION) PURE;
+    STDMETHOD(get_BackgroundWriteTime)(struct _FILETIME*) PURE;
+    STDMETHOD(put_BackgroundWriteTime)(struct _FILETIME const*) PURE;
+    STDMETHOD(ClearBackgroundWriteTime)(void) PURE;
+    STDMETHOD(get_SlideshowSettings)(ISlideshowSettings**) PURE;
+    STDMETHOD(put_SlideshowSettings)(ISlideshowSettings*) PURE;
+    STDMETHOD(get_SlideshowSourceDirectory)(LPWSTR*) PURE;
+    STDMETHOD(put_SlideshowSourceDirectory)(LPWSTR) PURE;
+    STDMETHOD(get_RSSFeed)(LPWSTR*) PURE;
+    STDMETHOD(IsSlideshowEnabled)(int*) PURE;
+    STDMETHOD(GetSlideshowSettingsWithoutFiles)(ISlideshowSettings**) PURE;
+    STDMETHOD(GetPath)(short, LPWSTR*) PURE;
+    STDMETHOD(SetPath)(LPWSTR) PURE;
+    STDMETHOD(GetCursor)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetCursor)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetSoundSchemeName)(LPWSTR*) PURE;
+    STDMETHOD(SetSoundSchemeName)(LPWSTR) PURE;
+    STDMETHOD(GetSound)(LPWSTR, unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetSound)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetAllSoundEvents)(LPWSTR*) PURE;
+    STDMETHOD(GetDesktopIcon)(LPWSTR, int, LPWSTR*) PURE;
+    STDMETHOD(GetDefaultDesktopIcon)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetDesktopIcon)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetCategory)(tagTHEMECAT*) PURE;
+    STDMETHOD(GetLogonBackgroundFlag)(int*) PURE;
+    STDMETHOD(SetLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(ClearLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(GetAutoColorization)(int*) PURE;
+    STDMETHOD(SetAutoColorization)(int) PURE;
+    STDMETHOD(GetMultimonBackgroundsEnabled)(int*) PURE;
+    STDMETHOD(SetMultimonBackgroundsEnabled)(int) PURE;
+    STDMETHOD(GetMultimonBackground)(unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetMultimonBackground)(unsigned int, LPWSTR) PURE;
+    STDMETHOD(GetHighContrast)(int*) PURE;
+    STDMETHOD(SetHighContrast)(int) PURE;
+    STDMETHOD(GetThemeMagicValue)(LPWSTR*) PURE;
+    STDMETHOD(SetThemeMagicValue)(LPWSTR) PURE;
+    STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
+    STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
+    STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
+    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
+    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
+    STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
+    STDMETHOD(ClearBrandLogo)(void) PURE;
+    STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
+    STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
+    STDMETHOD(Stub1)(void) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
     // see "re" folder for full vtables
-
-public:
-    HRESULT GetDisplayName(LPWSTR& name)
-    {
-        LPWSTR lpwstr = nullptr;
-        auto hr = get_DisplayName(&lpwstr);
-        if (SUCCEEDED(hr) && lpwstr)
-        {
-            if (lpwstr)
-            {
-                name = lpwstr;
-                SysFreeString(lpwstr);
-            }
-            else
-            {
-                hr = E_FAIL;
-            }
-        }
-        return hr;
-    }
 };
+
+struct ITheme1809 : IUnknown
+{
+    STDMETHOD(get_DisplayName)(LPWSTR*) PURE;
+    STDMETHOD(put_DisplayName)(LPWSTR) PURE;
+    //STDMETHOD(get_ScreenSaver)(LPWSTR*) PURE;
+    //STDMETHOD(put_ScreenSaver)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyle)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyle)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleColor)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleColor)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleSize)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleSize)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleVersion)(int*) PURE;
+    STDMETHOD(put_VisualStyleVersion)(int) PURE;
+    STDMETHOD(get_ColorizationColor)(unsigned long*) PURE;
+    STDMETHOD(put_ColorizationColor)(unsigned long) PURE;
+    STDMETHOD(get_ThemeId)(GUID*) PURE;
+    STDMETHOD(put_ThemeId)(GUID const&) PURE;
+    STDMETHOD(get_Background)(LPWSTR*) PURE;
+    STDMETHOD(put_Background)(LPWSTR) PURE;
+    STDMETHOD(get_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION*) PURE;
+    STDMETHOD(put_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION) PURE;
+    STDMETHOD(get_BackgroundWriteTime)(struct _FILETIME*) PURE;
+    STDMETHOD(put_BackgroundWriteTime)(struct _FILETIME const*) PURE;
+    STDMETHOD(ClearBackgroundWriteTime)(void) PURE;
+    STDMETHOD(get_SlideshowSettings)(ISlideshowSettings**) PURE;
+    STDMETHOD(put_SlideshowSettings)(ISlideshowSettings*) PURE;
+    STDMETHOD(get_SlideshowSourceDirectory)(LPWSTR*) PURE;
+    STDMETHOD(put_SlideshowSourceDirectory)(LPWSTR) PURE;
+    STDMETHOD(get_RSSFeed)(LPWSTR*) PURE;
+    STDMETHOD(IsSlideshowEnabled)(int*) PURE;
+    STDMETHOD(GetSlideshowSettingsWithoutFiles)(ISlideshowSettings**) PURE;
+    STDMETHOD(GetPath)(short, LPWSTR*) PURE;
+    STDMETHOD(SetPath)(LPWSTR) PURE;
+    STDMETHOD(GetCursor)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetCursor)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetSoundSchemeName)(LPWSTR*) PURE;
+    STDMETHOD(SetSoundSchemeName)(LPWSTR) PURE;
+    STDMETHOD(GetSound)(LPWSTR, unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetSound)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetAllSoundEvents)(LPWSTR*) PURE;
+    STDMETHOD(GetDesktopIcon)(LPWSTR, int, LPWSTR*) PURE;
+    STDMETHOD(GetDefaultDesktopIcon)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetDesktopIcon)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetCategory)(tagTHEMECAT*) PURE;
+    STDMETHOD(GetLogonBackgroundFlag)(int*) PURE;
+    STDMETHOD(SetLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(ClearLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(GetAutoColorization)(int*) PURE;
+    STDMETHOD(SetAutoColorization)(int) PURE;
+    STDMETHOD(GetMultimonBackgroundsEnabled)(int*) PURE;
+    STDMETHOD(SetMultimonBackgroundsEnabled)(int) PURE;
+    STDMETHOD(GetMultimonBackground)(unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetMultimonBackground)(unsigned int, LPWSTR) PURE;
+    STDMETHOD(GetHighContrast)(int*) PURE;
+    STDMETHOD(SetHighContrast)(int) PURE;
+    STDMETHOD(GetThemeMagicValue)(LPWSTR*) PURE;
+    STDMETHOD(SetThemeMagicValue)(LPWSTR) PURE;
+    STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
+    STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
+    STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
+    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
+    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
+    STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
+    STDMETHOD(ClearBrandLogo)(void) PURE;
+    STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
+    STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
+    STDMETHOD(Stub1)(void) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
+    // see "re" folder for full vtables
+};
+
+struct ITheme1903 : IUnknown
+{
+    STDMETHOD(get_DisplayName)(LPWSTR*) PURE;
+    STDMETHOD(put_DisplayName)(LPWSTR) PURE;
+    //STDMETHOD(get_ScreenSaver)(LPWSTR*) PURE;
+    //STDMETHOD(put_ScreenSaver)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyle)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyle)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleColor)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleColor)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleSize)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleSize)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleVersion)(int*) PURE;
+    STDMETHOD(put_VisualStyleVersion)(int) PURE;
+    STDMETHOD(get_ColorizationColor)(unsigned long*) PURE;
+    STDMETHOD(put_ColorizationColor)(unsigned long) PURE;
+    STDMETHOD(get_ThemeId)(GUID*) PURE;
+    STDMETHOD(put_ThemeId)(GUID const&) PURE;
+    // 1903+
+    STDMETHOD(get_AppMode)(int*) PURE;
+    STDMETHOD(put_AppMode)(int) PURE;
+    STDMETHOD(get_SystemMode)(int*) PURE;
+    STDMETHOD(put_SystemMode)(int*) PURE;
+
+    STDMETHOD(get_Background)(LPWSTR*) PURE;
+    STDMETHOD(put_Background)(LPWSTR) PURE;
+    STDMETHOD(get_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION*) PURE;
+    STDMETHOD(put_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION) PURE;
+    STDMETHOD(get_BackgroundWriteTime)(struct _FILETIME*) PURE;
+    STDMETHOD(put_BackgroundWriteTime)(struct _FILETIME const*) PURE;
+    STDMETHOD(ClearBackgroundWriteTime)(void) PURE;
+    STDMETHOD(get_SlideshowSettings)(ISlideshowSettings**) PURE;
+    STDMETHOD(put_SlideshowSettings)(ISlideshowSettings*) PURE;
+    STDMETHOD(get_SlideshowSourceDirectory)(LPWSTR*) PURE;
+    STDMETHOD(put_SlideshowSourceDirectory)(LPWSTR) PURE;
+    STDMETHOD(get_RSSFeed)(LPWSTR*) PURE;
+    STDMETHOD(IsSlideshowEnabled)(int*) PURE;
+    STDMETHOD(GetSlideshowSettingsWithoutFiles)(ISlideshowSettings**) PURE;
+    STDMETHOD(GetPath)(short, LPWSTR*) PURE;
+    STDMETHOD(SetPath)(LPWSTR) PURE;
+    STDMETHOD(GetCursor)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetCursor)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetSoundSchemeName)(LPWSTR*) PURE;
+    STDMETHOD(SetSoundSchemeName)(LPWSTR) PURE;
+    STDMETHOD(GetSound)(LPWSTR, unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetSound)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetAllSoundEvents)(LPWSTR*) PURE;
+    STDMETHOD(GetDesktopIcon)(LPWSTR, int, LPWSTR*) PURE;
+    STDMETHOD(GetDefaultDesktopIcon)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetDesktopIcon)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetCategory)(tagTHEMECAT*) PURE;
+    STDMETHOD(GetLogonBackgroundFlag)(int*) PURE;
+    STDMETHOD(SetLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(ClearLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(GetAutoColorization)(int*) PURE;
+    STDMETHOD(SetAutoColorization)(int) PURE;
+    STDMETHOD(GetMultimonBackgroundsEnabled)(int*) PURE;
+    STDMETHOD(SetMultimonBackgroundsEnabled)(int) PURE;
+    STDMETHOD(GetMultimonBackground)(unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetMultimonBackground)(unsigned int, LPWSTR) PURE;
+    STDMETHOD(GetHighContrast)(int*) PURE;
+    STDMETHOD(SetHighContrast)(int) PURE;
+    STDMETHOD(GetThemeMagicValue)(LPWSTR*) PURE;
+    STDMETHOD(SetThemeMagicValue)(LPWSTR) PURE;
+    STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
+    STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
+    STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
+    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
+    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
+    STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
+    STDMETHOD(ClearBrandLogo)(void) PURE;
+    STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
+    STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
+    STDMETHOD(Stub1)(void) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
+    // see "re" folder for full vtables
+};
+
 
 // const CThemeManager2::`vftable'
 MIDL_INTERFACE("{c1e8c83e-845d-4d95-81db-e283fdffc000}") IThemeManager2 : IUnknown
@@ -137,7 +268,7 @@ MIDL_INTERFACE("{c1e8c83e-845d-4d95-81db-e283fdffc000}") IThemeManager2 : IUnkno
   virtual HRESULT WINAPI RefreshAsync(HWND, int) = 0;
   virtual HRESULT WINAPI RefreshComplete() = 0;
   virtual HRESULT WINAPI GetThemeCount(int*) = 0;
-  virtual HRESULT WINAPI GetTheme(int, ITheme**) = 0;
+  virtual HRESULT WINAPI GetTheme(int, IUnknown**) = 0;
   virtual HRESULT WINAPI IsThemeDisabled(int, int*) = 0;
   virtual HRESULT WINAPI GetCurrentTheme(int*) = 0;
   virtual HRESULT WINAPI SetCurrentTheme(
@@ -151,7 +282,7 @@ MIDL_INTERFACE("{c1e8c83e-845d-4d95-81db-e283fdffc000}") IThemeManager2 : IUnkno
   virtual HRESULT WINAPI GetDefaultTheme(int*) = 0;
   virtual HRESULT WINAPI CreateThemePack(HWND, LPCWSTR, ULONG pack_flags) = 0;
   virtual HRESULT WINAPI CloneAndSetCurrentTheme(HWND, LPCWSTR, LPWSTR*) = 0;
-  virtual HRESULT WINAPI InstallThemePack(HWND, LPCWSTR, int, ULONG pack_flags, LPWSTR*, ITheme**) = 0;
+  virtual HRESULT WINAPI InstallThemePack(HWND, LPCWSTR, int, ULONG pack_flags, LPWSTR*, IUnknown**) = 0;
   virtual HRESULT WINAPI DeleteTheme(LPCWSTR) = 0;
   virtual HRESULT WINAPI OpenTheme(HWND, LPCWSTR, ULONG pack_flags) = 0;
   virtual HRESULT WINAPI AddAndSelectTheme(HWND, LPCWSTR, ULONG apply_flags, ULONG pack_flags) = 0;
