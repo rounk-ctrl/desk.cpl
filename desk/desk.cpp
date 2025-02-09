@@ -5,6 +5,8 @@
 #include "stringhelper.h"
 #include "version.h"
 
+namespace fs = std::filesystem;
+
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
 ULONG_PTR gdiplusToken;
@@ -69,11 +71,17 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
 		graphics.DrawImage(bitmap, 0, 0, newwidth, newheight);
 
+		HDC hdcgraphic = graphics.GetHDC();
+		if (!fs::exists(fs::path(wallpaperPath)))
+		{
+			RECT rect = { 0,0, newwidth, newheight };
+			FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
+		}
+
 		HMODULE imageres = LoadLibrary(L"imageres.dll");
 		HICON ico = (HICON)LoadImage(imageres, MAKEINTRESOURCE(54), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
 
 		// bin
-		HDC hdcgraphic = graphics.GetHDC();
 		DrawIconEx(hdcgraphic, newwidth - 48, newheight - 40, ico, 32, 32, 0, NULL, DI_NORMAL);
 		graphics.ReleaseHDC(hdcgraphic);
 
@@ -331,7 +339,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-void AddItem(HWND hListView, int rowIndex, LPCSTR text)
+int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 {
 	LVITEM lvItem = { 0 };
 	lvItem.mask = LVIF_TEXT | LVIF_PARAM;
@@ -340,10 +348,9 @@ void AddItem(HWND hListView, int rowIndex, LPCSTR text)
 	lvItem.pszText = (LPWSTR)PathFindFileName(ConvertStr2(text));
 	lvItem.lParam = (LPARAM)ConvertStr2(text);
 
-	SendMessage(hListView, LVM_INSERTITEM, 0, (LPARAM)&lvItem);
+	return ListView_InsertItem(hListView, &lvItem);
 }
 
-namespace fs = std::filesystem;
 std::set<LPCSTR, NaturalComparator> wallpapers;
 
 
@@ -471,6 +478,13 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		findInfo.flags = LVFI_STRING;
 		findInfo.psz = PathFindFileName(DecodeTranscodedImage().c_str());
 		int inde = ListView_FindItem(GetDlgItem(hWnd, 1202), -1, &findInfo);
+		if (inde == -1)
+		{
+			if (fs::exists(fs::path(DecodeTranscodedImage().c_str())))
+			{
+				inde = AddItem(GetDlgItem(hWnd, 1202), k, ConvertStr(DecodeTranscodedImage().c_str()));
+			}
+		}
 
 		ListView_SetItemState(GetDlgItem(hWnd, 1202), inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		ListView_EnsureVisible(GetDlgItem(hWnd, 1202), inde, FALSE);

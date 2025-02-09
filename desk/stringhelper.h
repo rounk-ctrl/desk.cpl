@@ -8,7 +8,7 @@ struct NaturalComparator {
 	}
 };
 
-LPCSTR ConvertStr(LPWSTR wideStr) {
+LPCSTR ConvertStr(LPCWSTR wideStr) {
 	int size_needed = WideCharToMultiByte(CP_ACP, 0, wideStr, -1, NULL, 0, NULL, NULL);
 	char* narrowStr = new char[size_needed];
 	WideCharToMultiByte(CP_ACP, 0, wideStr, -1, narrowStr, size_needed, NULL, NULL);
