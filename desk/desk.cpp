@@ -41,9 +41,19 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
 			return NULL;
 		}
 
+		Gdiplus::Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
+
+		Gdiplus::Color transparentColor(255, 255, 0, 255);
+
+		Gdiplus::ImageAttributes imgAttr;
+		imgAttr.SetColorKey(transparentColor, transparentColor, Gdiplus::ColorAdjustTypeBitmap);
+
+
 		Gdiplus::Graphics graphics(resized);
 		graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-		graphics.DrawImage(bitmap, 0, 0, width, height);
+		Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
+		graphics.DrawImage(monitor, rect,0,0, width, height, Gdiplus::UnitPixel, &imgAttr);
+		graphics.DrawImage(bitmap, 15, 25, width-37, height-68);
 
 		// create hbitmap
 		HBITMAP hBitmap = NULL;
@@ -53,6 +63,7 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
 		delete resized;
 		return hBitmap;
 	}
+	return NULL;
 }
 
 HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile)
@@ -504,7 +515,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				RECT rect;
 				GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 				width = rect.right - rect.left;
-				height = rect.bottom - rect.top-20;
+				height = rect.bottom - rect.top;
 
 				LVITEM item = { 0 };
 				item.iItem = pnmv->iItem;
