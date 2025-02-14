@@ -2,32 +2,19 @@
 #include "pch.h"
 #include "theme.h"
 #include "uxtheme.h"
-#include "stringhelper.h"
+#include "helper.h"
 #include "version.h"
 
 namespace fs = std::filesystem;
 
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
+IDesktopWallpaper* pDesktopWallpaper = NULL;
 ULONG_PTR gdiplusToken;
+LPWSTR wallpath{};
+int lastpos{};
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
-
-std::wstring DecodeTranscodedImage()
-{
-	HKEY hKey;
-	const wchar_t* subKey = L"Control Panel\\Desktop";
-	const wchar_t* valueName = L"TranscodedImageCache";
-
-	RegOpenKeyExW(HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey);
-	std::vector<BYTE> data(1024);
-	DWORD dataSize = static_cast<DWORD>(data.size());
-	RegQueryValueExW(hKey, valueName, nullptr, nullptr, data.data(), &dataSize);
-	RegCloseKey(hKey);
-
-	std::wstring wallpaperPath(reinterpret_cast<wchar_t*>(data.data() + 24));
-	return wallpaperPath;
-}
 
 HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
 {
@@ -339,8 +326,11 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		NMHDR* pnmh = (NMHDR*)lParam;
 		if (pnmh->code == PSN_APPLY)
 		{
+			ULONG apply_flags = 0;
 			int index = (int)SendMessage(GetDlgItem(hWnd, 1101), CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
-			pThemeManager->SetCurrentTheme(hWnd, index, !!TRUE, 0, 0);
+			if (wallpath)
+				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_BACKGROUND;
+			pThemeManager->SetCurrentTheme(hWnd, index, !!TRUE, apply_flags, 0);
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
@@ -350,20 +340,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-int AddItem(HWND hListView, int rowIndex, LPCSTR text)
-{
-	LVITEM lvItem = { 0 };
-	lvItem.mask = LVIF_TEXT | LVIF_PARAM;
-	lvItem.iItem = rowIndex;
-	lvItem.iSubItem = 0;
-	lvItem.pszText = (LPWSTR)PathFindFileName(ConvertStr2(text));
-	lvItem.lParam = (LPARAM)ConvertStr2(text);
-
-	return ListView_InsertItem(hListView, &lvItem);
-}
-
 std::set<LPCSTR, NaturalComparator> wallpapers;
-
 
 LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -377,9 +354,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 		width = rect.right - rect.left;
 		height = rect.bottom - rect.top;
-		//HBITMAP bmp = WallpaperAsBmp(width, height, ws);
-		//SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
-		//MessageBox(0, DecodeTranscodedImage().c_str(), 0, 0);
 
 		IUnknown* th;
 		int currThem{};
@@ -484,6 +458,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			th10->get_BackgroundPosition(&pos);
 		}
 		SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)pos, (LPARAM)0);
+		lastpos = pos;
 
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
@@ -502,6 +477,19 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 		th->Release();
 		//DeleteObject(bmp);
+	}
+	else if (uMsg == WM_COMMAND)
+	{
+		if (HIWORD(wParam) == CBN_SELCHANGE)
+		{
+			if (LOWORD(wParam) == 1205)
+			{
+				int index = (int)SendMessage(GetDlgItem(hWnd, 1205), CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
+				if (index != lastpos)
+					PropSheet_Changed(GetParent(hWnd), hWnd);
+
+			}
+		}
 	}
 	else if (uMsg == WM_NOTIFY) 
 	{
@@ -524,7 +512,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				item.cchTextMax = 256;
 				item.mask = LVIF_TEXT | LVIF_PARAM;
 				ListView_GetItem(GetDlgItem(hWnd, 1202), &item);
-				LPWSTR wallpath = (LPWSTR)item.lParam;
+				wallpath = (LPWSTR)item.lParam;
 
 				HBITMAP bmp = WallpaperAsBmp(width, height, wallpath);
 				SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
@@ -532,6 +520,23 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				PropSheet_Changed(GetParent(hWnd), hWnd);
 				DeleteObject(bmp);
 			}
+		}
+		if (pnmhdr->code == PSN_APPLY)
+		{
+			int index = (int)SendMessage(GetDlgItem(hWnd, 1205), CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
+
+			pDesktopWallpaper->SetPosition((DESKTOP_WALLPAPER_POSITION)index);
+			lastpos = index;
+
+			if (wallpath)
+			{
+				pDesktopWallpaper->SetWallpaper(NULL, wallpath);
+				wallpath = nullptr;
+			}
+
+			PropSheet_UnChanged(GetParent(hWnd), hWnd);
+			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
+			return TRUE;
 		}
 	}
 	return FALSE;
@@ -583,6 +588,8 @@ void PropertySheetMoment()
 
 	HRESULT hr = CoCreateInstance(CLSID_ThemeManager2, NULL, CLSCTX_INPROC_SERVER, IID_IThemeManager2, (void**)&pThemeManager);
 	pThemeManager->Init(ThemeInitNoFlags);
+
+	hr = CoCreateInstance(CLSID_DesktopWallpaper, NULL, CLSCTX_ALL, IID_IDesktopWallpaper, (void**)&pDesktopWallpaper);
 
 	InitUxtheme();
 
