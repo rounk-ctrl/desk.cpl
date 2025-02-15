@@ -460,9 +460,8 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		}
 		SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
-		LPWSTR wall = { 0 };
-		pDesktopWallpaper->GetWallpaper(NULL, &wall);
-		if (wall[0] == '\0')
+		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+		if (lstrlenW(ws) == 0)
 		{
 			noWall = TRUE;
 			EnableWindow(GetDlgItem(hWnd, 1205), false);
