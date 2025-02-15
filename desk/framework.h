@@ -13,9 +13,12 @@
 #include <Uxtheme.h>
 #include <shobjidl_core.h>
 #include <Shlwapi.h>
+#include <atlbase.h>
+#include <commdlg.h>
 #include <vssym32.h>
 #include <filesystem>
 #pragma comment(lib, "Comctl32")
+#pragma comment(lib, "Comdlg32.lib")
 #pragma comment(lib, "Gdiplus")
 #pragma comment(lib, "Uxtheme")
 #pragma comment(lib, "Shlwapi")
