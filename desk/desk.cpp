@@ -114,10 +114,10 @@ void PropertySheetMoment()
 	psp[4].lParam = 0;
 
 	psh.dwSize = sizeof(PROPSHEETHEADER);
-	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_USECALLBACK;
+	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_USECALLBACK | PSH_USEICONID;
 	psh.hwndParent = 0;
 	psh.hInstance = g_hinst;
-	psh.pszIcon = 0;
+	psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
 	psh.pszCaption = TEXT("Display Properties");
 	psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
 	psh.ppsp = (LPCPROPSHEETPAGE)&psp;
