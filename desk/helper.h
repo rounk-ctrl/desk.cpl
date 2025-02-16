@@ -38,15 +38,3 @@ std::wstring DecodeTranscodedImage()
 	std::wstring wallpaperPath(reinterpret_cast<wchar_t*>(data.data() + 24));
 	return wallpaperPath;
 }
-
-int AddItem(HWND hListView, int rowIndex, LPCSTR text)
-{
-	LVITEM lvItem = { 0 };
-	lvItem.mask = LVIF_TEXT | LVIF_PARAM;
-	lvItem.iItem = rowIndex;
-	lvItem.iSubItem = 0;
-	lvItem.pszText = (LPWSTR)PathFindFileName(ConvertStr2(text));
-	lvItem.lParam = (LPARAM)ConvertStr2(text);
-
-	return ListView_InsertItem(hListView, &lvItem);
-}

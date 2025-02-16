@@ -2,6 +2,26 @@
 #include "desk.h"
 #include "helper.h"
 namespace fs = std::filesystem;
+HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
+
+int AddItem(HWND hListView, int rowIndex, LPCSTR text)
+{
+	if (text)
+	{
+		SHFILEINFO sh;
+		SHGetFileInfo(ConvertStr2(text), FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON);
+		ImageList_AddIcon(hml, sh.hIcon);
+	}
+	LVITEM lvItem = { 0 };
+	lvItem.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+	lvItem.iItem = rowIndex;
+	lvItem.iSubItem = 0;
+	lvItem.iImage = rowIndex;
+	lvItem.pszText = (LPWSTR)PathFindFileName(ConvertStr2(text));
+	lvItem.lParam = (LPARAM)ConvertStr2(text);
+
+	return ListView_InsertItem(hListView, &lvItem);
+}
 
 HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
 {
@@ -107,17 +127,26 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 
 		AddItem(GetDlgItem(hWnd, 1202), 0, "(none)");
+		HICON barrierico = LoadIcon(LoadLibrary(L"imageres.dll"), MAKEINTRESOURCE(1027));
+		ImageList_AddIcon(hml, barrierico);
+		ListView_SetImageList(GetDlgItem(hWnd, 1202), hml, LVSIL_SMALL);
+		DestroyIcon(barrierico);
 
 		for (const auto& entry : fs::recursive_directory_iterator(L"C:\\Windows\\Web\\Wallpaper"))
 		{
-			if (entry.is_regular_file() && (entry.path().extension() == L".jpg" || entry.path().extension() == L".png"))
+			if (entry.is_regular_file() && (entry.path().extension() == L".jpg" 
+				|| entry.path().extension() == L".png"
+				|| entry.path().extension() == L".bmp"
+				|| entry.path().extension() == L".jpeg"
+				|| entry.path().extension() == L".dib"
+				|| entry.path().extension() == L".gif"))
 			{
 				LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
 				LPCSTR path = ConvertStr(lpwstrPath);
 				wallpapers.insert(path);
 			}
 		}
-
+		
 		if (isEn == 1)
 		{
 			ISlideshowSettings* st;

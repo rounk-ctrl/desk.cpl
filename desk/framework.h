@@ -17,6 +17,7 @@
 #include <commdlg.h>
 #include <vssym32.h>
 #include <filesystem>
+#include <shellapi.h>
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32.lib")
 #pragma comment(lib, "Gdiplus")
