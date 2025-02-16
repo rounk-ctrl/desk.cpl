@@ -180,6 +180,7 @@
     <ClInclude Include="helper.h" />
     <ClInclude Include="strnatcmp.h" />
     <ClInclude Include="theme.h" />
+    <ClInclude Include="ThemesPage.h" />
     <ClInclude Include="uxtheme.h" />
   </ItemGroup>
   <ItemGroup>
@@ -192,6 +193,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="strnatcmp.cpp" />
+    <ClCompile Include="ThemesPage.cpp" />
     <ClCompile Include="version.cpp" />
     <ClCompile Include="version.h" />
   </ItemGroup>
