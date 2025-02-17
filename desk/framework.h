@@ -13,7 +13,6 @@
 #include <Uxtheme.h>
 #include <shobjidl_core.h>
 #include <Shlwapi.h>
-#include <atlbase.h>
 #include <commdlg.h>
 #include <vssym32.h>
 #include <filesystem>

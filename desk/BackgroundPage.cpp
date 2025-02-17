@@ -255,38 +255,25 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			if (LOWORD(wParam) == 1203)
 			{
-				CComPtr<IFileDialog> pfd;
-				HRESULT hr = pfd.CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER);
-
-				if (FAILED(hr))
-					return E_FAIL;
+				IFileDialog* pfd;
+				HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
 
 				// get options
 				DWORD dwFlags;
 				hr = pfd->GetOptions(&dwFlags);
-				if (FAILED(hr))
-					return E_FAIL;
 
 				// set the file types
 				hr = pfd->SetFileTypes(ARRAYSIZE(file_types), file_types);
-				if (FAILED(hr))
-					return E_FAIL;
 
 				// the first element from the array
 				hr = pfd->SetFileTypeIndex(1);
-				if (FAILED(hr))
-					return E_FAIL;
 
 				pfd->SetTitle(L"Browse");
-				if (FAILED(hr))
-					return E_FAIL;
 
 				// Show the dialog
 				hr = pfd->Show(hWnd);
-				if (FAILED(hr))
-					return E_FAIL;
 
-				CComPtr<IShellItem> psiResult;
+				IShellItem* psiResult;
 				hr = pfd->GetResult(&psiResult);
 				if (SUCCEEDED(hr)) {
 					PWSTR pszFilePath = NULL;
@@ -299,7 +286,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						CoTaskMemFree(pszFilePath);
 					}
 				}
-				pfd.Release();
+				pfd->Release();
 			}
 			else if (LOWORD(wParam) == 1207)
 			{
@@ -364,6 +351,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				else
 				{
+					noWall = FALSE;
 					EnableWindow(GetDlgItem(hWnd, 1205), true);
 				}
 
@@ -403,7 +391,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			if (noWall)
 			{
 				pDesktopWallpaper->Enable(false);
-				noWall = FALSE;
 			}
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
