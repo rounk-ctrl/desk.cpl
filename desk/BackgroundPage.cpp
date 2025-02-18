@@ -95,6 +95,73 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd)
 	return hBitmap;
 }
 
+void AddMissingWallpapers(IUnknown* th, HWND hWnd)
+{
+	std::set<LPCSTR, NaturalComparator> missingWall;
+	// 1- enabled
+	// 0- disabled
+	int isEn = 0;
+	if (g_osVersion.BuildNumber() >= 18362)
+	{
+		ITheme1903* th1903 = (ITheme1903*)th;
+		th1903->IsSlideshowEnabled(&isEn);
+	}
+	else if (g_osVersion.BuildNumber() >= 17763)
+	{
+		ITheme1809* th1809 = (ITheme1809*)th;
+		th1809->IsSlideshowEnabled(&isEn);
+	}
+	else
+	{
+		ITheme10* th10 = (ITheme10*)th;
+		th10->IsSlideshowEnabled(&isEn);
+	}
+
+	if (isEn == 1)
+	{
+		ISlideshowSettings* st;
+		if (g_osVersion.BuildNumber() >= 18362)
+		{
+			ITheme1903* th1903 = (ITheme1903*)th;
+			th1903->get_SlideshowSettings(&st);
+		}
+		else if (g_osVersion.BuildNumber() >= 17763)
+		{
+			ITheme1809* th1809 = (ITheme1809*)th;
+			th1809->get_SlideshowSettings(&st);
+		}
+		else
+		{
+			ITheme10* th10 = (ITheme10*)th;
+			th10->get_SlideshowSettings(&st);
+		}
+		IWallpaperCollection* wlp;
+		st->GetAllMatchingWallpapers(&wlp);
+		int count = wlp->GetCount();
+		for (int i = 0; i < count; i++)
+		{
+			LPWSTR path = { 0 };
+			wlp->GetWallpaperAt(i, &path);
+			LPCSTR lpcstrPath = ConvertStr(path);
+			missingWall.insert(lpcstrPath);
+		}
+	}
+	for (auto path : missingWall)
+	{
+		LVFINDINFO findInfo = { 0 };
+		findInfo.flags = LVFI_STRING;
+		findInfo.psz = PathFindFileName(ConvertStr2(path));
+		int inde = ListView_FindItem(GetDlgItem(hWnd, 1202), -1, &findInfo);
+		int k = ListView_GetItemCount(GetDlgItem(hWnd, 1202));
+		if (inde == -1)
+		{
+			AddItem(GetDlgItem(hWnd, 1202), k, path);
+			k++;
+		}
+	}
+}
+
+
 std::set<LPCSTR, NaturalComparator> wallpapers;
 const COMDLG_FILTERSPEC file_types[] = {
 	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
@@ -119,26 +186,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		pThemeManager->GetCurrentTheme(&currThem);
 		pThemeManager->GetTheme(currThem, &th);
 
-		// 1- enabled
-		// 0- disabled
-		int isEn = 0;
-		if (g_osVersion.BuildNumber() >= 18362)
-		{
-			ITheme1903* th1903 = (ITheme1903*)th;
-			th1903->IsSlideshowEnabled(&isEn);
-		}
-		else if (g_osVersion.BuildNumber() >= 17763)
-		{
-			ITheme1809* th1809 = (ITheme1809*)th;
-			th1809->IsSlideshowEnabled(&isEn);
-		}
-		else
-		{
-			ITheme10* th10 = (ITheme10*)th;
-			th10->IsSlideshowEnabled(&isEn);
-		}
-
-
 		GetClientRect(GetDlgItem(hWnd, 1202), &rect);
 		width = rect.right - rect.left - 30;
 		LVCOLUMN lvc = { 0 };
@@ -147,7 +194,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		lvc.pszText = (LPWSTR)L"";
 		lvc.iSubItem = 0;
 		SendMessage(GetDlgItem(hWnd, 1202), LVM_INSERTCOLUMN, 0, (LPARAM)&lvc);
-
 
 		AddItem(GetDlgItem(hWnd, 1202), 0, "(none)");
 		HICON barrierico = LoadIcon(LoadLibrary(L"imageres.dll"), MAKEINTRESOURCE(1027));
@@ -170,41 +216,14 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 		}
 
-		if (isEn == 1)
-		{
-			ISlideshowSettings* st;
-			if (g_osVersion.BuildNumber() >= 18362)
-			{
-				ITheme1903* th1903 = (ITheme1903*)th;
-				th1903->get_SlideshowSettings(&st);
-			}
-			else if (g_osVersion.BuildNumber() >= 17763)
-			{
-				ITheme1809* th1809 = (ITheme1809*)th;
-				th1809->get_SlideshowSettings(&st);
-			}
-			else
-			{
-				ITheme10* th10 = (ITheme10*)th;
-				th10->get_SlideshowSettings(&st);
-			}
-			IWallpaperCollection* wlp;
-			st->GetAllMatchingWallpapers(&wlp);
-			int count = wlp->GetCount();
-			for (int i = 0; i < count; i++)
-			{
-				LPWSTR path = { 0 };
-				wlp->GetWallpaperAt(i, &path);
-				LPCSTR lpcstrPath = ConvertStr(path);
-				wallpapers.insert(lpcstrPath);
-			}
-		}
 		int k = 1;
 		for (auto path : wallpapers)
 		{
 			AddItem(GetDlgItem(hWnd, 1202), k, path);
 			k++;
 		}
+		AddMissingWallpapers(th, hWnd);
+
 		const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
 		for (int i = 0; i < _countof(items); i++)
 		{
