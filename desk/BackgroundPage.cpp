@@ -346,16 +346,13 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				if (ChooseColor(&cc) == TRUE)
 				{
 					newColor = cc.rgbResult;
-					if (noWall)
-					{
-						RECT rect;
-						GetClientRect(GetDlgItem(hWnd, 1200), &rect);
-						width = rect.right - rect.left;
-						height = rect.bottom - rect.top;
-						HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
-						SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
-						DeleteObject(bmp);
-					}
+					RECT rect;
+					GetClientRect(GetDlgItem(hWnd, 1200), &rect);
+					width = rect.right - rect.left;
+					height = rect.bottom - rect.top;
+					HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
+					SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
+					DeleteObject(bmp);
 
 					PropSheet_Changed(GetParent(hWnd), hWnd);
 				}
@@ -396,7 +393,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				else
 				{
-					noWall = FALSE;
 					EnableWindow(GetDlgItem(hWnd, 1205), true);
 				}
 
@@ -436,6 +432,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			if (noWall)
 			{
 				pDesktopWallpaper->Enable(false);
+				noWall = FALSE;
 			}
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
