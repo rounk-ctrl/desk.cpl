@@ -3,6 +3,7 @@
 #include "helper.h"
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
+int currentIndex = 0;
 
 int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 {
@@ -23,7 +24,7 @@ int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 	return ListView_InsertItem(hListView, &lvItem);
 }
 
-HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
+HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd)
 {
 	Gdiplus::Bitmap* resized = new Gdiplus::Bitmap(width, height, PixelFormat32bppARGB);
 	if (!resized)
@@ -33,35 +34,57 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path)
 
 	Gdiplus::Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
 
+	int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
+	int monitorheight = GetSystemMetrics(SM_CYSCREEN);
+
+	// pink
 	Gdiplus::Color transparentColor(255, 255, 0, 255);
 
 	Gdiplus::ImageAttributes imgAttr;
 	imgAttr.SetColorKey(transparentColor, transparentColor, Gdiplus::ColorAdjustTypeBitmap);
 
-
 	Gdiplus::Graphics graphics(resized);
 	graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
 	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
+	// draw monitor
 	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
+
+	COLORREF colorref;
+	if (newColor)
+		colorref = newColor;
+	else
+		colorref = GetSysColor(COLOR_BACKGROUND);
+
+	Gdiplus::Color clr(255, GetRValue(colorref), GetGValue(colorref), GetBValue(colorref));
+	Gdiplus::SolidBrush* br = new Gdiplus::SolidBrush(clr);
+	graphics.FillRectangle(br, 15, 25, width - 37, height - 68);
 
 	Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(path, FALSE);
 	if (bitmap)
 	{
-		graphics.DrawImage(bitmap, 15, 25, width - 37, height - 68);
+		int index = (int)SendMessage(GetDlgItem(hWnd, 1205), CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
+		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
+
+		if (index == 0)
+		{
+			graphics.SetClip(prevrect);
+
+			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
+			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
+
+			int newwidth = sX * prevrect.Width;
+			int newheight = sY * prevrect.Height;
+			prevrect.Width = newwidth;
+			prevrect.Height = newheight;
+
+			int marX = ((width - 37) - newwidth) / 2;
+			int marY = ((height - 68) - newheight) / 2;
+			prevrect.X += marX;
+			prevrect.Y += marY;
+		}
+		graphics.DrawImage(bitmap, prevrect);
 	}
 
-	if (!path)
-	{
-		COLORREF colorref;
-		if (newColor)
-			colorref = newColor;
-		else
-			colorref = GetSysColor(COLOR_BACKGROUND);
-
-		Gdiplus::Color clr(255, GetRValue(colorref), GetGValue(colorref), GetBValue(colorref));
-		Gdiplus::SolidBrush* br = new Gdiplus::SolidBrush(clr);
-		graphics.FillRectangle(br, 15, 25, width - 37, height - 68);
-	}
 
 	// create hbitmap
 	HBITMAP hBitmap = NULL;
@@ -134,7 +157,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 		for (const auto& entry : fs::recursive_directory_iterator(L"C:\\Windows\\Web\\Wallpaper"))
 		{
-			if (entry.is_regular_file() && (entry.path().extension() == L".jpg" 
+			if (entry.is_regular_file() && (entry.path().extension() == L".jpg"
 				|| entry.path().extension() == L".png"
 				|| entry.path().extension() == L".bmp"
 				|| entry.path().extension() == L".jpeg"
@@ -146,7 +169,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				wallpapers.insert(path);
 			}
 		}
-		
+
 		if (isEn == 1)
 		{
 			ISlideshowSettings* st;
@@ -192,6 +215,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
 		if (lstrlenW(ws) == 0)
 		{
+			currentIndex = 0;
 			noWall = TRUE;
 			EnableWindow(GetDlgItem(hWnd, 1205), false);
 			ListView_SetItemState(GetDlgItem(hWnd, 1202), 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
@@ -231,6 +255,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					inde = AddItem(GetDlgItem(hWnd, 1202), k, ConvertStr(DecodeTranscodedImage().c_str()));
 				}
 			}
+			currentIndex = inde;
 
 			ListView_SetItemState(GetDlgItem(hWnd, 1202), inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), inde, FALSE);
@@ -249,6 +274,24 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				if (index != lastpos)
 					PropSheet_Changed(GetParent(hWnd), hWnd);
 
+				WCHAR buffer[256];
+				RECT rect;
+				GetClientRect(GetDlgItem(hWnd, 1200), &rect);
+				width = rect.right - rect.left;
+				height = rect.bottom - rect.top;
+
+				LVITEM item = { 0 };
+				item.iItem = currentIndex;
+				item.iSubItem = 0;
+				item.pszText = buffer;
+				item.cchTextMax = 256;
+				item.mask = LVIF_TEXT | LVIF_PARAM;
+				ListView_GetItem(GetDlgItem(hWnd, 1202), &item);
+				wallpath = (LPWSTR)item.lParam;
+
+				HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
+				SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
+				DeleteObject(bmp);
 			}
 		}
 		else if (HIWORD(wParam) == BN_CLICKED)
@@ -309,7 +352,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 						GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 						width = rect.right - rect.left;
 						height = rect.bottom - rect.top;
-						HBITMAP bmp = WallpaperAsBmp(width, height, wallpath);
+						HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
 						SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
 						DeleteObject(bmp);
 					}
@@ -334,6 +377,8 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				width = rect.right - rect.left;
 				height = rect.bottom - rect.top;
 
+				currentIndex = pnmv->iItem;
+
 				LVITEM item = { 0 };
 				item.iItem = pnmv->iItem;
 				item.iSubItem = 0;
@@ -355,7 +400,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					EnableWindow(GetDlgItem(hWnd, 1205), true);
 				}
 
-				HBITMAP bmp = WallpaperAsBmp(width, height, wallpath);
+				HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
 				SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
 
 				if (firstSelect)
