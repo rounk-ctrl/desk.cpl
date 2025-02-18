@@ -21,7 +21,16 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		graphics.DrawImage(bitmap, 0, 0, newwidth, newheight);
 
 		HDC hdcgraphic = graphics.GetHDC();
-		if (!fs::exists(fs::path(wallpaperPath)))
+		if (!wallpaperPath)
+		{
+			RECT rect = { 0,0, newwidth, newheight };
+			if (newColor)
+				FillRect(hdcgraphic, &rect, CreateSolidBrush(newColor));
+			else
+				FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
+
+		}
+		else if (!fs::exists(fs::path(wallpaperPath)))
 		{
 			RECT rect = { 0,0, newwidth, newheight };
 			FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
@@ -198,6 +207,8 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		int currThem{};
 		pThemeManager->GetCurrentTheme(&currThem);
 		SendMessage(GetDlgItem(hWnd, 1101), CB_SETCURSEL, (WPARAM)currThem, (LPARAM)0);
+		pThemeManager->GetTheme(currThem, &currentITheme);
+		currentIThemeIndex = currThem;
 
 		RECT rect;
 		GetClientRect(GetDlgItem(hWnd, 1103), &rect);
@@ -228,26 +239,34 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				else
 					PropSheet_UnChanged(GetParent(hWnd), hWnd);
 
-				IUnknown* th;
-				pThemeManager->GetTheme(index, &th);
+				currentITheme->Release();
+				pThemeManager->GetTheme(index, &currentITheme);
+				currentIThemeIndex = index;
+
 				WCHAR* ws;
 
 				if (g_osVersion.BuildNumber() >= 18362)
 				{
-					ITheme1903* th1903 = (ITheme1903*)th;
+					ITheme1903* th1903 = (ITheme1903*)currentITheme;
 					th1903->get_Background(&ws);
 				}
 				else if (g_osVersion.BuildNumber() >= 17763)
 				{
-					ITheme1809* th1809 = (ITheme1809*)th;
+					ITheme1809* th1809 = (ITheme1809*)currentITheme;
 					th1809->get_Background(&ws);
 				}
 				else
 				{
-					ITheme10* th10 = (ITheme10*)th;
+					ITheme10* th10 = (ITheme10*)currentITheme;
 					th10->get_Background(&ws);
 				}
-
+				if (!wallpath)
+				{
+					if (lstrlenW(ws) == 0)
+						noWall = TRUE;
+					else
+						noWall = FALSE;
+				}
 				RECT rect;
 				GetClientRect(GetDlgItem(hWnd, 1103), &rect);
 				width = rect.right - rect.left;
@@ -257,18 +276,17 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				if (g_osVersion.BuildNumber() >= 17763)
 				{
 					// this func is same for 1809 and 1903
-					ITheme1809* th1809 = (ITheme1809*)th;
+					ITheme1809* th1809 = (ITheme1809*)currentITheme;
 					th1809->get_VisualStyle(&path);
 				}
 				else
 				{
-					ITheme10* th10 = (ITheme10*)th;
+					ITheme10* th10 = (ITheme10*)currentITheme;
 					th10->get_VisualStyle(&path);
 				}
 				HBITMAP ebmp = ThemePreviewBmp(width, height, ws, LoadThemeFromFilePath(path));
 				SendMessage(GetDlgItem(hWnd, 1103), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)ebmp);
 
-				th->Release();
 				SysFreeString(ws);
 				DeleteObject(ebmp);
 			}
@@ -287,6 +305,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
 			pThemeManager->SetCurrentTheme(hWnd, index, !!TRUE, apply_flags, 0);
+			currentIThemeIndex = index;
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
@@ -294,21 +313,27 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		else if (pnmh->code == PSN_SETACTIVE)
 		{
-			int currThem{};
-			pThemeManager->GetCurrentTheme(&currThem);
-			SendMessage(GetDlgItem(hWnd, 1101), CB_SETCURSEL, (WPARAM)currThem, (LPARAM)0);
+			bglock = TRUE;
+			if (thlock)
+			{
+				thlock = FALSE;
+				RECT rect;
+				GetClientRect(GetDlgItem(hWnd, 1103), &rect);
+				width = rect.right - rect.left;
+				height = rect.bottom - rect.top;
 
-			RECT rect;
-			GetClientRect(GetDlgItem(hWnd, 1103), &rect);
-			width = rect.right - rect.left;
-			height = rect.bottom - rect.top;
-
-			HBITMAP bmp;
-			WCHAR ws[MAX_PATH] = { 0 };
-			SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-			bmp = ThemePreviewBmp(width, height, ws, NULL);
-			SendMessage(GetDlgItem(hWnd, 1103), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
-			DeleteObject(bmp);
+				HBITMAP bmp;
+				WCHAR ws[MAX_PATH] = { 0 };
+				SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+				if (wallpath)
+					bmp = ThemePreviewBmp(width, height, wallpath, NULL);
+				else if (noWall)
+					bmp = ThemePreviewBmp(width, height, NULL, NULL);
+				else
+					bmp = ThemePreviewBmp(width, height, ws, NULL);
+				SendMessage(GetDlgItem(hWnd, 1103), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
+				DeleteObject(bmp);
+			}
 		}
 	}
 	return FALSE;

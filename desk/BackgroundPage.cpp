@@ -4,6 +4,7 @@
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 int currentIndex = 0;
+bool executed = FALSE;
 
 int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 {
@@ -161,6 +162,96 @@ void AddMissingWallpapers(IUnknown* th, HWND hWnd)
 	}
 }
 
+void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
+{
+	executed = TRUE;
+	int currThe;
+	WCHAR ws[MAX_PATH] = { 0 };
+	pThemeManager->GetCurrentTheme(&currThe);
+	if (currThe == currentIThemeIndex)
+	{
+		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+		if (lstrlenW(ws) == 0)
+		{
+			currentIndex = 0;
+			noWall = TRUE;
+			EnableWindow(GetDlgItem(hWnd, 1205), false);
+			ListView_SetItemState(GetDlgItem(hWnd, 1202), 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), 0, FALSE);
+		}
+		else
+		{
+			DESKTOP_WALLPAPER_POSITION pos;
+			pDesktopWallpaper->GetPosition(&pos);
+
+			SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)pos, (LPARAM)0);
+			lastpos = pos;
+
+			LVFINDINFO findInfo = { 0 };
+			findInfo.flags = LVFI_STRING;
+			findInfo.psz = PathFindFileName(DecodeTranscodedImage().c_str());
+			int inde = ListView_FindItem(GetDlgItem(hWnd, 1202), -1, &findInfo);
+			if (inde == -1)
+			{
+				if (fs::exists(fs::path(DecodeTranscodedImage().c_str())))
+				{
+					inde = AddItem(GetDlgItem(hWnd, 1202), ListView_GetItemCount(GetDlgItem(hWnd, 1202)), ConvertStr(DecodeTranscodedImage().c_str()));
+				}
+			}
+			currentIndex = inde;
+
+			ListView_SetItemState(GetDlgItem(hWnd, 1202), inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), inde, FALSE);
+		}
+	}
+	else
+	{
+		LPWSTR themePath;
+		if (g_osVersion.BuildNumber() >= 18362)
+		{
+			ITheme1903* th1903 = (ITheme1903*)currentITheme;
+			th1903->get_Background(&themePath);
+		}
+		else if (g_osVersion.BuildNumber() >= 17763)
+		{
+			ITheme1809* th1809 = (ITheme1809*)currentITheme;
+			th1809->get_Background(&themePath);
+		}
+		else
+		{
+			ITheme10* th10 = (ITheme10*)currentITheme;
+			th10->get_Background(&themePath);
+		}
+
+		if (lstrlenW(themePath) == 0)
+		{
+			currentIndex = 0;
+			noWall = TRUE;
+			EnableWindow(GetDlgItem(hWnd, 1205), false);
+			ListView_SetItemState(GetDlgItem(hWnd, 1202), 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), 0, FALSE);
+		}
+		else
+		{
+			DESKTOP_WALLPAPER_POSITION pos;
+			pDesktopWallpaper->GetPosition(&pos);
+
+			SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)pos, (LPARAM)0);
+			lastpos = pos;
+
+			LVFINDINFO findInfo = { 0 };
+			findInfo.flags = LVFI_STRING;
+			findInfo.psz = PathFindFileName(themePath);
+			int inde = ListView_FindItem(GetDlgItem(hWnd, 1202), -1, &findInfo);
+			currentIndex = inde;
+
+			firstSelect = TRUE;
+			ListView_SetItemState(GetDlgItem(hWnd, 1202), inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), inde, FALSE);
+		}
+	}
+}
+
 
 std::set<LPCSTR, NaturalComparator> wallpapers;
 const COMDLG_FILTERSPEC file_types[] = {
@@ -180,11 +271,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 		width = rect.right - rect.left;
 		height = rect.bottom - rect.top;
-
-		IUnknown* th;
-		int currThem{};
-		pThemeManager->GetCurrentTheme(&currThem);
-		pThemeManager->GetTheme(currThem, &th);
 
 		GetClientRect(GetDlgItem(hWnd, 1202), &rect);
 		width = rect.right - rect.left - 30;
@@ -222,7 +308,14 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			AddItem(GetDlgItem(hWnd, 1202), k, path);
 			k++;
 		}
-		AddMissingWallpapers(th, hWnd);
+
+		// first time do it with current theme, the other func will take care of missing
+		IUnknown* thcr;
+		int cu;
+		pThemeManager->GetCurrentTheme(&cu);
+		pThemeManager->GetTheme(cu, &thcr);
+		AddMissingWallpapers(thcr, hWnd);
+		thcr->Release();
 
 		const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
 		for (int i = 0; i < _countof(items); i++)
@@ -231,56 +324,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		}
 		SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
-		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-		if (lstrlenW(ws) == 0)
-		{
-			currentIndex = 0;
-			noWall = TRUE;
-			EnableWindow(GetDlgItem(hWnd, 1205), false);
-			ListView_SetItemState(GetDlgItem(hWnd, 1202), 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), 0, FALSE);
-		}
-		else
-		{
-			DESKTOP_WALLPAPER_POSITION pos;
-
-			if (g_osVersion.BuildNumber() >= 18362)
-			{
-				ITheme1903* th1903 = (ITheme1903*)th;
-				th1903->get_BackgroundPosition(&pos);
-			}
-			else if (g_osVersion.BuildNumber() >= 17763)
-			{
-				ITheme1809* th1809 = (ITheme1809*)th;
-				th1809->get_BackgroundPosition(&pos);
-			}
-			else
-			{
-				ITheme10* th10 = (ITheme10*)th;
-				th10->get_BackgroundPosition(&pos);
-			}
-
-			SendMessage(GetDlgItem(hWnd, 1205), CB_SETCURSEL, (WPARAM)pos, (LPARAM)0);
-			lastpos = pos;
-
-			LVFINDINFO findInfo = { 0 };
-			findInfo.flags = LVFI_STRING;
-			findInfo.psz = PathFindFileName(DecodeTranscodedImage().c_str());
-			int inde = ListView_FindItem(GetDlgItem(hWnd, 1202), -1, &findInfo);
-			if (inde == -1)
-			{
-				if (fs::exists(fs::path(DecodeTranscodedImage().c_str())))
-				{
-					inde = AddItem(GetDlgItem(hWnd, 1202), k, ConvertStr(DecodeTranscodedImage().c_str()));
-				}
-			}
-			currentIndex = inde;
-
-			ListView_SetItemState(GetDlgItem(hWnd, 1202), inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-			ListView_EnsureVisible(GetDlgItem(hWnd, 1202), inde, FALSE);
-		}
-
-		th->Release();
+		SelectCurrentWallpaper(currentITheme, hWnd);
 		//DeleteObject(bmp);
 	}
 	else if (uMsg == WM_COMMAND)
@@ -369,7 +413,17 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 					width = rect.right - rect.left;
 					height = rect.bottom - rect.top;
-					HBITMAP bmp = WallpaperAsBmp(width, height, wallpath, hWnd);
+
+					WCHAR buffer[256];
+					LVITEM item = { 0 };
+					item.iItem = currentIndex;
+					item.iSubItem = 0;
+					item.pszText = buffer;
+					item.cchTextMax = 256;
+					item.mask = LVIF_TEXT | LVIF_PARAM;
+					ListView_GetItem(GetDlgItem(hWnd, 1202), &item);
+
+					HBITMAP bmp = WallpaperAsBmp(width, height, (LPWSTR)item.lParam, hWnd);
 					SendMessage(GetDlgItem(hWnd, 1200), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)bmp);
 					DeleteObject(bmp);
 
@@ -392,8 +446,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				GetClientRect(GetDlgItem(hWnd, 1200), &rect);
 				width = rect.right - rect.left;
 				height = rect.bottom - rect.top;
-
-				currentIndex = pnmv->iItem;
 
 				LVITEM item = { 0 };
 				item.iItem = pnmv->iItem;
@@ -423,8 +475,15 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					wallpath = nullptr;
 					firstSelect = FALSE;
 				}
+				
 
-				PropSheet_Changed(GetParent(hWnd), hWnd);
+				if (currentIndex != pnmv->iItem)
+				{
+					PropSheet_Changed(GetParent(hWnd), hWnd);
+				}
+
+				currentIndex = pnmv->iItem;
+
 				DeleteObject(bmp);
 			}
 		}
@@ -458,9 +517,15 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
 			return TRUE;
 		}
-		if (pnmhdr->code == PSN_SETACTIVE)
+		if (pnmhdr->code == PSN_SETACTIVE && pnmhdr->code != NM_THEMECHANGED)
 		{
-
+			thlock = TRUE;
+			if (!wallpath && bglock)
+			{
+				bglock = FALSE;
+				AddMissingWallpapers(currentITheme, hWnd);
+				SelectCurrentWallpaper(currentITheme, hWnd);
+			}
 		}
 	}
 	return FALSE;

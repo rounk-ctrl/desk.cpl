@@ -10,3 +10,7 @@ extern COLORREF newColor;
 extern int lastpos;
 extern BOOL noWall;
 extern BOOL firstSelect;
+extern IUnknown* currentITheme;
+extern int currentIThemeIndex;
+extern bool bglock; 
+extern bool thlock;
