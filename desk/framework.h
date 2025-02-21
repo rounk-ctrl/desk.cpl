@@ -16,6 +16,7 @@
 #include <commdlg.h>
 #include <vssym32.h>
 #include <filesystem>
+#include <windowsx.h>
 #include <shellapi.h>
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32.lib")

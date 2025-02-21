@@ -435,8 +435,8 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	}
 	else if (uMsg == WM_NOTIFY)
 	{
-		LPNMHDR pnmhdr = (LPNMHDR)lParam;
-		if (pnmhdr->idFrom == 1202 && pnmhdr->code == LVN_ITEMCHANGED)
+		PSHNOTIFY* nhdr = (PSHNOTIFY*)lParam;
+		if (nhdr->hdr.idFrom == 1202 && nhdr->hdr.code == LVN_ITEMCHANGED)
 		{
 			LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
 			if (pnmv->uNewState & LVIS_SELECTED)
@@ -475,7 +475,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					wallpath = nullptr;
 					firstSelect = FALSE;
 				}
-				
+
 
 				if (currentIndex != pnmv->iItem)
 				{
@@ -487,7 +487,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				DeleteObject(bmp);
 			}
 		}
-		if (pnmhdr->code == PSN_APPLY)
+		else if (nhdr->hdr.code == PSN_APPLY)
 		{
 			int index = (int)SendMessage(GetDlgItem(hWnd, 1205), CB_GETCURSEL, (WPARAM)0, (LPARAM)0);
 
@@ -517,16 +517,21 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
 			return TRUE;
 		}
-		if (pnmhdr->code == PSN_SETACTIVE && pnmhdr->code != NM_THEMECHANGED)
+		else if (nhdr->hdr.code == PSN_SETACTIVE)
 		{
-			thlock = TRUE;
-			if (!wallpath && bglock)
+			if (!wallpath)
 			{
-				bglock = FALSE;
 				AddMissingWallpapers(currentITheme, hWnd);
 				SelectCurrentWallpaper(currentITheme, hWnd);
+				return TRUE;
 			}
 		}
+	}
+	else if (uMsg == WM_SETTINGCHANGE)
+	{
+		printf("WM_SETTINGCHANGED:\n");
+		AddMissingWallpapers(currentITheme, hWnd);
+		SelectCurrentWallpaper(currentITheme, hWnd);
 	}
 	return FALSE;
 }

@@ -9,6 +9,8 @@ HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
 IDesktopWallpaper* pDesktopWallpaper = NULL;
 ULONG_PTR gdiplusToken;
+
+// todo: remove
 LPWSTR wallpath{};
 int lastpos{};
 COLORREF newColor{};
@@ -16,8 +18,8 @@ BOOL noWall{};
 BOOL firstSelect = TRUE;
 IUnknown* currentITheme;
 int currentIThemeIndex;
-bool bglock = TRUE;
-bool thlock = TRUE;
+
+THEMEINFO selectedTheme;
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
 
@@ -68,6 +70,12 @@ void PropertySheetMoment()
 	pThemeManager->Init(ThemeInitNoFlags);
 
 	hr = CoCreateInstance(CLSID_DesktopWallpaper, NULL, CLSCTX_ALL, IID_IDesktopWallpaper, (void**)&pDesktopWallpaper);
+
+	AllocConsole();
+	FILE* pFile;
+	freopen_s(&pFile, "CONOUT$", "w", stdout);
+
+	printf("Hello world!\n");
 
 	PROPSHEETPAGE psp[5];
 	PROPSHEETHEADER psh;

@@ -258,6 +258,50 @@ struct ITheme1903 : IUnknown
     // see "re" folder for full vtables
 };
 
+// fuck this shit
+class ITheme
+{
+public:
+    ITheme(IUnknown* iunk)
+    {
+        if (g_osVersion.BuildNumber() >= 18362)
+        {
+            th1903 = (ITheme1903*)iunk;
+        }
+        else if (g_osVersion.BuildNumber() >= 17763)
+        {
+            th1809 = (ITheme1809*)iunk;
+        }
+        else
+        {
+            th10 = (ITheme10*)iunk;
+        }
+    }
+    ~ITheme()
+    {
+        if (th1903) th1903->Release();
+        if (th1809) th1809->Release();
+        if (th10) th10->Release();
+    }
+
+    STDMETHODIMP get_background(LPWSTR* path)
+    {
+        if (th1903) return th1903->get_Background(path);
+        if (th1809) return th1809->get_Background(path);
+        if (th10) return th10->get_Background(path);
+    };
+
+    STDMETHODIMP get_VisualStyle(LPWSTR* path)
+    {
+        if (th1903) return th1903->get_VisualStyle(path);
+        if (th1809) return th1809->get_VisualStyle(path);
+        if (th10) return th10->get_VisualStyle(path);
+    };
+private:
+    ITheme10* th10;
+    ITheme1809* th1809;
+    ITheme1903* th1903;
+};
 
 // const CThemeManager2::`vftable'
 MIDL_INTERFACE("{c1e8c83e-845d-4d95-81db-e283fdffc000}") IThemeManager2 : IUnknown
