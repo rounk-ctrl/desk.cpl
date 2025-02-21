@@ -10,11 +10,6 @@ HWND hPreview;
 int width{};
 int height{};
 
-// why dont winapi have this bruh
-// set a static to display a bitmap
-#define Static_SetBitmap(hwndCtl, hBmp)  \
-	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
-
 // set relevant info accordng to this page
 // if u select a new theme, the settings set by background page
 // becomes irrelevant, overwrite them
@@ -24,18 +19,25 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	if (lstrlenW(ws) == 0)
 	{
 		// no wallpaper applied
-		selectedTheme.wallpaperType = WT_NOWALL;
-		selectedTheme.wallpaperPath = nullptr;
+		selectedTheme->wallpaperType = WT_NOWALL;
+		if (selectedTheme->wallpaperPath != nullptr)
+		{
+			delete[] selectedTheme->wallpaperPath;
+		}
+		selectedTheme->wallpaperPath = nullptr;
 	}
 	else
 	{
-		selectedTheme.wallpaperType = WT_PICTURE;
-		selectedTheme.wallpaperPath = ws;
+		selectedTheme->wallpaperType = WT_PICTURE;
+		size_t len = wcslen(ws) + 1;
+		selectedTheme->wallpaperPath = new wchar_t[len];
+		wcscpy_s(selectedTheme->wallpaperPath, len, ws);
 	}
 	// common properties
-	selectedTheme.newColor = NULL;
-	selectedTheme.selectedThemeIndex = currThem;
-	selectedTheme.customWallpaperSelection = FALSE;
+	selectedTheme->newColor = NULL;
+	selectedTheme->selectedThemeIndex = currThem;
+	selectedTheme->customWallpaperSelection = false;
+	selectedTheme->posChanged = false;
 }
 
 HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile)
@@ -275,9 +277,6 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			if (LOWORD(wParam) == 1101)
 			{
-				int currThem{};
-				pThemeManager->GetCurrentTheme(&currThem);
-
 				int index = ComboBox_GetCurSel(hCombobox);
 
 				// TODO: REMOVE
@@ -299,14 +298,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				// update THEMEINFO
 				UpdateThemeInfo(ws, index);
 
-				if (index != currThem)
-				{
-					PropSheet_Changed(GetParent(hWnd), hWnd);
-				}
-				else
-				{
-					PropSheet_UnChanged(GetParent(hWnd), hWnd);
-				}
+				PropSheet_Changed(GetParent(hWnd), hWnd);
 
 				wallpath = nullptr;
 				DeleteObject(ebmp);
@@ -322,10 +314,10 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			ULONG apply_flags = 0;
 			int index = ComboBox_GetCurSel(hCombobox);
 
-			if (selectedTheme.customWallpaperSelection)
+			if (selectedTheme->customWallpaperSelection)
 				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_BACKGROUND;
 
-			if (selectedTheme.newColor)
+			if (selectedTheme->newColor)
 				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
 			// apply the selected theme
@@ -340,7 +332,18 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		else if (pnmh->hdr.code == PSN_SETACTIVE)
 		{
+			if (selectedTheme->customWallpaperSelection)
+			{
+				int index = ComboBox_GetCurSel(hCombobox);
+				pThemeManager->GetTheme(index, &currentITheme);
+				ITheme* themeClass = new ITheme(currentITheme);
+				LPWSTR path = nullptr;
+				themeClass->get_VisualStyle(&path);
 
+				// set the preview bitmap to the static control
+				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path));
+				Static_SetBitmap(hPreview, ebmp);
+			}
 		}
 	}
 	return FALSE;

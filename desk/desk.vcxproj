@@ -46,8 +46,8 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <DisableAdvancedSupport>true</DisableAdvancedSupport>
-    <SupportLTL>true</SupportLTL>
+    <DisableAdvancedSupport>false</DisableAdvancedSupport>
+    <SupportLTL>false</SupportLTL>
     <WindowsTargetPlatformMinVersion>6.0.6000.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">

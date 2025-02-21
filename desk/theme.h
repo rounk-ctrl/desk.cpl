@@ -289,6 +289,7 @@ public:
         if (th1903) return th1903->get_Background(path);
         if (th1809) return th1809->get_Background(path);
         if (th10) return th10->get_Background(path);
+        return NULL;
     };
 
     STDMETHODIMP get_VisualStyle(LPWSTR* path)
@@ -296,11 +297,29 @@ public:
         if (th1903) return th1903->get_VisualStyle(path);
         if (th1809) return th1809->get_VisualStyle(path);
         if (th10) return th10->get_VisualStyle(path);
+        return NULL;
     };
+    
+    STDMETHODIMP IsSlideshowEnabled(int* en)
+    {
+        if (th1903) return th1903->IsSlideshowEnabled(en);
+        if (th1809) return th1809->IsSlideshowEnabled(en);
+        if (th10) return th10->IsSlideshowEnabled(en);
+        return NULL;
+    };
+
+    STDMETHODIMP get_SlideshowSettings(ISlideshowSettings** st)
+    {
+        if (th1903) return th1903->get_SlideshowSettings(st);
+        if (th1809) return th1809->get_SlideshowSettings(st);
+        if (th10) return th10->get_SlideshowSettings(st);
+        return NULL;
+    };
+
 private:
-    ITheme10* th10;
-    ITheme1809* th1809;
-    ITheme1903* th1903;
+    ITheme10* th10 = NULL;
+    ITheme1809* th1809 = NULL;
+    ITheme1903* th1903 = NULL;
 };
 
 // const CThemeManager2::`vftable'

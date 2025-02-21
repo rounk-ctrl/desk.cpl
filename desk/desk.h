@@ -2,6 +2,10 @@
 #include "pch.h"
 #include "theme.h"
 
+// why dont winapi have this bruh
+// set a static to display a bitmap
+#define Static_SetBitmap(hwndCtl, hBmp)  \
+	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
 
 enum WALLPAPER_TYPE {
 	WT_NOWALL = 1,
@@ -14,7 +18,8 @@ struct THEMEINFO {
 	LPWSTR wallpaperPath;
 	COLORREF newColor;
 	int selectedThemeIndex;
-	bool customWallpaperSelection = FALSE;
+	bool customWallpaperSelection = false;
+	bool posChanged = false;
 };
 
 extern HINSTANCE g_hinst;
@@ -30,4 +35,4 @@ extern BOOL firstSelect;
 extern IUnknown* currentITheme;
 extern int currentIThemeIndex;
 
-extern THEMEINFO selectedTheme;
+extern THEMEINFO* selectedTheme;
