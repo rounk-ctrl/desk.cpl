@@ -71,9 +71,11 @@ void PropertySheetMoment()
 
 	hr = CoCreateInstance(CLSID_DesktopWallpaper, NULL, CLSCTX_ALL, IID_IDesktopWallpaper, (void**)&pDesktopWallpaper);
 
+#ifndef NDEBUG
 	AllocConsole();
 	FILE* pFile;
 	freopen_s(&pFile, "CONOUT$", "w", stdout);
+#endif
 
 	printf("Hello world!\n");
 
