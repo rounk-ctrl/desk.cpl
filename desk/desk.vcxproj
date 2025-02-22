@@ -179,6 +179,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="helper.h" />
+    <ClInclude Include="ScreensaverPage.h" />
     <ClInclude Include="strnatcmp.h" />
     <ClInclude Include="theme.h" />
     <ClInclude Include="ThemesPage.h" />
@@ -194,6 +195,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ScreensaverPage.cpp" />
     <ClCompile Include="strnatcmp.cpp" />
     <ClCompile Include="ThemesPage.cpp" />
     <ClCompile Include="version.cpp" />
@@ -211,6 +213,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Bitmap1.bmp" />
+    <Image Include="Bitmap120.bmp" />
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

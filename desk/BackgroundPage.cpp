@@ -143,6 +143,7 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd)
 	resized->GetHBITMAP(Gdiplus::Color(0, 0, 0), &hBitmap);
 
 	delete bitmap;
+	delete monitor;
 	delete resized;
 	return hBitmap;
 }
