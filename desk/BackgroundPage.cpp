@@ -4,6 +4,7 @@
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 BOOL firstInit;
+BOOL selectionPicker;
 
 HWND hListView;
 HWND hBackPreview;
@@ -209,6 +210,7 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
+		selectionPicker = TRUE;
 		EnableWindow(hPosCombobox, true);
 
 		DESKTOP_WALLPAPER_POSITION pos;
@@ -225,6 +227,7 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 	}
 	else if (selectedTheme->wallpaperType == WT_NOWALL)
 	{
+		selectionPicker = TRUE;
 		EnableWindow(hPosCombobox, false);
 		ListView_SetItemState(hListView, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		ListView_EnsureVisible(hListView, 0, FALSE);
@@ -396,7 +399,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					}
 
 					selectedTheme->wallpaperPath = nullptr;
-					selectedTheme->customWallpaperSelection = true;
 					selectedTheme->wallpaperType = WT_NOWALL;
 
 				}
@@ -409,8 +411,16 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					selectedTheme->wallpaperPath = new wchar_t[len];
 					wcscpy_s(selectedTheme->wallpaperPath, len, path);
 
-					selectedTheme->customWallpaperSelection = true;
 					selectedTheme->wallpaperType = WT_PICTURE;
+				}
+				if (selectionPicker)
+				{
+					selectionPicker = FALSE;
+					selectedTheme->customWallpaperSelection = false;
+				}
+				else
+				{
+					selectedTheme->customWallpaperSelection = true;
 				}
 
 				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd);

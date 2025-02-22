@@ -85,6 +85,7 @@ void PropertySheetMoment()
 	psp[0].pszTitle = TEXT("Themes");
 	psp[0].lParam = 0;
 
+
 	psp[1].dwSize = sizeof(PROPSHEETPAGE);
 	psp[1].dwFlags = PSP_USETITLE;
 	psp[1].hInstance = g_hinst;

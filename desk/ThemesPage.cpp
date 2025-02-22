@@ -15,6 +15,7 @@ int height{};
 // becomes irrelevant, overwrite them
 void UpdateThemeInfo(LPWSTR ws, int currThem)
 {
+	printf("\nupdate themeinfo\n");
 	// update THEMEINFO
 	if (lstrlenW(ws) == 0)
 	{
