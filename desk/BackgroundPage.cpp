@@ -192,7 +192,7 @@ void AddMissingWallpapers(IUnknown* th, HWND hWnd)
 	findInfo.flags = LVFI_STRING;
 	findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath);
 	int inde = ListView_FindItem(hListView, -1, &findInfo);
-	if (inde == -1)
+	if (inde == -1 && selectedTheme->wallpaperPath != nullptr)
 	{
 		if (fs::exists(fs::path(selectedTheme->wallpaperPath)))
 		{
@@ -303,6 +303,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
 		ComboBox_SetCurSel(hPosCombobox, 0);
 
+		AddMissingWallpapers(currentITheme, hWnd);
 		SelectCurrentWallpaper(currentITheme, hWnd);
 		firstInit = FALSE;
 	}

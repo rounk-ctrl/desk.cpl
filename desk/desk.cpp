@@ -11,13 +11,7 @@ IDesktopWallpaper* pDesktopWallpaper = NULL;
 ULONG_PTR gdiplusToken;
 
 // todo: remove
-LPWSTR wallpath{};
-int lastpos{};
-COLORREF newColor{};
-BOOL noWall{};
-BOOL firstSelect = TRUE;
 IUnknown* currentITheme;
-int currentIThemeIndex;
 
 THEMEINFO* selectedTheme = new THEMEINFO();
 

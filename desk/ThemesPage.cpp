@@ -35,7 +35,6 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	}
 	// common properties
 	selectedTheme->newColor = NULL;
-	selectedTheme->selectedThemeIndex = currThem;
 	selectedTheme->customWallpaperSelection = false;
 	selectedTheme->posChanged = false;
 }
@@ -60,8 +59,8 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		if (!wallpaperPath)
 		{
 			RECT rect = { 0,0, newwidth, newheight };
-			if (newColor)
-				FillRect(hdcgraphic, &rect, CreateSolidBrush(newColor));
+			if (selectedTheme->newColor)
+				FillRect(hdcgraphic, &rect, CreateSolidBrush(selectedTheme->newColor));
 			else
 				FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
 
@@ -258,9 +257,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		pThemeManager->GetCurrentTheme(&currThem);
 		ComboBox_SetCurSel(hCombobox, currThem);
 
-		//TODO: REMOVE
 		pThemeManager->GetTheme(currThem, &currentITheme);
-		currentIThemeIndex = currThem;
 
 		// set the preview bitmap to the static control
 		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
@@ -282,7 +279,6 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				// TODO: REMOVE
 				currentITheme->Release();
 				pThemeManager->GetTheme(index, &currentITheme);
-				currentIThemeIndex = index;
 
 				LPWSTR ws;
 				ITheme* themeClass = new ITheme(currentITheme);
@@ -300,7 +296,6 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				PropSheet_Changed(GetParent(hWnd), hWnd);
 
-				wallpath = nullptr;
 				DeleteObject(ebmp);
 			}
 		}
@@ -322,9 +317,6 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			// apply the selected theme
 			pThemeManager->SetCurrentTheme(hWnd, index, !!TRUE, apply_flags, 0);
-
-			//TODO: REMOVE
-			currentIThemeIndex = index;
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
