@@ -4,7 +4,6 @@
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 BOOL firstInit;
-BOOL selectionPicker;
 
 HWND hListView;
 HWND hBackPreview;
@@ -211,12 +210,7 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
-		selectionPicker = TRUE;
 		EnableWindow(hPosCombobox, true);
-
-		DESKTOP_WALLPAPER_POSITION pos;
-		pDesktopWallpaper->GetPosition(&pos);
-		ComboBox_SetCurSel(hPosCombobox, pos);
 
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
@@ -228,7 +222,6 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 	}
 	else if (selectedTheme->wallpaperType == WT_NOWALL)
 	{
-		selectionPicker = TRUE;
 		EnableWindow(hPosCombobox, false);
 		ListView_SetItemState(hListView, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		ListView_EnsureVisible(hListView, 0, FALSE);
@@ -305,7 +298,9 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			ComboBox_AddString(hPosCombobox, items[i]);
 		}
 
-		ComboBox_SetCurSel(hPosCombobox, 0);
+		DESKTOP_WALLPAPER_POSITION pos;
+		pDesktopWallpaper->GetPosition(&pos);
+		ComboBox_SetCurSel(hPosCombobox, pos);
 
 		AddMissingWallpapers(currentITheme, hWnd);
 		SelectCurrentWallpaper(currentITheme, hWnd);
@@ -416,7 +411,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				if (selectionPicker)
 				{
-					selectionPicker = FALSE;
 					selectedTheme->customWallpaperSelection = false;
 				}
 				else
@@ -464,6 +458,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		}
 		else if (nhdr->hdr.code == PSN_SETACTIVE)
 		{
+			selectionPicker = false;
 			if (!selectedTheme->customWallpaperSelection && !firstInit)
 			{
 				AddMissingWallpapers(currentITheme, hWnd);

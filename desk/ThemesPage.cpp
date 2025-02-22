@@ -325,6 +325,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		else if (pnmh->hdr.code == PSN_SETACTIVE)
 		{
+			selectionPicker = true;
 			if (selectedTheme->customWallpaperSelection)
 			{
 				int index = ComboBox_GetCurSel(hCombobox);

@@ -29,3 +29,4 @@ extern IDesktopWallpaper* pDesktopWallpaper;
 extern IUnknown* currentITheme;
 
 extern THEMEINFO* selectedTheme;
+extern BOOL selectionPicker;
