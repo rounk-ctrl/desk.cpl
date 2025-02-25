@@ -10,6 +10,8 @@ int scrWidth{};
 int scrHeight{};
 int energyWidth{};
 int energyHeight{};
+LPWSTR selectedScrSaver{};
+typedef LRESULT(CALLBACK* ScreenSaverProc_t)(HWND, UINT, WPARAM, LPARAM);
 
 HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 {
@@ -62,6 +64,26 @@ VOID AddScreenSavers(HWND comboBox)
 	}
 }
 
+HWND ScreenPreview(HWND preview)
+{
+	HWND hWnd = CreateWindow(WC_STATIC, 0,
+		WS_CHILD | WS_VISIBLE, 15, 25, scrWidth-37, scrHeight-68,
+		preview, NULL, g_hinst, NULL);
+
+	if (selectedScrSaver)
+	{
+		TCHAR cmdLine[256];
+		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver, (UINT_PTR)hWnd);
+
+		STARTUPINFO si = { sizeof(si) };
+		si.dwFlags = STARTF_USESHOWWINDOW;
+		si.wShowWindow = SW_SHOW;
+		PROCESS_INFORMATION pi = { 0 };
+		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi);
+	}
+	return hWnd;
+}
+
 LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg == WM_INITDIALOG)
@@ -91,7 +113,9 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		auto result = wil::reg::try_get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
 		if (result.has_value())
 		{
-			HMODULE hScr = LoadLibrary(result.value().c_str());
+			selectedScrSaver = _wcsdup(result.value().c_str());
+
+			HMODULE hScr = LoadLibrary(selectedScrSaver);
 			WCHAR name[MAX_PATH];
 			LoadString(hScr, 1, name, MAX_PATH);
 			ComboBox_SetCurSel(hScrCombo, ComboBox_FindString(hScrCombo, 0, name));
@@ -99,8 +123,10 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		else
 		{
+			selectedScrSaver = nullptr;
 			ComboBox_SetCurSel(hScrCombo, 0);
 		}
+		ScreenPreview(hScrPreview);
 	}
 	return FALSE;
 }
