@@ -1,6 +1,7 @@
 #pragma once
 #include "framework.h"
 #include "strnatcmp.h"
+#include <wil/registry.h>
 
 struct NaturalComparator {
 	bool operator()(const LPCSTR& a, const LPCSTR& b) const {
@@ -25,16 +26,12 @@ LPWSTR ConvertStr2(LPCSTR narrowStr) {
 
 std::wstring DecodeTranscodedImage()
 {
-	HKEY hKey;
-	const wchar_t* subKey = L"Control Panel\\Desktop";
-	const wchar_t* valueName = L"TranscodedImageCache";
+	auto data = wil::reg::try_get_value_binary(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"TranscodedImageCache", RRF_RT_REG_BINARY);
 
-	RegOpenKeyExW(HKEY_CURRENT_USER, subKey, 0, KEY_READ, &hKey);
-	std::vector<BYTE> data(1024);
-	DWORD dataSize = static_cast<DWORD>(data.size());
-	RegQueryValueExW(hKey, valueName, nullptr, nullptr, data.data(), &dataSize);
-	RegCloseKey(hKey);
-
-	std::wstring wallpaperPath(reinterpret_cast<wchar_t*>(data.data() + 24));
-	return wallpaperPath;
+	if (data.has_value())
+	{
+		std::wstring wallpaperPath(reinterpret_cast<wchar_t*>(data.value().data() + 24));
+		return wallpaperPath;
+	}
+	return NULL;
 }

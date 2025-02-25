@@ -260,7 +260,9 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		ListView_SetImageList(GetDlgItem(hWnd, 1202), hml, LVSIL_SMALL);
 		DestroyIcon(barrierico);
 
-		for (const auto& entry : fs::recursive_directory_iterator(L"C:\\Windows\\Web\\Wallpaper"))
+		WCHAR wallpaperdir[MAX_PATH];
+		ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
+		for (const auto& entry : fs::recursive_directory_iterator(wallpaperdir))
 		{
 			if (entry.is_regular_file() && (entry.path().extension() == L".jpg"
 				|| entry.path().extension() == L".png"

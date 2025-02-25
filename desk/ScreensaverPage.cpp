@@ -1,8 +1,11 @@
 #include "ScreensaverPage.h"
 #include "desk.h"
+#include <wil/registry.h>
+namespace fs = std::filesystem;
 
 HWND hScrPreview;
 HWND hEnergy;
+HWND hScrCombo;
 int scrWidth{};
 int scrHeight{};
 int energyWidth{};
@@ -42,12 +45,30 @@ HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 	return hBitmap;
 }
 
+VOID AddScreenSavers(HWND comboBox)
+{
+	WCHAR systemdir[MAX_PATH];
+	ExpandEnvironmentStrings(L"%windir%\\system32", systemdir, MAX_PATH);
+	for (const auto& entry : fs::directory_iterator(systemdir))
+	{
+		if (entry.path().extension() == L".scr")
+		{
+			HMODULE hScr = LoadLibrary(_wcsdup(entry.path().c_str()));
+			WCHAR name[MAX_PATH];
+			LoadString(hScr, 1, name, MAX_PATH);
+			ComboBox_AddString(comboBox, name);
+			FreeLibrary(hScr);
+		}
+	}
+}
+
 LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg == WM_INITDIALOG)
 	{
 		hScrPreview = GetDlgItem(hWnd, 1302);
 		hEnergy = GetDlgItem(hWnd, 1305);
+		hScrCombo = GetDlgItem(hWnd, 1300);
 		RECT rect;
 		GetClientRect(hScrPreview, &rect);
 		scrWidth = rect.right - rect.left;
@@ -63,6 +84,23 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		bmp = MonitorAsBmp(energyWidth, energyHeight, IDB_BITMAP2,RGB(255,204,204));
 		Static_SetBitmap(hEnergy, bmp);
 		DeleteObject(bmp);
+		
+		ComboBox_AddString(hScrCombo, L"(none)");
+		AddScreenSavers(hScrCombo);
+
+		auto result = wil::reg::try_get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
+		if (result.has_value())
+		{
+			HMODULE hScr = LoadLibrary(result.value().c_str());
+			WCHAR name[MAX_PATH];
+			LoadString(hScr, 1, name, MAX_PATH);
+			ComboBox_SetCurSel(hScrCombo, ComboBox_FindString(hScrCombo, 0, name));
+			FreeLibrary(hScr);
+		}
+		else
+		{
+			ComboBox_SetCurSel(hScrCombo, 0);
+		}
 	}
 	return FALSE;
 }
