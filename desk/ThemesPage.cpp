@@ -338,6 +338,14 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path));
 				Static_SetBitmap(hPreview, ebmp);
 			}
+			if (pi.hProcess != nullptr)
+			{
+				TerminateProcess(pi.hProcess, 0);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+				pi.hProcess = nullptr;
+				pi.hThread = nullptr;
+			}
 		}
 	}
 	return FALSE;

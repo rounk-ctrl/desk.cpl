@@ -84,8 +84,6 @@ HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
 {
     HRESULT hr = S_OK;
 
-    OSVERSIONINFOW verInfo = { 0 };
-
     WCHAR defColor[MAX_PATH];
     WCHAR defSize[MAX_PATH];
 
@@ -100,7 +98,7 @@ HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
     HANDLE hSharableSection;
     HANDLE hNonsharableSection;
 
-    if (verInfo.dwBuildNumber < 20000)
+    if (g_osVersion.BuildNumber() < 20000)
     {
         hr = LoaderLoadTheme(
             NULL,
@@ -146,8 +144,8 @@ HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
     if (g_hLocalTheme)
     {
         UXTHEMEFILE* ltf = (UXTHEMEFILE*)g_hLocalTheme;
-        lstrcpyA(ltf->header, "thmfile");
-        lstrcpyA(ltf->header, "end");
+        memcpy(ltf->header, "thmfile", 7);
+        memcpy(ltf->end, "end", 3);
         ltf->sharableSectionView = MapViewOfFile(hSharableSection, 4, 0, 0, 0);
         ltf->hSharableSection = hSharableSection;
         ltf->nsSectionView = MapViewOfFile(hNonsharableSection, 4, 0, 0, 0);

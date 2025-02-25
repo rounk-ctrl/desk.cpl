@@ -38,6 +38,25 @@ HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 	// draw monitor
 	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
 	
+	if (id == IDB_BITMAP1)
+	{
+		int cx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+		int cy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
+
+		HDC hScreenDC = GetDC(NULL);
+		HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+		auto g_hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
+		SelectObject(hMemoryDC, g_hbDesktop);
+		BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
+		Gdiplus::Bitmap* bm = new Gdiplus::Bitmap(g_hbDesktop, NULL);
+		graphics.DrawImage(bm, prevrect);
+
+		delete bm;
+		DeleteObject(g_hbDesktop);
+	}
+
 	// create hbitmap
 	HBITMAP hBitmap = NULL;
 	resized->GetHBITMAP(Gdiplus::Color(0, 0, 0), &hBitmap);
@@ -55,11 +74,13 @@ VOID AddScreenSavers(HWND comboBox)
 	{
 		if (entry.path().extension() == L".scr")
 		{
-			HMODULE hScr = LoadLibrary(_wcsdup(entry.path().c_str()));
+			LPWSTR path = _wcsdup(entry.path().c_str());
+			HMODULE hScr = LoadLibrary(path);
 			WCHAR name[MAX_PATH];
 			LoadString(hScr, 1, name, MAX_PATH);
 			ComboBox_AddString(comboBox, name);
 			FreeLibrary(hScr);
+			free(path);
 		}
 	}
 }
@@ -78,8 +99,11 @@ HWND ScreenPreview(HWND preview)
 		STARTUPINFO si = { sizeof(si) };
 		si.dwFlags = STARTF_USESHOWWINDOW;
 		si.wShowWindow = SW_SHOW;
-		PROCESS_INFORMATION pi = { 0 };
 		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi);
+	}
+	else
+	{
+		DestroyWindow(hWnd);
 	}
 	return hWnd;
 }

@@ -274,6 +274,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
 				LPCSTR path = ConvertStr(lpwstrPath);
 				wallpapers.insert(path);
+				free(lpwstrPath);
 			}
 		}
 
@@ -465,6 +466,14 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			{
 				AddMissingWallpapers(currentITheme, hWnd);
 				SelectCurrentWallpaper(currentITheme, hWnd);
+			}
+			if (pi.hProcess != nullptr)
+			{
+				TerminateProcess(pi.hProcess, 0);
+				CloseHandle(pi.hThread);
+				CloseHandle(pi.hProcess);
+				pi.hProcess = nullptr;
+				pi.hThread = nullptr;
 			}
 		}
 	}

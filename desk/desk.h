@@ -30,3 +30,4 @@ extern IUnknown* currentITheme;
 
 extern THEMEINFO* selectedTheme;
 extern BOOL selectionPicker;
+extern PROCESS_INFORMATION pi;
