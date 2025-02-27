@@ -40,7 +40,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	selectedTheme->posChanged = false;
 }
 
-HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile)
+HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
 {
 	Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(wallpaperPath, FALSE);
 	if (bitmap)
@@ -57,19 +57,14 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		graphics.DrawImage(bitmap, 0, 0, newwidth, newheight);
 
 		HDC hdcgraphic = graphics.GetHDC();
-		if (!wallpaperPath)
+		if (!wallpaperPath || (!fs::exists(fs::path(wallpaperPath))))
 		{
 			RECT rect = { 0,0, newwidth, newheight };
 			if (selectedTheme->newColor)
 				FillRect(hdcgraphic, &rect, CreateSolidBrush(selectedTheme->newColor));
 			else
-				FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
+				FillRect(hdcgraphic, &rect, CreateSolidBrush(clrBg));
 
-		}
-		else if (!fs::exists(fs::path(wallpaperPath)))
-		{
-			RECT rect = { 0,0, newwidth, newheight };
-			FillRect(hdcgraphic, &rect, GetSysColorBrush(COLOR_BACKGROUND));
 		}
 
 		HMODULE imageres = LoadLibrary(L"imageres.dll");
@@ -155,7 +150,7 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		GetThemeMargins(hTheme, hdcgraphic, WP_CLOSEBUTTON, 0, TMT_CONTENTMARGINS, NULL, &btnMar);
 		if (btnMar.cxLeftWidth == 0) GetThemeMargins(hTheme, hdcgraphic, WP_CLOSEBUTTON, 0, TMT_SIZINGMARGINS, NULL, &btnMar);
 
-		size.cx = (static_cast<double>(size.cx) / (size.cy + btnMar.cxRightWidth)) * GetSystemMetrics(SM_CYCAPTION) - 2;
+		size.cx = (static_cast<double>(size.cx) / (size.cy + btnMar.cxRightWidth)) * GetSystemMetrics(SM_CYCAPTION);
 		size.cy = GetSystemMetrics(SM_CYSIZE) - GetSystemMetrics(SM_CYEDGE) - GetSystemMetrics(SM_CYFRAME) + 2;
 		rect.left = rect.right - size.cx - btnMar.cxLeftWidth;
 		rect.top = y + GetSystemMetrics(SM_CYSIZE) + GetSystemMetrics(SM_CYFRAME) - 2 - size.cy + GetSystemMetrics(SM_CXPADDEDBORDER);
@@ -262,7 +257,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		// set the preview bitmap to the static control
 		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-		bmp = ThemePreviewBmp(width, height, ws, NULL);
+		bmp = ThemePreviewBmp(width, height, ws, NULL, GetSysColor(COLOR_BACKGROUND));
 		Static_SetBitmap(hPreview, bmp);
 		DeleteObject(bmp);
 
@@ -288,8 +283,15 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				LPWSTR path = nullptr;
 				themeClass->get_VisualStyle(&path);
 				
+				int hc;
+				themeClass->GetHighContrast(&hc);
+
+				COLORREF clr;
+				themeClass->GetBackgroundColor(&clr);
+				printf("%d, %d, %d", GetRValue(clr), GetGValue(clr), GetBValue(clr));
+
 				// set the preview bitmap to the static control
-				HBITMAP ebmp = ThemePreviewBmp(width, height, ws, LoadThemeFromFilePath(path));
+				HBITMAP ebmp = ThemePreviewBmp(width, height, ws, LoadThemeFromFilePath(path), clr);
 				Static_SetBitmap(hPreview, ebmp);
 
 				// update THEMEINFO
@@ -326,7 +328,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		else if (pnmh->hdr.code == PSN_SETACTIVE)
 		{
 			selectionPicker = true;
-			if (selectedTheme->customWallpaperSelection)
+			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor)
 			{
 				int index = ComboBox_GetCurSel(hCombobox);
 				pThemeManager->GetTheme(index, &currentITheme);
@@ -334,8 +336,11 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				LPWSTR path = nullptr;
 				themeClass->get_VisualStyle(&path);
 
+				COLORREF clr;
+				themeClass->GetBackgroundColor(&clr);
+
 				// set the preview bitmap to the static control
-				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path));
+				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path), clr);
 				Static_SetBitmap(hPreview, ebmp);
 			}
 			if (pi.hProcess != nullptr)

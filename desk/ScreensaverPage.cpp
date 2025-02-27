@@ -6,6 +6,8 @@ namespace fs = std::filesystem;
 HWND hScrPreview;
 HWND hEnergy;
 HWND hScrCombo;
+HWND hBtnSettings;
+HWND hBtnPreview;
 int scrWidth{};
 int scrHeight{};
 int energyWidth{};
@@ -115,6 +117,8 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		hScrPreview = GetDlgItem(hWnd, 1302);
 		hEnergy = GetDlgItem(hWnd, 1305);
 		hScrCombo = GetDlgItem(hWnd, 1300);
+		hBtnSettings = GetDlgItem(hWnd, 1303);
+		hBtnPreview = GetDlgItem(hWnd, 1304);
 		RECT rect;
 		GetClientRect(hScrPreview, &rect);
 		scrWidth = rect.right - rect.left;
@@ -149,6 +153,8 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		{
 			selectedScrSaver = nullptr;
 			ComboBox_SetCurSel(hScrCombo, 0);
+			EnableWindow(hBtnPreview, FALSE);
+			EnableWindow(hBtnSettings, FALSE);
 		}
 		ScreenPreview(hScrPreview);
 	}

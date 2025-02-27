@@ -4,6 +4,7 @@
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 BOOL firstInit;
+int selectedIndex;
 
 HWND hListView;
 HWND hBackPreview;
@@ -17,7 +18,7 @@ int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 	if (text)
 	{
 		// gimmick
-		SHFILEINFO sh;
+		SHFILEINFO sh{};
 		SHGetFileInfo(ConvertStr2(text), FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON);
 		ImageList_AddIcon(hml, sh.hIcon);
 	}
@@ -59,7 +60,8 @@ LPWSTR GetWallpaperPath(HWND hListView, int iIndex)
 BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 {
 	COLORREF clr;
-	pDesktopWallpaper->GetBackgroundColor(&clr);
+	ITheme* themeClass = new ITheme(currentITheme);
+	themeClass->GetBackgroundColor(&clr);
 
 	CHOOSECOLOR cc;
 	COLORREF acrCustClr[16];
@@ -75,7 +77,7 @@ BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 	return out;
 }
 
-HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd)
+HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF color)
 {
 	Gdiplus::Bitmap* resized = new Gdiplus::Bitmap(width, height, PixelFormat32bppARGB);
 	if (!resized)
@@ -104,7 +106,7 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd)
 	if (selectedTheme->newColor)
 		colorref = selectedTheme->newColor;
 	else
-		colorref = GetSysColor(COLOR_BACKGROUND);
+		colorref = color;
 
 	Gdiplus::Color clr(255, GetRValue(colorref), GetGValue(colorref), GetBValue(colorref));
 	Gdiplus::SolidBrush* br = new Gdiplus::SolidBrush(clr);
@@ -317,7 +319,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			{
 				selectedTheme->posChanged = true;
 
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd);
+				COLORREF clr;
+				ITheme* themeClass = new ITheme(currentITheme);
+				themeClass->GetBackgroundColor(&clr);
+
+				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clr);
 				Static_SetBitmap(hBackPreview, bmp);
 				DeleteObject(bmp);
 
@@ -368,7 +374,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 					selectedTheme->newColor = cc.rgbResult;
 
-					HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd);
+					COLORREF clr;
+					ITheme* themeClass = new ITheme(currentITheme);
+					themeClass->GetBackgroundColor(&clr);
+
+					HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clr);
 					Static_SetBitmap(hBackPreview, bmp);
 					DeleteObject(bmp);
 
@@ -386,6 +396,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
 			if (pnmv->uNewState & LVIS_SELECTED)
 			{
+				selectedIndex = pnmv->iItem;
 				LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
 
 				if (StrCmpW(path, L"(none)") == 0)
@@ -421,7 +432,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					selectedTheme->customWallpaperSelection = true;
 				}
 
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd);
+				COLORREF clr;
+				ITheme* themeClass = new ITheme(currentITheme);
+				themeClass->GetBackgroundColor(&clr);
+
+				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd,clr);
 				Static_SetBitmap(hBackPreview, bmp);
 
 				PropSheet_Changed(GetParent(hWnd), hWnd);
@@ -466,6 +481,18 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			{
 				AddMissingWallpapers(currentITheme, hWnd);
 				SelectCurrentWallpaper(currentITheme, hWnd);
+			}
+			// special case where preview wont update if (none) 
+			// and background color changes due to theme change
+			// just update each time u activate
+			if (!firstInit && selectedIndex == 0)
+			{
+				COLORREF clr;
+				ITheme* themeClass = new ITheme(currentITheme);
+				themeClass->GetBackgroundColor(&clr);
+
+				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, NULL, hWnd, clr);
+				Static_SetBitmap(hBackPreview, bmp);
 			}
 			if (pi.hProcess != nullptr)
 			{

@@ -94,15 +94,15 @@ struct ITheme10 : IUnknown
     STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
     STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
     STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
-    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
-    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBackgroundColor)(COLORREF*) PURE;
+    STDMETHOD(GetColor)(unsigned int, COLORREF*) PURE;
     STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
     STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
     STDMETHOD(ClearBrandLogo)(void) PURE;
     STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
     STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
     STDMETHOD(Stub1)(void) PURE;
-    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, COLORREF) PURE;
     // see "re" folder for full vtables
 };
 
@@ -167,15 +167,15 @@ struct ITheme1809 : IUnknown
     STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
     STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
     STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
-    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
-    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBackgroundColor)(COLORREF*) PURE;
+    STDMETHOD(GetColor)(unsigned int, COLORREF*) PURE;
     STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
     STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
     STDMETHOD(ClearBrandLogo)(void) PURE;
     STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
     STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
     STDMETHOD(Stub1)(void) PURE;
-    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, COLORREF) PURE;
     // see "re" folder for full vtables
 };
 
@@ -246,15 +246,15 @@ struct ITheme1903 : IUnknown
     STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
     STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
     STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
-    STDMETHOD(GetBackgroundColor)(unsigned long*) PURE;
-    STDMETHOD(GetColor)(unsigned int, unsigned long*) PURE;
+    STDMETHOD(GetBackgroundColor)(COLORREF*) PURE;
+    STDMETHOD(GetColor)(unsigned int, COLORREF*) PURE;
     STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
     STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
     STDMETHOD(ClearBrandLogo)(void) PURE;
     STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
     STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
     STDMETHOD(Stub1)(void) PURE;
-    STDMETHOD(SetThemeColor)(LPCWSTR, unsigned long) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, COLORREF) PURE;
     // see "re" folder for full vtables
 };
 
@@ -315,6 +315,22 @@ public:
         if (th10) return th10->get_SlideshowSettings(st);
         return NULL;
     };
+
+    STDMETHODIMP GetHighContrast(int* en)
+    {
+        if (th1903) return th1903->GetHighContrast(en);
+        if (th1809) return th1809->GetHighContrast(en);
+        if (th10) return th10->GetHighContrast(en);
+        return NULL;
+    }
+    
+    STDMETHODIMP GetBackgroundColor(COLORREF* clr)
+    {
+        if (th1903) return th1903->GetBackgroundColor(clr);
+        if (th1809) return th1809->GetBackgroundColor(clr);
+        if (th10) return th10->GetBackgroundColor(clr);
+        return NULL;
+    }
 
 private:
     ITheme10* th10 = NULL;
