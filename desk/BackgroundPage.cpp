@@ -494,14 +494,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, NULL, hWnd, clr);
 				Static_SetBitmap(hBackPreview, bmp);
 			}
-			if (pi.hProcess != nullptr)
-			{
-				TerminateProcess(pi.hProcess, 0);
-				CloseHandle(pi.hThread);
-				CloseHandle(pi.hProcess);
-				pi.hProcess = nullptr;
-				pi.hThread = nullptr;
-			}
+			_TerminateProcess(pi);
 		}
 	}
 	else if (uMsg == WM_SETTINGCHANGE)

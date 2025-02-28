@@ -1,6 +1,7 @@
 #include "ScreensaverPage.h"
 #include "desk.h"
 #include <wil/registry.h>
+#include "helper.h"
 namespace fs = std::filesystem;
 
 HWND hScrPreview;
@@ -12,8 +13,10 @@ int scrWidth{};
 int scrHeight{};
 int energyWidth{};
 int energyHeight{};
-LPWSTR selectedScrSaver{};
-typedef LRESULT(CALLBACK* ScreenSaverProc_t)(HWND, UINT, WPARAM, LPARAM);
+LPCWSTR selectedScrSaver{};
+
+LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+std::map<std::wstring, std::wstring> scrSaverMap;
 
 HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 {
@@ -81,33 +84,45 @@ VOID AddScreenSavers(HWND comboBox)
 			WCHAR name[MAX_PATH];
 			LoadString(hScr, 1, name, MAX_PATH);
 			ComboBox_AddString(comboBox, name);
+			scrSaverMap.insert({std::wstring(name), entry.path()});
 			FreeLibrary(hScr);
 			free(path);
 		}
 	}
 }
 
-HWND ScreenPreview(HWND preview)
+HWND hWnd;
+VOID ScreenPreview(HWND preview)
 {
-	HWND hWnd = CreateWindow(WC_STATIC, 0,
-		WS_CHILD | WS_VISIBLE, 15, 25, scrWidth-37, scrHeight-68,
-		preview, NULL, g_hinst, NULL);
+	if (!hWnd)
+	{
+		hWnd = CreateWindow(WC_STATIC, 0,
+			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 15, 25, scrWidth - 37, scrHeight - 68,
+			preview, NULL, g_hinst, NULL);
+		SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)StaticProc);
+	}
 
 	if (selectedScrSaver)
 	{
+		ZeroMemory(&pi, sizeof(pi));
+
 		TCHAR cmdLine[256];
 		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver, (UINT_PTR)hWnd);
 
 		STARTUPINFO si = { sizeof(si) };
-		si.dwFlags = STARTF_USESHOWWINDOW;
-		si.wShowWindow = SW_SHOW;
 		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi);
 	}
 	else
 	{
-		DestroyWindow(hWnd);
+		if (hWnd)
+		{
+			DestroyWindow(hWnd);
+			hWnd = nullptr;
+			HBITMAP bmp = MonitorAsBmp(scrWidth, scrHeight, IDB_BITMAP1, RGB(255, 0, 255));
+			Static_SetBitmap(hScrPreview, bmp);
+			DeleteObject(bmp);
+		}
 	}
-	return hWnd;
 }
 
 LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -141,7 +156,7 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		auto result = wil::reg::try_get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
 		if (result.has_value())
 		{
-			selectedScrSaver = _wcsdup(result.value().c_str());
+			selectedScrSaver = result.value().c_str();
 
 			HMODULE hScr = LoadLibrary(selectedScrSaver);
 			WCHAR name[MAX_PATH];
@@ -158,5 +173,46 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		ScreenPreview(hScrPreview);
 	}
+	else if (uMsg == WM_COMMAND)
+	{
+		if (HIWORD(wParam) == CBN_SELCHANGE)
+		{
+			if (LOWORD(wParam) == 1300)
+			{
+				_TerminateProcess(pi);
+				int index = ComboBox_GetCurSel(hScrCombo);
+				int leng = ComboBox_GetLBTextLen(hScrCombo, index);
+				WCHAR* name = (WCHAR*)malloc((leng + 1) * sizeof(WCHAR));
+				ComboBox_GetLBText(hScrCombo, index, name);
+
+				if (index == 0)
+				{
+					selectedScrSaver = nullptr;
+				}
+				else
+				{
+					selectedScrSaver = scrSaverMap[name].c_str();
+				}
+
+				ScreenPreview(hScrPreview);
+				free(name);
+			}
+		}
+	}
 	return FALSE;
+}
+
+LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_PAINT)
+	{
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		HBRUSH hBrush = CreateSolidBrush(RGB(0, 0, 0));
+		FillRect(hdc, &ps.rcPaint, hBrush);
+		DeleteObject(hBrush);
+		EndPaint(hWnd, &ps);
+		return 0;
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
