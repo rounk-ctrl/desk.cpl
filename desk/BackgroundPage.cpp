@@ -249,10 +249,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		GetClientRect(hBackPreview, &rect);
 		backPreviewWidth = rect.right - rect.left;
 		backPreviewHeight = rect.bottom - rect.top;
-		WCHAR ws[MAX_PATH] = { 0 };
-
-		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-
+		
 		GetClientRect(hListView, &rect);
 		AddColumn(hListView, rect.right - rect.left - 30);
 

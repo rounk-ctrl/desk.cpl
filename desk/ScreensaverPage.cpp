@@ -17,6 +17,7 @@ LPCWSTR selectedScrSaver{};
 
 LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 std::map<std::wstring, std::wstring> scrSaverMap;
+PROCESS_INFORMATION pi2;
 
 HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 {
@@ -91,15 +92,15 @@ VOID AddScreenSavers(HWND comboBox)
 	}
 }
 
-HWND hWnd;
+HWND hWndStatic;
 VOID ScreenPreview(HWND preview)
 {
-	if (!hWnd)
+	if (!hWndStatic)
 	{
-		hWnd = CreateWindow(WC_STATIC, 0,
+		hWndStatic = CreateWindow(WC_STATIC, 0,
 			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 15, 25, scrWidth - 37, scrHeight - 68,
 			preview, NULL, g_hinst, NULL);
-		SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)StaticProc);
+		SetWindowLongPtr(hWndStatic, GWLP_WNDPROC, (LONG_PTR)StaticProc);
 	}
 
 	if (selectedScrSaver)
@@ -107,23 +108,39 @@ VOID ScreenPreview(HWND preview)
 		ZeroMemory(&pi, sizeof(pi));
 
 		TCHAR cmdLine[256];
-		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver, (UINT_PTR)hWnd);
+		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver, (UINT_PTR)hWndStatic);
 
 		STARTUPINFO si = { sizeof(si) };
 		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi);
 	}
 	else
 	{
-		if (hWnd)
+		if (hWndStatic)
 		{
-			DestroyWindow(hWnd);
-			hWnd = nullptr;
+			DestroyWindow(hWndStatic);
+			hWndStatic = nullptr;
 			HBITMAP bmp = MonitorAsBmp(scrWidth, scrHeight, IDB_BITMAP1, RGB(255, 0, 255));
 			Static_SetBitmap(hScrPreview, bmp);
 			DeleteObject(bmp);
 		}
 	}
 }
+
+VOID ScreenSettings(HWND preview)
+{
+	if (selectedScrSaver)
+	{
+		ZeroMemory(&pi2, sizeof(pi2));
+
+		TCHAR cmdLine[256];
+		wsprintf(cmdLine, L"%s /c /p %u", selectedScrSaver, (UINT_PTR)GetParent(preview));
+
+		STARTUPINFO si = { sizeof(si) };
+		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi2);
+
+	}
+}
+
 
 LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -188,15 +205,57 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				if (index == 0)
 				{
 					selectedScrSaver = nullptr;
+					EnableWindow(hBtnPreview, FALSE);
+					EnableWindow(hBtnSettings, FALSE);
 				}
 				else
 				{
 					selectedScrSaver = scrSaverMap[name].c_str();
+					EnableWindow(hBtnPreview, TRUE);
+					EnableWindow(hBtnSettings, TRUE);
 				}
 
 				ScreenPreview(hScrPreview);
 				free(name);
 			}
+		}
+		else if (HIWORD(wParam) == BN_CLICKED)
+		{
+			if (LOWORD(wParam) == 1303)
+			{
+				_TerminateProcess(pi);
+				DestroyWindow(hWndStatic);
+				hWndStatic = nullptr;
+				HBITMAP bmp = MonitorAsBmp(scrWidth, scrHeight, IDB_BITMAP1, RGB(255, 0, 255));
+				Static_SetBitmap(hScrPreview, bmp);
+				DeleteObject(bmp);
+
+				ScreenSettings(hScrPreview);
+			}
+			else if (LOWORD(wParam) == 1304)
+			{
+				_TerminateProcess(pi);
+				DestroyWindow(hWndStatic);
+				hWndStatic = nullptr;
+				HBITMAP bmp = MonitorAsBmp(scrWidth, scrHeight, IDB_BITMAP1, RGB(255, 0, 255));
+				Static_SetBitmap(hScrPreview, bmp);
+				DeleteObject(bmp);
+
+				ShellExecute(0, L"open", selectedScrSaver, NULL, NULL, SW_SHOW);
+			}
+		}
+	}
+	else if (uMsg == WM_ACTIVATE)
+	{
+		if (LOWORD(wParam) == WA_ACTIVE)
+		{
+			// show with new settings
+			_TerminateProcess(pi);
+			ScreenPreview(hScrPreview);
+
+			CloseHandle(pi2.hThread);
+			CloseHandle(pi2.hProcess);
+			ZeroMemory(&pi2, sizeof(pi2));
 		}
 	}
 	return FALSE;
