@@ -9,6 +9,9 @@ HWND hEnergy;
 HWND hScrCombo;
 HWND hBtnSettings;
 HWND hBtnPreview;
+HWND hWndStatic;
+HWND updown;
+HWND secureCheck;
 int scrWidth{};
 int scrHeight{};
 int energyWidth{};
@@ -92,9 +95,9 @@ VOID AddScreenSavers(HWND comboBox)
 	}
 }
 
-HWND hWndStatic;
 VOID ScreenPreview(HWND preview)
 {
+	_TerminateProcess(pi);
 	if (!hWndStatic)
 	{
 		hWndStatic = CreateWindow(WC_STATIC, 0,
@@ -151,6 +154,9 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		hScrCombo = GetDlgItem(hWnd, 1300);
 		hBtnSettings = GetDlgItem(hWnd, 1303);
 		hBtnPreview = GetDlgItem(hWnd, 1304);
+		updown = GetDlgItem(hWnd, 1307);
+		secureCheck = GetDlgItem(hWnd, 1320);
+
 		RECT rect;
 		GetClientRect(hScrPreview, &rect);
 		scrWidth = rect.right - rect.left;
@@ -173,7 +179,7 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		auto result = wil::reg::try_get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
 		if (result.has_value())
 		{
-			selectedScrSaver = result.value().c_str();
+			selectedScrSaver = _wcsdup(result.value().c_str());
 
 			HMODULE hScr = LoadLibrary(selectedScrSaver);
 			WCHAR name[MAX_PATH];
@@ -189,6 +195,13 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			EnableWindow(hBtnSettings, FALSE);
 		}
 		ScreenPreview(hScrPreview);
+		int timeout;
+		SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &timeout, 0);
+		SendMessage(updown, UDM_SETPOS32, 0, timeout/60);
+
+		BOOL isSecure;
+		SystemParametersInfo(SPI_GETSCREENSAVESECURE, 0, &isSecure, 0);
+		Button_SetCheck(secureCheck, isSecure);
 	}
 	else if (uMsg == WM_COMMAND)
 	{
@@ -217,6 +230,7 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 				ScreenPreview(hScrPreview);
 				free(name);
+				PropSheet_Changed(GetParent(hWnd), hWnd);
 			}
 		}
 		else if (HIWORD(wParam) == BN_CLICKED)
@@ -243,6 +257,52 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 				ShellExecute(0, L"open", selectedScrSaver, NULL, NULL, SW_SHOW);
 			}
+			else if (LOWORD(wParam) == 1314)
+			{
+				WCHAR xpcpl[MAX_PATH];
+				ExpandEnvironmentStrings(L"shell32.dll,Control_RunDLL %windir%\\System32\\xppowerc.cpl", xpcpl, MAX_PATH);
+				if (PathFileExists(xpcpl) == FALSE)
+				{
+					ExpandEnvironmentStrings(L"shell32.dll,Control_RunDLL %windir%\\System32\\powercfg.cpl", xpcpl, MAX_PATH);
+				}
+				ShellExecute(0, L"open", L"Rundll32.exe", xpcpl, 0, SW_SHOW);
+			}
+			else if (LOWORD(wParam) == 1320)
+			{
+				PropSheet_Changed(GetParent(hWnd), hWnd);
+			}
+		}
+	}
+	else if (uMsg == WM_NOTIFY)
+	{
+		PSHNOTIFY* nhdr = (PSHNOTIFY*)lParam;
+		if (nhdr->hdr.code == UDN_DELTAPOS)
+		{
+			PropSheet_Changed(GetParent(hWnd), hWnd);
+		}
+		else if (nhdr->hdr.code == PSN_APPLY)
+		{
+			int index = ComboBox_GetCurSel(hScrCombo);
+			if (index == 0)
+			{
+				RegDeleteKeyValue(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
+				SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, FALSE, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+			}
+			else
+			{
+				wil::reg::set_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE", selectedScrSaver);
+				SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+				SystemParametersInfo(SPI_SETSCREENSAVESECURE, Button_GetCheck(secureCheck), NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+				int timeout = SendMessage(updown, UDM_GETPOS32, 0, 0);
+				SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, timeout*60, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+			}
+
+			PropSheet_UnChanged(GetParent(hWnd), hWnd);
+			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
+		}
+		else if (nhdr->hdr.code == PSN_SETACTIVE)
+		{
+			ScreenPreview(hScrPreview);
 		}
 	}
 	else if (uMsg == WM_ACTIVATE)
@@ -250,7 +310,6 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		if (LOWORD(wParam) == WA_ACTIVE)
 		{
 			// show with new settings
-			_TerminateProcess(pi);
 			ScreenPreview(hScrPreview);
 
 			CloseHandle(pi2.hThread);
