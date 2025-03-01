@@ -1,6 +1,8 @@
-#include "BackgroundPage.h"
+﻿#include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
+#include <wininet.h>
+#include <shlobj_core.h>
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 BOOL firstInit;
@@ -97,7 +99,7 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 	imgAttr.SetColorKey(transparentColor, transparentColor, Gdiplus::ColorAdjustTypeBitmap);
 
 	Gdiplus::Graphics graphics(resized);
-	graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+	graphics.SetInterpolationMode(Gdiplus::InterpolationModeInvalid);
 	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
 	// draw monitor
 	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
@@ -118,7 +120,7 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 		int index = ComboBox_GetCurSel(hPosCombobox);
 		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
 
-		if (index == 0)
+		if (index == DWPOS_CENTER)
 		{
 			graphics.SetClip(prevrect);
 
@@ -134,8 +136,38 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 			int marY = ((height - 68) - newheight) / 2;
 			prevrect.X += marX;
 			prevrect.Y += marY;
+			graphics.DrawImage(bitmap, prevrect);
 		}
-		graphics.DrawImage(bitmap, prevrect);
+		else if (index == DWPOS_TILE)
+		{
+			graphics.SetClip(prevrect);
+
+			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
+			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
+
+			int newprewidth = sX * prevrect.Width;
+			int newpreheight = sY * prevrect.Height;
+			prevrect.Width = newprewidth;
+			prevrect.Height = newpreheight;
+
+			int sideImages = ((width-37) / newprewidth) + 1;
+			int topImages = ((height-68) / newpreheight) + 1;
+
+			for (int i = 0; i < topImages; i++)
+			{
+				for (int j = 0; j < sideImages; j++)
+				{
+					graphics.DrawImage(bitmap, prevrect);
+					prevrect.X += prevrect.Width;
+				}
+				prevrect.X = 15;
+				prevrect.Y += prevrect.Height;
+			}
+		}
+		else
+		{
+			graphics.DrawImage(bitmap, prevrect);
+		}
 	}
 
 
@@ -314,11 +346,10 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		{
 			if (LOWORD(wParam) == 1205)
 			{
-				selectedTheme->posChanged = true;
+				selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
 
 				COLORREF clr;
-				ITheme* themeClass = new ITheme(currentITheme);
-				themeClass->GetBackgroundColor(&clr);
+				pDesktopWallpaper->GetBackgroundColor(&clr);
 
 				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clr);
 				Static_SetBitmap(hBackPreview, bmp);
@@ -442,11 +473,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		}
 		else if (nhdr->hdr.code == PSN_APPLY)
 		{
-			if (selectedTheme->posChanged)
+			if (selectedTheme->posChanged != -1)
 			{
 				int index = ComboBox_GetCurSel(hPosCombobox);
 				pDesktopWallpaper->SetPosition((DESKTOP_WALLPAPER_POSITION)index);
-				selectedTheme->posChanged = false;
+				selectedTheme->posChanged = -1;
 			}
 			if (selectedTheme->newColor)
 			{

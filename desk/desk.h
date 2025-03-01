@@ -18,16 +18,14 @@ struct THEMEINFO {
 	LPWSTR wallpaperPath;
 	COLORREF newColor;
 	bool customWallpaperSelection = false;
-	bool posChanged = false;
+	int posChanged = -1;
 };
 
 extern HINSTANCE g_hinst;
 extern IThemeManager2* pThemeManager;
 extern IDesktopWallpaper* pDesktopWallpaper;
 
-//todo: remove
 extern IUnknown* currentITheme;
-
 extern THEMEINFO* selectedTheme;
 extern BOOL selectionPicker;
 extern PROCESS_INFORMATION pi;

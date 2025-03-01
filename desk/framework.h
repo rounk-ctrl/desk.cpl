@@ -22,6 +22,7 @@
 #include <shellapi.h>
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32")
+#pragma comment(lib, "Msimg32")
 #pragma comment(lib, "Gdiplus")
 #pragma comment(lib, "Uxtheme")
 #pragma comment(lib, "Shlwapi")

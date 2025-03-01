@@ -38,7 +38,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	// common properties
 	selectedTheme->newColor = NULL;
 	selectedTheme->customWallpaperSelection = false;
-	selectedTheme->posChanged = false;
+	selectedTheme->posChanged = -1;
 }
 
 HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
@@ -54,25 +54,93 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		}
 
 		Gdiplus::Graphics graphics(resized);
-		graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-		graphics.DrawImage(bitmap, 0, 0, newwidth, newheight);
+		graphics.SetInterpolationMode(Gdiplus::InterpolationModeInvalid);
 
 		HDC hdcgraphic = graphics.GetHDC();
-		if (!wallpaperPath || (!fs::exists(fs::path(wallpaperPath))))
+		RECT clrrect = { 0,0, newwidth, newheight };
+		if (selectedTheme->newColor)
+			FillRect(hdcgraphic, &clrrect, CreateSolidBrush(selectedTheme->newColor));
+		else
+			FillRect(hdcgraphic, &clrrect, CreateSolidBrush(clrBg));
+		graphics.ReleaseHDC(hdcgraphic);
+
+		if (wallpaperPath && PathFileExists(wallpaperPath))
 		{
-			RECT rect = { 0,0, newwidth, newheight };
-			if (selectedTheme->newColor)
-				FillRect(hdcgraphic, &rect, CreateSolidBrush(selectedTheme->newColor));
+			Gdiplus::Rect prevrect(0, 0, newwidth, newheight);
+			DESKTOP_WALLPAPER_POSITION pos;
+			if (selectedTheme->posChanged != -1)
+			{
+				pos = (DESKTOP_WALLPAPER_POSITION)selectedTheme->posChanged;
+			}
 			else
-				FillRect(hdcgraphic, &rect, CreateSolidBrush(clrBg));
+			{
+				pDesktopWallpaper->GetPosition(&pos);
+			}
 
+			if (pos == DWPOS_CENTER)
+			{
+				graphics.SetClip(prevrect);
+
+				int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
+				int monitorheight = GetSystemMetrics(SM_CYSCREEN);
+
+				double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
+				double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
+
+				int newprewidth = sX * prevrect.Width;
+				int newpreheight = sY * prevrect.Height;
+				prevrect.Width = newprewidth;
+				prevrect.Height = newpreheight;
+
+				int marX = ((newwidth)-newprewidth) / 2;
+				int marY = ((newheight)-newpreheight) / 2;
+				prevrect.X += marX;
+				prevrect.Y += marY;
+				graphics.DrawImage(bitmap, prevrect);
+			}
+			else if (pos == DWPOS_TILE)
+			{
+				graphics.SetClip(prevrect);
+
+				int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
+				int monitorheight = GetSystemMetrics(SM_CYSCREEN);
+
+				double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
+				double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
+
+				int newprewidth = sX * prevrect.Width;
+				int newpreheight = sY * prevrect.Height;
+				prevrect.Width = newprewidth;
+				prevrect.Height = newpreheight;
+
+				int sideImages = (newwidth / newprewidth) + 1;
+				int topImages = (newheight / newpreheight) + 1;
+
+				for (int i = 0; i < topImages; i++)
+				{
+					for (int j = 0; j < sideImages; j++)
+					{
+						graphics.DrawImage(bitmap, prevrect);
+						prevrect.X += prevrect.Width;
+					}
+					prevrect.X = 0;
+					prevrect.Y += prevrect.Height;
+				}
+			}
+			else
+			{
+				graphics.DrawImage(bitmap, prevrect);
+			}
 		}
-
-		HMODULE imageres = LoadLibrary(L"imageres.dll");
-		HICON ico = (HICON)LoadImage(imageres, MAKEINTRESOURCE(54), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+		SHSTOCKICONINFO sii = { sizeof(sii) };
+		SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 
 		// bin
-		DrawIconEx(hdcgraphic, newwidth - 48, newheight - 40, ico, 32, 32, 0, NULL, DI_NORMAL);
+		hdcgraphic = graphics.GetHDC();
+		if (sii.hIcon)
+		{
+			DrawIconEx(hdcgraphic, newwidth - 48, newheight - 40, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
+		}
 		graphics.ReleaseHDC(hdcgraphic);
 
 		// draw window
@@ -192,12 +260,10 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		// cleanup
 		delete bitmap;
 		delete resized;
-		DestroyIcon(ico);
 		DeleteObject(fon);
 		DeleteObject(font);
 		CloseThemeData(hTheme);
 		CloseThemeData(hTheme1);
-		FreeLibrary(imageres);
 
 		// bless
 		if (hFile)
@@ -273,7 +339,6 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			{
 				int index = ComboBox_GetCurSel(hCombobox);
 
-				// TODO: REMOVE
 				currentITheme->Release();
 				pThemeManager->GetTheme(index, &currentITheme);
 
@@ -329,7 +394,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		else if (pnmh->hdr.code == PSN_SETACTIVE)
 		{
 			selectionPicker = true;
-			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor)
+			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1)
 			{
 				int index = ComboBox_GetCurSel(hCombobox);
 				pThemeManager->GetTheme(index, &currentITheme);
