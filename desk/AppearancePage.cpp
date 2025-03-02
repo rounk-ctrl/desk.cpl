@@ -1,0 +1,7 @@
+#include "AppearancePage.h"
+
+
+LRESULT CALLBACK AppearanceDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return FALSE;
+}

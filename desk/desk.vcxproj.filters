@@ -54,6 +54,9 @@
     <ClInclude Include="todo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AppearancePage.h">
+      <Filter>Pages</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -83,6 +86,9 @@
     <ClCompile Include="ScreensaverPage.cpp">
       <Filter>Pages</Filter>
     </ClCompile>
+    <ClCompile Include="AppearancePage.cpp">
+      <Filter>Pages</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
@@ -108,5 +114,8 @@
     <Image Include="Bitmap120.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

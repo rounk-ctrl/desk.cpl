@@ -1,8 +1,7 @@
 ﻿#include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
-#include <wininet.h>
-#include <shlobj_core.h>
+
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
 BOOL firstInit;
@@ -460,11 +459,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 					selectedTheme->customWallpaperSelection = true;
 				}
 
-				COLORREF clr;
+				COLORREF clrlv;
 				ITheme* themeClass = new ITheme(currentITheme);
-				themeClass->GetBackgroundColor(&clr);
+				themeClass->GetBackgroundColor(&clrlv);
 
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd,clr);
+				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd,clrlv);
 				Static_SetBitmap(hBackPreview, bmp);
 
 				PropSheet_Changed(GetParent(hWnd), hWnd);

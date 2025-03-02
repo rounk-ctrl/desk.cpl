@@ -258,12 +258,99 @@ struct ITheme1903 : IUnknown
     // see "re" folder for full vtables
 };
 
+// fucking
+struct ITheme24H2 : IUnknown
+{
+    STDMETHOD(get_DisplayName)(LPWSTR*) PURE;
+    STDMETHOD(put_DisplayName)(LPWSTR) PURE;
+    //STDMETHOD(get_ScreenSaver)(LPWSTR*) PURE;
+    //STDMETHOD(put_ScreenSaver)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyle)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyle)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleColor)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleColor)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleSize)(LPWSTR*) PURE;
+    STDMETHOD(put_VisualStyleSize)(LPWSTR) PURE;
+    STDMETHOD(get_VisualStyleVersion)(int*) PURE;
+    STDMETHOD(put_VisualStyleVersion)(int) PURE;
+    STDMETHOD(get_ColorizationColor)(unsigned long*) PURE;
+    STDMETHOD(put_ColorizationColor)(unsigned long) PURE;
+    STDMETHOD(get_ThemeId)(GUID*) PURE;
+    STDMETHOD(put_ThemeId)(GUID const&) PURE;
+    // 1903+
+    STDMETHOD(get_AppMode)(int*) PURE;
+    STDMETHOD(put_AppMode)(int) PURE;
+    STDMETHOD(get_SystemMode)(int*) PURE;
+    STDMETHOD(put_SystemMode)(int*) PURE;
+
+    STDMETHOD(get_Background)(LPWSTR*) PURE;
+    STDMETHOD(put_Background)(LPWSTR) PURE;
+    STDMETHOD(get_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION*) PURE;
+    STDMETHOD(put_BackgroundPosition)(DESKTOP_WALLPAPER_POSITION) PURE;
+    STDMETHOD(get_BackgroundWriteTime)(struct _FILETIME*) PURE;
+    STDMETHOD(put_BackgroundWriteTime)(struct _FILETIME const*) PURE;
+    STDMETHOD(ClearBackgroundWriteTime)(void) PURE;
+    STDMETHOD(get_SlideshowSettings)(ISlideshowSettings**) PURE;
+    STDMETHOD(put_SlideshowSettings)(ISlideshowSettings*) PURE;
+    STDMETHOD(get_SlideshowSourceDirectory)(LPWSTR*) PURE;
+    STDMETHOD(put_SlideshowSourceDirectory)(LPWSTR) PURE;
+    STDMETHOD(get_RSSFeed)(LPWSTR*) PURE;
+    STDMETHOD(IsSlideshowEnabled)(int*) PURE;
+    STDMETHOD(GetSlideshowSettingsWithoutFiles)(ISlideshowSettings**) PURE;
+    // 24H2
+    STDMETHOD(GetThumbnailSlideshowSettings)(ISlideshowSettings**)PURE;
+
+    STDMETHOD(GetPath)(short, LPWSTR*) PURE;
+    STDMETHOD(SetPath)(LPWSTR) PURE;
+    STDMETHOD(GetCursor)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetCursor)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetSoundSchemeName)(LPWSTR*) PURE;
+    STDMETHOD(SetSoundSchemeName)(LPWSTR) PURE;
+    STDMETHOD(GetSound)(LPWSTR, unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetSound)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetAllSoundEvents)(LPWSTR*) PURE;
+    STDMETHOD(GetDesktopIcon)(LPWSTR, int, LPWSTR*) PURE;
+    STDMETHOD(GetDefaultDesktopIcon)(LPWSTR, LPWSTR*) PURE;
+    STDMETHOD(SetDesktopIcon)(LPWSTR, LPWSTR) PURE;
+    STDMETHOD(GetCategory)(tagTHEMECAT*) PURE;
+    STDMETHOD(GetLogonBackgroundFlag)(int*) PURE;
+    STDMETHOD(SetLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(ClearLogonBackgroundFlag)(void) PURE;
+    STDMETHOD(GetAutoColorization)(int*) PURE;
+    STDMETHOD(SetAutoColorization)(int) PURE;
+    STDMETHOD(GetMultimonBackgroundsEnabled)(int*) PURE;
+    STDMETHOD(SetMultimonBackgroundsEnabled)(int) PURE;
+    STDMETHOD(GetMultimonBackground)(unsigned int, LPWSTR*) PURE;
+    STDMETHOD(SetMultimonBackground)(unsigned int, LPWSTR) PURE;
+    STDMETHOD(GetHighContrast)(int*) PURE;
+    STDMETHOD(SetHighContrast)(int) PURE;
+    STDMETHOD(GetThemeMagicValue)(LPWSTR*) PURE;
+    STDMETHOD(SetThemeMagicValue)(LPWSTR) PURE;
+    STDMETHOD(GetThemeColor)(LPCWSTR, LPWSTR*) PURE;
+    STDMETHOD(GetThemeImage)(int, HBITMAP*) PURE;
+    STDMETHOD(GetWindowColorPreview)(HBITMAP*) PURE;
+    STDMETHOD(GetBackgroundColor)(COLORREF*) PURE;
+    STDMETHOD(GetColor)(unsigned int, COLORREF*) PURE;
+    STDMETHOD(GetBrandLogo)(LPWSTR*) PURE;
+    STDMETHOD(SetBrandLogo)(LPWSTR) PURE;
+    STDMETHOD(ClearBrandLogo)(void) PURE;
+    STDMETHOD(GetScreenSaverName)(LPWSTR*) PURE;
+    STDMETHOD(GetBackgroundPreview)(HBITMAP*) PURE;
+    STDMETHOD(Stub1)(void) PURE;
+    STDMETHOD(SetThemeColor)(LPCWSTR, COLORREF) PURE;
+    // see "re" folder for full vtables
+};
+
 // fuck this shit
 class ITheme
 {
 public:
     ITheme(IUnknown* iunk)
     {
+        if (g_osVersion.BuildNumber() >= 26100)
+        {
+            th24h2 = (ITheme24H2*)iunk;
+        }
         if (g_osVersion.BuildNumber() >= 18362)
         {
             th1903 = (ITheme1903*)iunk;
@@ -279,6 +366,7 @@ public:
     }
     ~ITheme()
     {
+        if (th24h2) th24h2->Release();
         if (th1903) th1903->Release();
         if (th1809) th1809->Release();
         if (th10) th10->Release();
@@ -286,6 +374,7 @@ public:
 
     STDMETHODIMP get_background(LPWSTR* path)
     {
+        if (th24h2) return th24h2->get_Background(path);
         if (th1903) return th1903->get_Background(path);
         if (th1809) return th1809->get_Background(path);
         if (th10) return th10->get_Background(path);
@@ -294,6 +383,7 @@ public:
 
     STDMETHODIMP get_VisualStyle(LPWSTR* path)
     {
+        if (th24h2) return th24h2->get_VisualStyle(path);
         if (th1903) return th1903->get_VisualStyle(path);
         if (th1809) return th1809->get_VisualStyle(path);
         if (th10) return th10->get_VisualStyle(path);
@@ -302,6 +392,7 @@ public:
     
     STDMETHODIMP IsSlideshowEnabled(int* en)
     {
+        if (th24h2) return th24h2->IsSlideshowEnabled(en);
         if (th1903) return th1903->IsSlideshowEnabled(en);
         if (th1809) return th1809->IsSlideshowEnabled(en);
         if (th10) return th10->IsSlideshowEnabled(en);
@@ -310,6 +401,7 @@ public:
 
     STDMETHODIMP get_SlideshowSettings(ISlideshowSettings** st)
     {
+        if (th24h2) return th24h2->get_SlideshowSettings(st);
         if (th1903) return th1903->get_SlideshowSettings(st);
         if (th1809) return th1809->get_SlideshowSettings(st);
         if (th10) return th10->get_SlideshowSettings(st);
@@ -318,6 +410,7 @@ public:
 
     STDMETHODIMP GetHighContrast(int* en)
     {
+        if (th24h2) return th24h2->GetHighContrast(en);
         if (th1903) return th1903->GetHighContrast(en);
         if (th1809) return th1809->GetHighContrast(en);
         if (th10) return th10->GetHighContrast(en);
@@ -326,6 +419,7 @@ public:
     
     STDMETHODIMP GetBackgroundColor(COLORREF* clr)
     {
+        if (th24h2) return th24h2->GetBackgroundColor(clr);
         if (th1903) return th1903->GetBackgroundColor(clr);
         if (th1809) return th1809->GetBackgroundColor(clr);
         if (th10) return th10->GetBackgroundColor(clr);
@@ -336,6 +430,7 @@ private:
     ITheme10* th10 = NULL;
     ITheme1809* th1809 = NULL;
     ITheme1903* th1903 = NULL;
+    ITheme24H2* th24h2 = NULL;
 };
 
 // const CThemeManager2::`vftable'

@@ -18,7 +18,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 {
 	printf("\nupdate themeinfo\n");
 	// update THEMEINFO
-	if (lstrlenW(ws) == 0)
+	if (lstrlenW(ws) == 0 || PathFileExists(ws)==FALSE)
 	{
 		// no wallpaper applied
 		selectedTheme->wallpaperType = WT_NOWALL;

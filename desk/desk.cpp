@@ -3,6 +3,7 @@
 #include "ThemesPage.h"
 #include "BackgroundPage.h"
 #include "ScreensaverPage.h"
+#include "AppearancePage.h"
 
 namespace fs = std::filesystem;
 
@@ -17,11 +18,6 @@ BOOL selectionPicker;
 PROCESS_INFORMATION pi;
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
-
-LRESULT CALLBACK AppearanceDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	return FALSE;
-}
 
 LRESULT CALLBACK SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
