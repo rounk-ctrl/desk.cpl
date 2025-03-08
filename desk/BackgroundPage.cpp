@@ -1,6 +1,8 @@
 ﻿#include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
+#include <wininet.h>
+#include <ShlObj.h>
 
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
@@ -338,6 +340,16 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		AddMissingWallpapers(currentITheme, hWnd);
 		SelectCurrentWallpaper(currentITheme, hWnd);
 		firstInit = FALSE;
+
+		WCHAR pattern[MAX_PATH];
+		StrCpyW(pattern, L"187 87 178 85 190 117 234 245");
+
+		IActiveDesktop* iADp;
+		CoCreateInstance(CLSID_ActiveDesktop, 0, CLSCTX_ALL, IID_PPV_ARGS(&iADp));
+		iADp->SetPattern(pattern, 0);
+		iADp->ApplyChanges(AD_APPLY_ALL);
+		//SystemParametersInfo(SPI_SETDESKPATTERN, 0, (PVOID)&pattern, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
+		iADp->Release();
 	}
 	else if (uMsg == WM_COMMAND)
 	{
