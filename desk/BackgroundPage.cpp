@@ -510,10 +510,10 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 					pDesktopWallpaper->Enable(false);
 				}
-				selectedTheme->updateWallThemesPg = true;
 				selectedTheme->customWallpaperSelection = false;
 			}
 
+			selectedTheme->updateWallThemesPg = true;
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);
 			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
 			return TRUE;
