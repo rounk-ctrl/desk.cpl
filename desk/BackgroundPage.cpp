@@ -151,8 +151,8 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 			prevrect.Width = newprewidth;
 			prevrect.Height = newpreheight;
 
-			int sideImages = ((width-37) / newprewidth) + 1;
-			int topImages = ((height-68) / newpreheight) + 1;
+			int sideImages = ((width - 37) / newprewidth) + 1;
+			int topImages = ((height - 68) / newpreheight) + 1;
 
 			for (int i = 0; i < topImages; i++)
 			{
@@ -282,7 +282,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		GetClientRect(hBackPreview, &rect);
 		backPreviewWidth = rect.right - rect.left;
 		backPreviewHeight = rect.bottom - rect.top;
-		
+
 		GetClientRect(hListView, &rect);
 		AddColumn(hListView, rect.right - rect.left - 30);
 
@@ -475,7 +475,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				ITheme* themeClass = new ITheme(currentITheme);
 				themeClass->GetBackgroundColor(&clrlv);
 
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd,clrlv);
+				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clrlv);
 				Static_SetBitmap(hBackPreview, bmp);
 
 				PropSheet_Changed(GetParent(hWnd), hWnd);

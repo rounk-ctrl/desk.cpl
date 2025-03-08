@@ -18,7 +18,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 {
 	printf("\nupdate themeinfo\n");
 	// update THEMEINFO
-	if (lstrlenW(ws) == 0 || PathFileExists(ws)==FALSE)
+	if (lstrlenW(ws) == 0 || PathFileExists(ws) == FALSE)
 	{
 		// no wallpaper applied
 		selectedTheme->wallpaperType = WT_NOWALL;
@@ -348,7 +348,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 				LPWSTR path = nullptr;
 				themeClass->get_VisualStyle(&path);
-				
+
 				int hc;
 				themeClass->GetHighContrast(&hc);
 

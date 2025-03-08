@@ -46,7 +46,7 @@ HBITMAP MonitorAsBmp(int width, int height, WORD id, COLORREF maskColor)
 	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
 	// draw monitor
 	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
-	
+
 	if (id == IDB_BITMAP1)
 	{
 		int cx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
@@ -88,7 +88,7 @@ VOID AddScreenSavers(HWND comboBox)
 			WCHAR name[MAX_PATH];
 			LoadString(hScr, 1, name, MAX_PATH);
 			ComboBox_AddString(comboBox, name);
-			scrSaverMap.insert({std::wstring(name), entry.path()});
+			scrSaverMap.insert({ std::wstring(name), entry.path() });
 			FreeLibrary(hScr);
 			free(path);
 		}
@@ -162,17 +162,17 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		scrWidth = rect.right - rect.left;
 		scrHeight = rect.bottom - rect.top;
 		GetClientRect(hEnergy, &rect);
-		energyWidth= rect.right - rect.left;
+		energyWidth = rect.right - rect.left;
 		energyHeight = rect.bottom - rect.top;
 
 		HBITMAP bmp = MonitorAsBmp(scrWidth, scrHeight, IDB_BITMAP1, RGB(255, 0, 255));
 		Static_SetBitmap(hScrPreview, bmp);
 		DeleteObject(bmp);
 
-		bmp = MonitorAsBmp(energyWidth, energyHeight, IDB_BITMAP2,RGB(255,204,204));
+		bmp = MonitorAsBmp(energyWidth, energyHeight, IDB_BITMAP2, RGB(255, 204, 204));
 		Static_SetBitmap(hEnergy, bmp);
 		DeleteObject(bmp);
-		
+
 		ComboBox_AddString(hScrCombo, L"(none)");
 		AddScreenSavers(hScrCombo);
 
@@ -197,7 +197,7 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		ScreenPreview(hScrPreview);
 		int timeout;
 		SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &timeout, 0);
-		SendMessage(updown, UDM_SETPOS32, 0, timeout/60);
+		SendMessage(updown, UDM_SETPOS32, 0, timeout / 60);
 
 		BOOL isSecure;
 		SystemParametersInfo(SPI_GETSCREENSAVESECURE, 0, &isSecure, 0);
@@ -294,7 +294,7 @@ LRESULT CALLBACK ScrSaverDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 				SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 				SystemParametersInfo(SPI_SETSCREENSAVESECURE, Button_GetCheck(secureCheck), NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 				int timeout = SendMessage(updown, UDM_GETPOS32, 0, 0);
-				SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, timeout*60, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+				SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, timeout * 60, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 			}
 
 			PropSheet_UnChanged(GetParent(hWnd), hWnd);

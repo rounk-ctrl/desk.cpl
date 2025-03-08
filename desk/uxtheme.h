@@ -49,111 +49,111 @@ typedef HRESULT(*LoaderLoadTheme_t_win11)(
 	);
 
 typedef HTHEME(*OpenThemeDataFromFile_t)(
-    HANDLE hThemeFile,
-    HWND hWnd,
-    LPCWSTR pszClassList,
-    DWORD dwFlags
-    // DWORD unknown,
-    // bool a
-    );
+	HANDLE hThemeFile,
+	HWND hWnd,
+	LPCWSTR pszClassList,
+	DWORD dwFlags
+	// DWORD unknown,
+	// bool a
+	);
 OpenThemeDataFromFile_t OpenThemeDataFromFile;
 
 typedef struct _UXTHEMEFILE
 {
-    char header[7]; // must be "thmfile"
-    LPVOID sharableSectionView;
-    HANDLE hSharableSection;
-    LPVOID nsSectionView;
-    HANDLE hNsSection;
-    char end[3]; // must be "end"
+	char header[7]; // must be "thmfile"
+	LPVOID sharableSectionView;
+	HANDLE hSharableSection;
+	LPVOID nsSectionView;
+	HANDLE hNsSection;
+	char end[3]; // must be "end"
 } UXTHEMEFILE, * LPUXTHEMEFILE;
 
 void InitUxtheme()
 {
-    HMODULE hUxtheme = GetModuleHandle(L"uxtheme.dll");
-    if (hUxtheme)
-    {
-        GetThemeDefaults = (GetThemeDefaults_t)GetProcAddress(hUxtheme, (LPCSTR)7);
-        LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, (LPCSTR)92);
-        OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, (LPCSTR)16);
-        FreeLibrary(hUxtheme);
-    }
+	HMODULE hUxtheme = GetModuleHandle(L"uxtheme.dll");
+	if (hUxtheme)
+	{
+		GetThemeDefaults = (GetThemeDefaults_t)GetProcAddress(hUxtheme, (LPCSTR)7);
+		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, (LPCSTR)92);
+		OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, (LPCSTR)16);
+		FreeLibrary(hUxtheme);
+	}
 }
 
 HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
 {
-    HRESULT hr = S_OK;
+	HRESULT hr = S_OK;
 
-    WCHAR defColor[MAX_PATH];
-    WCHAR defSize[MAX_PATH];
+	WCHAR defColor[MAX_PATH];
+	WCHAR defSize[MAX_PATH];
 
-    hr = GetThemeDefaults(
-        szThemeFileName,
-        defColor,
-        ARRAYSIZE(defColor),
-        defSize,
-        ARRAYSIZE(defSize)
-    );
+	hr = GetThemeDefaults(
+		szThemeFileName,
+		defColor,
+		ARRAYSIZE(defColor),
+		defSize,
+		ARRAYSIZE(defSize)
+	);
 
-    HANDLE hSharableSection;
-    HANDLE hNonsharableSection;
+	HANDLE hSharableSection;
+	HANDLE hNonsharableSection;
 
-    if (g_osVersion.BuildNumber() < 20000)
-    {
-        hr = LoaderLoadTheme(
-            NULL,
-            NULL,
-            szThemeFileName,
-            defColor,
-            defSize,
-            &hSharableSection,
-            NULL,
-            0,
-            &hNonsharableSection,
-            NULL,
-            0,
-            NULL,
-            NULL,
-            NULL,
-            NULL,
-            FALSE
-        );
-    }
-    else
-    {
-        hr = ((LoaderLoadTheme_t_win11)LoaderLoadTheme)(
-            NULL,
-            NULL,
-            szThemeFileName,
-            defColor,
-            defSize,
-            &hSharableSection,
-            NULL,
-            0,
-            &hNonsharableSection,
-            NULL,
-            0,
-            NULL,
-            NULL,
-            NULL,
-            NULL
-            );
-    }
+	if (g_osVersion.BuildNumber() < 20000)
+	{
+		hr = LoaderLoadTheme(
+			NULL,
+			NULL,
+			szThemeFileName,
+			defColor,
+			defSize,
+			&hSharableSection,
+			NULL,
+			0,
+			&hNonsharableSection,
+			NULL,
+			0,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			FALSE
+		);
+	}
+	else
+	{
+		hr = ((LoaderLoadTheme_t_win11)LoaderLoadTheme)(
+			NULL,
+			NULL,
+			szThemeFileName,
+			defColor,
+			defSize,
+			&hSharableSection,
+			NULL,
+			0,
+			&hNonsharableSection,
+			NULL,
+			0,
+			NULL,
+			NULL,
+			NULL,
+			NULL
+			);
+	}
 
-    HANDLE g_hLocalTheme = malloc(sizeof(UXTHEMEFILE));
-    if (g_hLocalTheme)
-    {
-        UXTHEMEFILE* ltf = (UXTHEMEFILE*)g_hLocalTheme;
-        memcpy(ltf->header, "thmfile", 7);
-        memcpy(ltf->end, "end", 3);
-        ltf->sharableSectionView = MapViewOfFile(hSharableSection, 4, 0, 0, 0);
-        ltf->hSharableSection = hSharableSection;
-        ltf->nsSectionView = MapViewOfFile(hNonsharableSection, 4, 0, 0, 0);
-        ltf->hNsSection = hNonsharableSection;
-    }
-    else
-    {
-        hr = E_FAIL;
-    }
-    return g_hLocalTheme;
+	HANDLE g_hLocalTheme = malloc(sizeof(UXTHEMEFILE));
+	if (g_hLocalTheme)
+	{
+		UXTHEMEFILE* ltf = (UXTHEMEFILE*)g_hLocalTheme;
+		memcpy(ltf->header, "thmfile", 7);
+		memcpy(ltf->end, "end", 3);
+		ltf->sharableSectionView = MapViewOfFile(hSharableSection, 4, 0, 0, 0);
+		ltf->hSharableSection = hSharableSection;
+		ltf->nsSectionView = MapViewOfFile(hNonsharableSection, 4, 0, 0, 0);
+		ltf->hNsSection = hNonsharableSection;
+	}
+	else
+	{
+		hr = E_FAIL;
+	}
+	return g_hLocalTheme;
 }
