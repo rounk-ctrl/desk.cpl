@@ -19,6 +19,8 @@ struct THEMEINFO {
 	COLORREF newColor;
 	bool customWallpaperSelection = false;
 	int posChanged = -1;
+	bool useDesktopColor = false;
+	bool updateWallThemesPg = false;
 };
 
 extern HINSTANCE g_hinst;

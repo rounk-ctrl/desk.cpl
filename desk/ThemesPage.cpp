@@ -39,6 +39,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	selectedTheme->newColor = NULL;
 	selectedTheme->customWallpaperSelection = false;
 	selectedTheme->posChanged = -1;
+	selectedTheme->useDesktopColor = false;
 }
 
 HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
@@ -394,7 +395,7 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		else if (pnmh->hdr.code == PSN_SETACTIVE)
 		{
 			selectionPicker = true;
-			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1)
+			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
 			{
 				int index = ComboBox_GetCurSel(hCombobox);
 				pThemeManager->GetTheme(index, &currentITheme);
@@ -403,11 +404,20 @@ LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				themeClass->get_VisualStyle(&path);
 
 				COLORREF clr;
-				themeClass->GetBackgroundColor(&clr);
+				if (selectedTheme->useDesktopColor)
+				{
+					pDesktopWallpaper->GetBackgroundColor(&clr);
+				}
+				else
+				{
+					themeClass->GetBackgroundColor(&clr);
+				}
 
 				// set the preview bitmap to the static control
 				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path), clr);
 				Static_SetBitmap(hPreview, ebmp);
+
+				selectedTheme->updateWallThemesPg = false;
 			}
 			_TerminateProcess(pi);
 		}

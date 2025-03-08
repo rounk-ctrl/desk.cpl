@@ -63,8 +63,15 @@ LPWSTR GetWallpaperPath(HWND hListView, int iIndex)
 BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 {
 	COLORREF clr;
-	ITheme* themeClass = new ITheme(currentITheme);
-	themeClass->GetBackgroundColor(&clr);
+	if (selectedTheme->useDesktopColor)
+	{
+		pDesktopWallpaper->GetBackgroundColor(&clr);
+	}
+	else
+	{
+		ITheme* themeClass = new ITheme(currentITheme);
+		themeClass->GetBackgroundColor(&clr);
+	}
 
 	CHOOSECOLOR cc;
 	COLORREF acrCustClr[16];
@@ -77,6 +84,7 @@ BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 
 	BOOL out = ChooseColor(&cc);
 	*clrOut = cc;
+	selectedTheme->useDesktopColor = true;
 	return out;
 }
 
@@ -340,16 +348,6 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		AddMissingWallpapers(currentITheme, hWnd);
 		SelectCurrentWallpaper(currentITheme, hWnd);
 		firstInit = FALSE;
-
-		WCHAR pattern[MAX_PATH];
-		StrCpyW(pattern, L"187 87 178 85 190 117 234 245");
-
-		IActiveDesktop* iADp;
-		CoCreateInstance(CLSID_ActiveDesktop, 0, CLSCTX_ALL, IID_PPV_ARGS(&iADp));
-		iADp->SetPattern(pattern, 0);
-		iADp->ApplyChanges(AD_APPLY_ALL);
-		//SystemParametersInfo(SPI_SETDESKPATTERN, 0, (PVOID)&pattern, SPIF_SENDCHANGE | SPIF_UPDATEINIFILE);
-		iADp->Release();
 	}
 	else if (uMsg == WM_COMMAND)
 	{
@@ -472,9 +470,15 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 
 				COLORREF clrlv;
-				ITheme* themeClass = new ITheme(currentITheme);
-				themeClass->GetBackgroundColor(&clrlv);
-
+				if (selectedTheme->useDesktopColor)
+				{
+					pDesktopWallpaper->GetBackgroundColor(&clrlv);
+				}
+				else
+				{
+					ITheme* themeClass = new ITheme(currentITheme);
+					themeClass->GetBackgroundColor(&clrlv);
+				}
 				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clrlv);
 				Static_SetBitmap(hBackPreview, bmp);
 
@@ -506,6 +510,7 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				{
 					pDesktopWallpaper->Enable(false);
 				}
+				selectedTheme->updateWallThemesPg = true;
 				selectedTheme->customWallpaperSelection = false;
 			}
 
@@ -520,6 +525,11 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			{
 				AddMissingWallpapers(currentITheme, hWnd);
 				SelectCurrentWallpaper(currentITheme, hWnd);
+
+				// update wallpaper position 
+				DESKTOP_WALLPAPER_POSITION pos;
+				pDesktopWallpaper->GetPosition(&pos);
+				ComboBox_SetCurSel(hPosCombobox, pos);
 			}
 			// special case where preview wont update if (none) 
 			// and background color changes due to theme change
@@ -527,8 +537,15 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 			if (!firstInit && selectedIndex == 0)
 			{
 				COLORREF clr;
-				ITheme* themeClass = new ITheme(currentITheme);
-				themeClass->GetBackgroundColor(&clr);
+				if (selectedTheme->useDesktopColor)
+				{
+					pDesktopWallpaper->GetBackgroundColor(&clr);
+				}
+				else
+				{
+					ITheme* themeClass = new ITheme(currentITheme);
+					themeClass->GetBackgroundColor(&clr);
+				}
 
 				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, NULL, hWnd, clr);
 				Static_SetBitmap(hBackPreview, bmp);
