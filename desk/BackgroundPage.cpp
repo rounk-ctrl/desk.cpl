@@ -1,8 +1,6 @@
 ﻿#include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
-#include <wininet.h>
-#include <ShlObj.h>
 
 namespace fs = std::filesystem;
 HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
@@ -128,11 +126,11 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 	{
 		int index = ComboBox_GetCurSel(hPosCombobox);
 		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
+		graphics.SetClip(prevrect);
+
 
 		if (index == DWPOS_CENTER)
 		{
-			graphics.SetClip(prevrect);
-
 			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
 			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
 
@@ -149,8 +147,6 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 		}
 		else if (index == DWPOS_TILE)
 		{
-			graphics.SetClip(prevrect);
-
 			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
 			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
 
@@ -526,10 +522,13 @@ LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				AddMissingWallpapers(currentITheme, hWnd);
 				SelectCurrentWallpaper(currentITheme, hWnd);
 
-				// update wallpaper position 
-				DESKTOP_WALLPAPER_POSITION pos;
-				pDesktopWallpaper->GetPosition(&pos);
-				ComboBox_SetCurSel(hPosCombobox, pos);
+				if (selectedTheme->posChanged == -1)
+				{
+					// update wallpaper position 
+					DESKTOP_WALLPAPER_POSITION pos;
+					pDesktopWallpaper->GetPosition(&pos);
+					ComboBox_SetCurSel(hPosCombobox, pos);
+				}
 			}
 			// special case where preview wont update if (none) 
 			// and background color changes due to theme change
