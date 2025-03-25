@@ -2,20 +2,299 @@
 #include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
-
 namespace fs = std::filesystem;
-HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
-BOOL firstInit;
-int selectedIndex;
 
-HWND hListView;
-HWND hBackPreview;
-HWND hPosCombobox;
-int backPreviewWidth{};
-int backPreviewHeight{};
+std::set<LPCSTR, NaturalComparator> wallpapers;
+const COMDLG_FILTERSPEC file_types[] = {
+	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
+};
+
+BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	firstInit = TRUE;
+	hListView = GetDlgItem(1202);
+	hBackPreview = GetDlgItem(1200);
+	hPosCombobox = GetDlgItem(1205);
+
+	backPreviewSize = GetClientSIZE(hBackPreview);
+
+	RECT rect;
+	::GetClientRect(hListView, &rect);
+	AddColumn(hListView, rect.right - rect.left - 30);
+
+	AddItem(hListView, 0, "(none)");
+	HICON barrierico = LoadIcon(LoadLibrary(L"imageres.dll"), MAKEINTRESOURCE(1027));
+	ImageList_AddIcon(hml, barrierico);
+	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
+	DestroyIcon(barrierico);
+
+	WCHAR wallpaperdir[MAX_PATH];
+	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
+	for (const auto& entry : fs::recursive_directory_iterator(wallpaperdir))
+	{
+		if (entry.is_regular_file() && (entry.path().extension() == L".jpg"
+			|| entry.path().extension() == L".png"
+			|| entry.path().extension() == L".bmp"
+			|| entry.path().extension() == L".jpeg"
+			|| entry.path().extension() == L".dib"
+			|| entry.path().extension() == L".gif"))
+		{
+			LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
+			LPCSTR path = ConvertStr(lpwstrPath);
+			wallpapers.insert(path);
+			free(lpwstrPath);
+		}
+	}
+
+	// start with k=1, k=0 is (none)
+	int k = 1;
+	for (auto path : wallpapers)
+	{
+		AddItem(hListView, k, path);
+		k++;
+	}
+
+	// first time do it with current theme, the other func will take care of missing
+	IUnknown* thcr;
+	int cu;
+	pThemeManager->GetCurrentTheme(&cu);
+	pThemeManager->GetTheme(cu, &thcr);
+	AddMissingWallpapers(thcr);
+	thcr->Release();
+
+	// combobox with positions of wallpaper
+	const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
+	for (int i = 0; i < _countof(items); i++)
+	{
+		ComboBox_AddString(hPosCombobox, items[i]);
+	}
+
+	DESKTOP_WALLPAPER_POSITION pos;
+	pDesktopWallpaper->GetPosition(&pos);
+	ComboBox_SetCurSel(hPosCombobox, pos);
+
+	AddMissingWallpapers(currentITheme);
+	SelectCurrentWallpaper(currentITheme);
+	firstInit = FALSE;
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
+
+	COLORREF clr;
+	pDesktopWallpaper->GetBackgroundColor(&clr);
+
+	HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, hWnd, clr);
+	Static_SetBitmap(hBackPreview, bmp);
+	DeleteObject(bmp);
+
+	PropSheet_Changed(GetParent(), hWnd);
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	IFileDialog* pfd;
+	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+
+	// get options
+	DWORD dwFlags;
+	hr = pfd->GetOptions(&dwFlags);
+
+	// set the file types
+	hr = pfd->SetFileTypes(ARRAYSIZE(file_types), file_types);
+
+	// the first element from the array
+	hr = pfd->SetFileTypeIndex(1);
+
+	pfd->SetTitle(L"Browse");
+
+	// Show the dialog
+	hr = pfd->Show(hWnd);
+
+	IShellItem* psiResult;
+	hr = pfd->GetResult(&psiResult);
+	if (SUCCEEDED(hr)) {
+		PWSTR pszFilePath = NULL;
+		hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+		if (SUCCEEDED(hr)) {
+			int inde = AddItem(hListView, ListView_GetItemCount(hListView), ConvertStr(pszFilePath));
+
+			ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			ListView_EnsureVisible(hListView, inde, FALSE);
+			CoTaskMemFree(pszFilePath);
+		}
+	}
+	pfd->Release();
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	CHOOSECOLOR cc;
+	if (ColorPicker(hWnd, &cc) == TRUE)
+	{
+		selectedTheme->newColor = cc.rgbResult;
+
+		COLORREF clr;
+		ITheme* themeClass = new ITheme(currentITheme);
+		themeClass->GetBackgroundColor(&clr);
+
+		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, hWnd, clr);
+		Static_SetBitmap(hBackPreview, bmp);
+		DeleteObject(bmp);
+
+		PropSheet_Changed(GetParent(), hWnd);
+	}
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled)
+{
+	LPNMLISTVIEW pnmv = (LPNMLISTVIEW)nmhdr;
+	if (pnmv->uNewState & LVIS_SELECTED)
+	{
+		selectedIndex = pnmv->iItem;
+		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
+
+		if (StrCmpW(path, L"(none)") == 0)
+		{
+			::EnableWindow(hPosCombobox, false);
+
+			if (selectedTheme->wallpaperPath != nullptr)
+			{
+				delete[] selectedTheme->wallpaperPath;
+			}
+
+			selectedTheme->wallpaperPath = nullptr;
+			selectedTheme->wallpaperType = WT_NOWALL;
+
+		}
+		else
+		{
+			::EnableWindow(hPosCombobox, true);
+
+			// set new path
+			size_t len = wcslen(path) + 1;
+			selectedTheme->wallpaperPath = new wchar_t[len];
+			wcscpy_s(selectedTheme->wallpaperPath, len, path);
+
+			selectedTheme->wallpaperType = WT_PICTURE;
+		}
+		if (selectionPicker)
+		{
+			selectedTheme->customWallpaperSelection = false;
+		}
+		else
+		{
+			selectedTheme->customWallpaperSelection = true;
+		}
+
+		COLORREF clrlv;
+		if (selectedTheme->useDesktopColor)
+		{
+			pDesktopWallpaper->GetBackgroundColor(&clrlv);
+		}
+		else
+		{
+			ITheme* themeClass = new ITheme(currentITheme);
+			themeClass->GetBackgroundColor(&clrlv);
+		}
+		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, m_hWnd, clrlv);
+		Static_SetBitmap(hBackPreview, bmp);
+
+		PropSheet_Changed(GetParent(), m_hWnd);
+		DeleteObject(bmp);
+	}
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	printf("WM_SETTINGCHANGED:\n");
+	AddMissingWallpapers(currentITheme);
+	SelectCurrentWallpaper(currentITheme);
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnApply()
+{
+	if (selectedTheme->posChanged != -1)
+	{
+		int index = ComboBox_GetCurSel(hPosCombobox);
+		pDesktopWallpaper->SetPosition((DESKTOP_WALLPAPER_POSITION)index);
+		selectedTheme->posChanged = -1;
+	}
+	if (selectedTheme->newColor)
+	{
+		pDesktopWallpaper->SetBackgroundColor(selectedTheme->newColor);
+		selectedTheme->newColor = NULL;
+	}
+	if (selectedTheme->customWallpaperSelection)
+	{
+		if (selectedTheme->wallpaperType == WT_PICTURE)
+		{
+			pDesktopWallpaper->Enable(true);
+			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath);
+		}
+		else if (selectedTheme->wallpaperType == WT_NOWALL)
+		{
+			pDesktopWallpaper->Enable(false);
+		}
+		selectedTheme->customWallpaperSelection = false;
+	}
+
+	selectedTheme->updateWallThemesPg = true;
+	PropSheet_UnChanged(GetParent(), m_hWnd);
+	SetWindowLongPtr(DWLP_MSGRESULT, PSNRET_NOERROR);
+	return TRUE;
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnSetActive()
+{
+	selectionPicker = false;
+	if (!selectedTheme->customWallpaperSelection && !firstInit)
+	{
+		AddMissingWallpapers(currentITheme);
+		SelectCurrentWallpaper(currentITheme);
+
+		if (selectedTheme->posChanged == -1)
+		{
+			// update wallpaper position 
+			DESKTOP_WALLPAPER_POSITION pos;
+			pDesktopWallpaper->GetPosition(&pos);
+			ComboBox_SetCurSel(hPosCombobox, pos);
+		}
+	}
+	// special case where preview wont update if (none) 
+	// and background color changes due to theme change
+	// just update each time u activate
+	if (!firstInit && selectedIndex == 0)
+	{
+		COLORREF clr;
+		if (selectedTheme->useDesktopColor)
+		{
+			pDesktopWallpaper->GetBackgroundColor(&clr);
+		}
+		else
+		{
+			ITheme* themeClass = new ITheme(currentITheme);
+			themeClass->GetBackgroundColor(&clr);
+		}
+
+		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), NULL, m_hWnd, clr);
+		Static_SetBitmap(hBackPreview, bmp);
+	}
+	_TerminateProcess(pi);
+	return 0;
+}
+
 
 #pragma region ListView helpers
-int AddItem(HWND hListView, int rowIndex, LPCSTR text)
+int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCSTR text)
 {
 	if (text)
 	{
@@ -37,7 +316,7 @@ int AddItem(HWND hListView, int rowIndex, LPCSTR text)
 	return ListView_InsertItem(hListView, &lvItem);
 }
 
-int AddColumn(HWND hListView, int width)
+int CBackgroundDlgProc::AddColumn(HWND hListView, int width)
 {
 	LVCOLUMN lvc = { 0 };
 	lvc.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
@@ -47,7 +326,7 @@ int AddColumn(HWND hListView, int width)
 	return ListView_InsertColumn(hListView, 0, &lvc);
 }
 
-LPWSTR GetWallpaperPath(HWND hListView, int iIndex)
+LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 {
 	LVITEM item = { 0 };
 	item.iItem = iIndex;
@@ -59,7 +338,7 @@ LPWSTR GetWallpaperPath(HWND hListView, int iIndex)
 }
 #pragma endregion
 
-BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
+BOOL CBackgroundDlgProc::ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 {
 	COLORREF clr;
 	if (selectedTheme->useDesktopColor)
@@ -87,7 +366,7 @@ BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 	return out;
 }
 
-HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF color)
+HBITMAP CBackgroundDlgProc::WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF color)
 {
 	Gdiplus::Bitmap* resized = new Gdiplus::Bitmap(width, height, PixelFormat32bppARGB);
 	if (!resized)
@@ -187,9 +466,9 @@ HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF c
 	return hBitmap;
 }
 
-void AddMissingWallpapers(IUnknown* th, HWND hWnd)
+void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 {
-	hListView = GetDlgItem(hWnd, 1202);
+	hListView = GetDlgItem(1202);
 
 	std::set<LPCSTR, NaturalComparator> missingWall;
 	// 1- enabled
@@ -242,7 +521,7 @@ void AddMissingWallpapers(IUnknown* th, HWND hWnd)
 	}
 }
 
-void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
+void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
 {
 	int currThe;
 	WCHAR ws[MAX_PATH] = { 0 };
@@ -250,7 +529,7 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
-		EnableWindow(hPosCombobox, true);
+		::EnableWindow(hPosCombobox, true);
 
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
@@ -262,302 +541,9 @@ void SelectCurrentWallpaper(IUnknown* th, HWND hWnd)
 	}
 	else if (selectedTheme->wallpaperType == WT_NOWALL)
 	{
-		EnableWindow(hPosCombobox, false);
+		::EnableWindow(hPosCombobox, false);
 		ListView_SetItemState(hListView, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		ListView_EnsureVisible(hListView, 0, FALSE);
 	}
 
-}
-
-std::set<LPCSTR, NaturalComparator> wallpapers;
-const COMDLG_FILTERSPEC file_types[] = {
-	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
-};
-
-LRESULT CALLBACK BackgroundDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (uMsg == WM_INITDIALOG)
-	{
-		firstInit = TRUE;
-		hListView = GetDlgItem(hWnd, 1202);
-		hBackPreview = GetDlgItem(hWnd, 1200);
-		hPosCombobox = GetDlgItem(hWnd, 1205);
-
-		RECT rect;
-		GetClientRect(hBackPreview, &rect);
-		backPreviewWidth = rect.right - rect.left;
-		backPreviewHeight = rect.bottom - rect.top;
-
-		GetClientRect(hListView, &rect);
-		AddColumn(hListView, rect.right - rect.left - 30);
-
-		AddItem(hListView, 0, "(none)");
-		HICON barrierico = LoadIcon(LoadLibrary(L"imageres.dll"), MAKEINTRESOURCE(1027));
-		ImageList_AddIcon(hml, barrierico);
-		ListView_SetImageList(GetDlgItem(hWnd, 1202), hml, LVSIL_SMALL);
-		DestroyIcon(barrierico);
-
-		WCHAR wallpaperdir[MAX_PATH];
-		ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
-		for (const auto& entry : fs::recursive_directory_iterator(wallpaperdir))
-		{
-			if (entry.is_regular_file() && (entry.path().extension() == L".jpg"
-				|| entry.path().extension() == L".png"
-				|| entry.path().extension() == L".bmp"
-				|| entry.path().extension() == L".jpeg"
-				|| entry.path().extension() == L".dib"
-				|| entry.path().extension() == L".gif"))
-			{
-				LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
-				LPCSTR path = ConvertStr(lpwstrPath);
-				wallpapers.insert(path);
-				free(lpwstrPath);
-			}
-		}
-
-		// start with k=1, k=0 is (none)
-		int k = 1;
-		for (auto path : wallpapers)
-		{
-			AddItem(hListView, k, path);
-			k++;
-		}
-
-		// first time do it with current theme, the other func will take care of missing
-		IUnknown* thcr;
-		int cu;
-		pThemeManager->GetCurrentTheme(&cu);
-		pThemeManager->GetTheme(cu, &thcr);
-		AddMissingWallpapers(thcr, hWnd);
-		thcr->Release();
-
-		// combobox with positions of wallpaper
-		const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
-		for (int i = 0; i < _countof(items); i++)
-		{
-			ComboBox_AddString(hPosCombobox, items[i]);
-		}
-
-		DESKTOP_WALLPAPER_POSITION pos;
-		pDesktopWallpaper->GetPosition(&pos);
-		ComboBox_SetCurSel(hPosCombobox, pos);
-
-		AddMissingWallpapers(currentITheme, hWnd);
-		SelectCurrentWallpaper(currentITheme, hWnd);
-		firstInit = FALSE;
-	}
-	else if (uMsg == WM_COMMAND)
-	{
-		if (HIWORD(wParam) == CBN_SELCHANGE)
-		{
-			if (LOWORD(wParam) == 1205)
-			{
-				selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
-
-				COLORREF clr;
-				pDesktopWallpaper->GetBackgroundColor(&clr);
-
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clr);
-				Static_SetBitmap(hBackPreview, bmp);
-				DeleteObject(bmp);
-
-				PropSheet_Changed(GetParent(hWnd), hWnd);
-			}
-		}
-		else if (HIWORD(wParam) == BN_CLICKED)
-		{
-			if (LOWORD(wParam) == 1203)
-			{
-				IFileDialog* pfd;
-				HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
-
-				// get options
-				DWORD dwFlags;
-				hr = pfd->GetOptions(&dwFlags);
-
-				// set the file types
-				hr = pfd->SetFileTypes(ARRAYSIZE(file_types), file_types);
-
-				// the first element from the array
-				hr = pfd->SetFileTypeIndex(1);
-
-				pfd->SetTitle(L"Browse");
-
-				// Show the dialog
-				hr = pfd->Show(hWnd);
-
-				IShellItem* psiResult;
-				hr = pfd->GetResult(&psiResult);
-				if (SUCCEEDED(hr)) {
-					PWSTR pszFilePath = NULL;
-					hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-					if (SUCCEEDED(hr)) {
-						int inde = AddItem(hListView, ListView_GetItemCount(hListView), ConvertStr(pszFilePath));
-
-						ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-						ListView_EnsureVisible(hListView, inde, FALSE);
-						CoTaskMemFree(pszFilePath);
-					}
-				}
-				pfd->Release();
-			}
-			else if (LOWORD(wParam) == 1207)
-			{
-				CHOOSECOLOR cc;
-				if (ColorPicker(hWnd, &cc) == TRUE)
-				{
-					selectedTheme->newColor = cc.rgbResult;
-
-					COLORREF clr;
-					ITheme* themeClass = new ITheme(currentITheme);
-					themeClass->GetBackgroundColor(&clr);
-
-					HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clr);
-					Static_SetBitmap(hBackPreview, bmp);
-					DeleteObject(bmp);
-
-					PropSheet_Changed(GetParent(hWnd), hWnd);
-				}
-
-			}
-		}
-	}
-	else if (uMsg == WM_NOTIFY)
-	{
-		PSHNOTIFY* nhdr = (PSHNOTIFY*)lParam;
-		if (nhdr->hdr.idFrom == 1202 && nhdr->hdr.code == LVN_ITEMCHANGED)
-		{
-			LPNMLISTVIEW pnmv = (LPNMLISTVIEW)lParam;
-			if (pnmv->uNewState & LVIS_SELECTED)
-			{
-				selectedIndex = pnmv->iItem;
-				LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
-
-				if (StrCmpW(path, L"(none)") == 0)
-				{
-					EnableWindow(hPosCombobox, false);
-
-					if (selectedTheme->wallpaperPath != nullptr)
-					{
-						delete[] selectedTheme->wallpaperPath;
-					}
-
-					selectedTheme->wallpaperPath = nullptr;
-					selectedTheme->wallpaperType = WT_NOWALL;
-
-				}
-				else
-				{
-					EnableWindow(hPosCombobox, true);
-
-					// set new path
-					size_t len = wcslen(path) + 1;
-					selectedTheme->wallpaperPath = new wchar_t[len];
-					wcscpy_s(selectedTheme->wallpaperPath, len, path);
-
-					selectedTheme->wallpaperType = WT_PICTURE;
-				}
-				if (selectionPicker)
-				{
-					selectedTheme->customWallpaperSelection = false;
-				}
-				else
-				{
-					selectedTheme->customWallpaperSelection = true;
-				}
-
-				COLORREF clrlv;
-				if (selectedTheme->useDesktopColor)
-				{
-					pDesktopWallpaper->GetBackgroundColor(&clrlv);
-				}
-				else
-				{
-					ITheme* themeClass = new ITheme(currentITheme);
-					themeClass->GetBackgroundColor(&clrlv);
-				}
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, selectedTheme->wallpaperPath, hWnd, clrlv);
-				Static_SetBitmap(hBackPreview, bmp);
-
-				PropSheet_Changed(GetParent(hWnd), hWnd);
-				DeleteObject(bmp);
-			}
-		}
-		else if (nhdr->hdr.code == PSN_APPLY)
-		{
-			if (selectedTheme->posChanged != -1)
-			{
-				int index = ComboBox_GetCurSel(hPosCombobox);
-				pDesktopWallpaper->SetPosition((DESKTOP_WALLPAPER_POSITION)index);
-				selectedTheme->posChanged = -1;
-			}
-			if (selectedTheme->newColor)
-			{
-				pDesktopWallpaper->SetBackgroundColor(selectedTheme->newColor);
-				selectedTheme->newColor = NULL;
-			}
-			if (selectedTheme->customWallpaperSelection)
-			{
-				if (selectedTheme->wallpaperType == WT_PICTURE)
-				{
-					pDesktopWallpaper->Enable(true);
-					pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath);
-				}
-				else if (selectedTheme->wallpaperType == WT_NOWALL)
-				{
-					pDesktopWallpaper->Enable(false);
-				}
-				selectedTheme->customWallpaperSelection = false;
-			}
-
-			selectedTheme->updateWallThemesPg = true;
-			PropSheet_UnChanged(GetParent(hWnd), hWnd);
-			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
-			return TRUE;
-		}
-		else if (nhdr->hdr.code == PSN_SETACTIVE)
-		{
-			selectionPicker = false;
-			if (!selectedTheme->customWallpaperSelection && !firstInit)
-			{
-				AddMissingWallpapers(currentITheme, hWnd);
-				SelectCurrentWallpaper(currentITheme, hWnd);
-
-				if (selectedTheme->posChanged == -1)
-				{
-					// update wallpaper position 
-					DESKTOP_WALLPAPER_POSITION pos;
-					pDesktopWallpaper->GetPosition(&pos);
-					ComboBox_SetCurSel(hPosCombobox, pos);
-				}
-			}
-			// special case where preview wont update if (none) 
-			// and background color changes due to theme change
-			// just update each time u activate
-			if (!firstInit && selectedIndex == 0)
-			{
-				COLORREF clr;
-				if (selectedTheme->useDesktopColor)
-				{
-					pDesktopWallpaper->GetBackgroundColor(&clr);
-				}
-				else
-				{
-					ITheme* themeClass = new ITheme(currentITheme);
-					themeClass->GetBackgroundColor(&clr);
-				}
-
-				HBITMAP bmp = WallpaperAsBmp(backPreviewWidth, backPreviewHeight, NULL, hWnd, clr);
-				Static_SetBitmap(hBackPreview, bmp);
-			}
-			_TerminateProcess(pi);
-		}
-	}
-	else if (uMsg == WM_SETTINGCHANGE)
-	{
-		printf("WM_SETTINGCHANGED:\n");
-		AddMissingWallpapers(currentITheme, hWnd);
-		SelectCurrentWallpaper(currentITheme, hWnd);
-	}
-	return FALSE;
 }

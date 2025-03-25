@@ -25,6 +25,8 @@
 #include <atlwin.h>
 #include <atlapp.h>
 #include <atldlgs.h>
+#include <atlctrls.h>
+#include <atlctrlx.h>
 
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32")

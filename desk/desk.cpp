@@ -51,28 +51,13 @@ void PropertySheetMoment()
 	CThemeDlgProc themedlg;
 	sheet.AddPage(themedlg);
 
+	CBackgroundDlgProc backgrounddlg;
+	sheet.AddPage(backgrounddlg);
+
 	CScrSaverDlgProc screensaverdlg;
 	sheet.AddPage(screensaverdlg);
 
 	/*
-	psp[1].dwSize = sizeof(PROPSHEETPAGE);
-	psp[1].dwFlags = PSP_USETITLE;
-	psp[1].hInstance = g_hinst;
-	psp[1].pszTemplate = MAKEINTRESOURCE(IDD_BACKGROUNDDLG);
-	psp[1].pszIcon = NULL;
-	psp[1].pfnDlgProc = BackgroundDlgProc;
-	psp[1].pszTitle = TEXT("Background");
-	psp[1].lParam = 0;
-
-	psp[2].dwSize = sizeof(PROPSHEETPAGE);
-	psp[2].dwFlags = PSP_USETITLE;
-	psp[2].hInstance = g_hinst;
-	psp[2].pszTemplate = MAKEINTRESOURCE(IDD_SCRSVRDLG);
-	psp[2].pszIcon = NULL;
-	psp[2].pfnDlgProc = ScrSaverDlgProc;
-	psp[2].pszTitle = TEXT("Screen Saver");
-	psp[2].lParam = 0;
-
 	psp[3].dwSize = sizeof(PROPSHEETPAGE);
 	psp[3].dwFlags = PSP_USETITLE;
 	psp[3].hInstance = g_hinst;
@@ -90,8 +75,6 @@ void PropertySheetMoment()
 	psp[4].pfnDlgProc = SettingsDlgProc;
 	psp[4].pszTitle = TEXT("Settings");
 	psp[4].lParam = 0;
-
-	PropertySheet(&psh);
 	*/
 
 	sheet.DoModal();
