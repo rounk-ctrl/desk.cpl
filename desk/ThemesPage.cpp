@@ -4,17 +4,143 @@
 #include "helper.h"
 #include "theme.h"
 namespace fs = std::filesystem;
-bool themeSelected;
 
-HWND hCombobox;
-HWND hPreview;
-int width{};
-int height{};
+BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	// global variables
+	hCombobox = GetDlgItem(1101);
+	hPreview = GetDlgItem(1103);
+	size = GetClientSIZE(hPreview);
+
+	// initialize theme manager
+	InitUxtheme();
+
+	HBITMAP bmp;
+	WCHAR ws[MAX_PATH] = { 0 };
+	int count{};
+
+	// add all themes to combobox
+	pThemeManager->GetThemeCount(&count);
+	for (auto i = 0; i < count; ++i)
+	{
+		// same across all w10
+		IUnknown* the;
+		pThemeManager->GetTheme(i, &the);
+		ITheme10* them = (ITheme10*)the;
+		LPWSTR str = nullptr;
+		them->get_DisplayName(&str);
+
+		ComboBox_AddString(hCombobox, str);
+		them->Release();
+	}
+
+	// select current theme in combobox
+	int currThem{};
+	pThemeManager->GetCurrentTheme(&currThem);
+	ComboBox_SetCurSel(hCombobox, currThem);
+
+	pThemeManager->GetTheme(currThem, &currentITheme);
+
+	// set the preview bitmap to the static control
+	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+	bmp = ThemePreviewBmp(GETSIZE(size), ws, NULL, GetSysColor(COLOR_BACKGROUND));
+	Static_SetBitmap(hPreview, bmp);
+	DeleteObject(bmp);
+
+	// update THEMEINFO
+	UpdateThemeInfo(ws, currThem);
+	return TRUE;
+}
+
+BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	int index = ComboBox_GetCurSel(hCombobox);
+
+	currentITheme->Release();
+	pThemeManager->GetTheme(index, &currentITheme);
+
+	LPWSTR ws;
+	ITheme* themeClass = new ITheme(currentITheme);
+	themeClass->get_background(&ws);
+
+	LPWSTR path = nullptr;
+	themeClass->get_VisualStyle(&path);
+
+	int hc;
+	themeClass->GetHighContrast(&hc);
+
+	COLORREF clr;
+	themeClass->GetBackgroundColor(&clr);
+	printf("%d, %d, %d", GetRValue(clr), GetGValue(clr), GetBValue(clr));
+
+	// set the preview bitmap to the static control
+	HBITMAP ebmp = ThemePreviewBmp(GETSIZE(size), ws, LoadThemeFromFilePath(path), clr);
+	Static_SetBitmap(hPreview, ebmp);
+
+	// update THEMEINFO
+	UpdateThemeInfo(ws, index);
+
+	PropSheet_Changed(m_hWnd, hWnd);
+
+	DeleteObject(ebmp);
+	return TRUE;
+}
+
+BOOL CThemeDlgProc::OnApply()
+{
+	// default apply flag, when applied in windows (ignore nothing)
+	ULONG apply_flags = 0;
+	int index = ComboBox_GetCurSel(hCombobox);
+
+	if (selectedTheme->customWallpaperSelection)
+		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_BACKGROUND;
+
+	if (selectedTheme->newColor)
+		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
+
+	// apply the selected theme
+	pThemeManager->SetCurrentTheme(m_hWnd, index, TRUE, apply_flags, 0);
+
+	PropSheet_UnChanged(::GetParent(m_hWnd), m_hWnd);
+	SetWindowLongPtr(DWLP_MSGRESULT, PSNRET_NOERROR);
+	return TRUE;
+}
+
+BOOL CThemeDlgProc::OnSetActive()
+{
+	selectionPicker = true;
+	if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
+	{
+		int index = ComboBox_GetCurSel(hCombobox);
+		pThemeManager->GetTheme(index, &currentITheme);
+		ITheme* themeClass = new ITheme(currentITheme);
+		LPWSTR path = nullptr;
+		themeClass->get_VisualStyle(&path);
+
+		COLORREF clr;
+		if (selectedTheme->useDesktopColor)
+		{
+			pDesktopWallpaper->GetBackgroundColor(&clr);
+		}
+		else
+		{
+			themeClass->GetBackgroundColor(&clr);
+		}
+
+		// set the preview bitmap to the static control
+		HBITMAP ebmp = ThemePreviewBmp(GETSIZE(size), selectedTheme->wallpaperPath, LoadThemeFromFilePath(path), clr);
+		Static_SetBitmap(hPreview, ebmp);
+
+		selectedTheme->updateWallThemesPg = false;
+	}
+	_TerminateProcess(pi);
+	return TRUE;
+}
 
 // set relevant info accordng to this page
 // if u select a new theme, the settings set by background page
 // becomes irrelevant, overwrite them
-void UpdateThemeInfo(LPWSTR ws, int currThem)
+void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 {
 	printf("\nupdate themeinfo\n");
 	// update THEMEINFO
@@ -42,7 +168,7 @@ void UpdateThemeInfo(LPWSTR ws, int currThem)
 	selectedTheme->useDesktopColor = false;
 }
 
-HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
+HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
 {
 	Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(wallpaperPath, FALSE);
 	if (bitmap)
@@ -280,147 +406,4 @@ HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDL
 		return hBitmap;
 	}
 	return NULL;
-}
-
-LRESULT CALLBACK ThemeDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (uMsg == WM_INITDIALOG)
-	{
-		// global variables
-		hCombobox = GetDlgItem(hWnd, 1101);
-		hPreview = GetDlgItem(hWnd, 1103);
-		RECT rect;
-		GetClientRect(hPreview, &rect);
-		width = rect.right - rect.left;
-		height = rect.bottom - rect.top;
-
-		// initialize theme manager
-		InitUxtheme();
-
-		HBITMAP bmp;
-		WCHAR ws[MAX_PATH] = { 0 };
-		int count{};
-
-		// add all themes to combobox
-		pThemeManager->GetThemeCount(&count);
-		for (auto i = 0; i < count; ++i)
-		{
-			// same across all w10
-			IUnknown* the;
-			pThemeManager->GetTheme(i, &the);
-			ITheme10* them = (ITheme10*)the;
-			LPWSTR str = nullptr;
-			them->get_DisplayName(&str);
-
-			ComboBox_AddString(hCombobox, str);
-			them->Release();
-		}
-
-		// select current theme in combobox
-		int currThem{};
-		pThemeManager->GetCurrentTheme(&currThem);
-		ComboBox_SetCurSel(hCombobox, currThem);
-
-		pThemeManager->GetTheme(currThem, &currentITheme);
-
-		// set the preview bitmap to the static control
-		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-		bmp = ThemePreviewBmp(width, height, ws, NULL, GetSysColor(COLOR_BACKGROUND));
-		Static_SetBitmap(hPreview, bmp);
-		DeleteObject(bmp);
-
-		// update THEMEINFO
-		UpdateThemeInfo(ws, currThem);
-	}
-	else if (uMsg == WM_COMMAND)
-	{
-		if (HIWORD(wParam) == CBN_SELCHANGE)
-		{
-			if (LOWORD(wParam) == 1101)
-			{
-				int index = ComboBox_GetCurSel(hCombobox);
-
-				currentITheme->Release();
-				pThemeManager->GetTheme(index, &currentITheme);
-
-				LPWSTR ws;
-				ITheme* themeClass = new ITheme(currentITheme);
-				themeClass->get_background(&ws);
-
-				LPWSTR path = nullptr;
-				themeClass->get_VisualStyle(&path);
-
-				int hc;
-				themeClass->GetHighContrast(&hc);
-
-				COLORREF clr;
-				themeClass->GetBackgroundColor(&clr);
-				printf("%d, %d, %d", GetRValue(clr), GetGValue(clr), GetBValue(clr));
-
-				// set the preview bitmap to the static control
-				HBITMAP ebmp = ThemePreviewBmp(width, height, ws, LoadThemeFromFilePath(path), clr);
-				Static_SetBitmap(hPreview, ebmp);
-
-				// update THEMEINFO
-				UpdateThemeInfo(ws, index);
-
-				PropSheet_Changed(GetParent(hWnd), hWnd);
-
-				DeleteObject(ebmp);
-			}
-		}
-	}
-	else if (uMsg == WM_NOTIFY)
-	{
-		PSHNOTIFY* pnmh = (PSHNOTIFY*)lParam;
-		if (pnmh->hdr.code == PSN_APPLY)
-		{
-			// default apply flag, when applied in windows (ignore nothing)
-			ULONG apply_flags = 0;
-			int index = ComboBox_GetCurSel(hCombobox);
-
-			if (selectedTheme->customWallpaperSelection)
-				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_BACKGROUND;
-
-			if (selectedTheme->newColor)
-				apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
-
-			// apply the selected theme
-			pThemeManager->SetCurrentTheme(hWnd, index, !!TRUE, apply_flags, 0);
-
-			PropSheet_UnChanged(GetParent(hWnd), hWnd);
-			SetWindowLongPtr(hWnd, DWLP_MSGRESULT, PSNRET_NOERROR);
-			return TRUE;
-		}
-		else if (pnmh->hdr.code == PSN_SETACTIVE)
-		{
-			selectionPicker = true;
-			if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
-			{
-				int index = ComboBox_GetCurSel(hCombobox);
-				pThemeManager->GetTheme(index, &currentITheme);
-				ITheme* themeClass = new ITheme(currentITheme);
-				LPWSTR path = nullptr;
-				themeClass->get_VisualStyle(&path);
-
-				COLORREF clr;
-				if (selectedTheme->useDesktopColor)
-				{
-					pDesktopWallpaper->GetBackgroundColor(&clr);
-				}
-				else
-				{
-					themeClass->GetBackgroundColor(&clr);
-				}
-
-				// set the preview bitmap to the static control
-				HBITMAP ebmp = ThemePreviewBmp(width, height, selectedTheme->wallpaperPath, LoadThemeFromFilePath(path), clr);
-				Static_SetBitmap(hPreview, ebmp);
-
-				selectedTheme->updateWallThemesPg = false;
-			}
-			_TerminateProcess(pi);
-		}
-	}
-	return FALSE;
 }

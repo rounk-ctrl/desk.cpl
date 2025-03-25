@@ -1,7 +1,11 @@
 #pragma once
 #include "framework.h"
 #include "strnatcmp.h"
-#include <wil/registry.h>
+
+#define RECTWIDTH(rc)   ((rc).right-(rc).left)
+#define RECTHEIGHT(rc)  ((rc).bottom-(rc).top)
+
+#define GETSIZE(size) (size).cx, (size).cy
 
 struct NaturalComparator {
 	bool operator()(const LPCSTR& a, const LPCSTR& b) const {
@@ -24,18 +28,6 @@ static LPWSTR ConvertStr2(LPCSTR narrowStr) {
 	return wideStr;
 }
 
-static std::wstring DecodeTranscodedImage()
-{
-	auto data = wil::reg::try_get_value_binary(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"TranscodedImageCache", RRF_RT_REG_BINARY);
-
-	if (data.has_value())
-	{
-		std::wstring wallpaperPath(reinterpret_cast<wchar_t*>(data.value().data() + 24));
-		return wallpaperPath;
-	}
-	return NULL;
-}
-
 static VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 {
 	if (hp.hProcess != nullptr)
@@ -46,4 +38,11 @@ static VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 		hp.hProcess = nullptr;
 		hp.hThread = nullptr;
 	}
+}
+
+inline SIZE GetClientSIZE(HWND _hwnd)
+{
+	RECT rect;
+	GetClientRect(_hwnd, &rect);
+	return { RECTWIDTH(rect), RECTHEIGHT(rect) };
 }

@@ -24,29 +24,6 @@ LRESULT CALLBACK SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return FALSE;
 }
 
-
-void CALLBACK PropSheetCallback(HWND hwndPropSheet, UINT uMsg, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-		//called before the dialog is created, hwndPropSheet = NULL, lParam points to dialog resource
-	case PSCB_PRECREATE:
-	{
-		LPDLGTEMPLATE  lpTemplate = (LPDLGTEMPLATE)lParam;
-
-		if (!(lpTemplate->style & WS_SYSMENU))
-		{
-			lpTemplate->style |= WS_SYSMENU;
-		}
-	}
-	break;
-
-	//called after the dialog is created
-	case PSCB_INITIALIZED:
-		break;
-
-	}
-}
 void PropertySheetMoment()
 {
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
@@ -65,19 +42,18 @@ void PropertySheetMoment()
 
 	printf("Hello world!\n");
 
-	PROPSHEETPAGE psp[5];
-	PROPSHEETHEADER psh;
+	WTL::CPropertySheet sheet(L"Display Properties");
 
-	psp[0].dwSize = sizeof(PROPSHEETPAGE);
-	psp[0].dwFlags = PSP_USETITLE;
-	psp[0].hInstance = g_hinst;
-	psp[0].pszTemplate = MAKEINTRESOURCE(IDD_THEMEDLG);
-	psp[0].pszIcon = NULL;
-	psp[0].pfnDlgProc = ThemeDlgProc;
-	psp[0].pszTitle = TEXT("Themes");
-	psp[0].lParam = 0;
+	sheet.m_psh.dwFlags |= PSH_USEICONID;
+	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
 
+	CThemeDlgProc themedlg;
+	sheet.AddPage(themedlg);
 
+	CScrSaverDlgProc screensaverdlg;
+	sheet.AddPage(screensaverdlg);
+
+	/*
 	psp[1].dwSize = sizeof(PROPSHEETPAGE);
 	psp[1].dwFlags = PSP_USETITLE;
 	psp[1].hInstance = g_hinst;
@@ -114,17 +90,10 @@ void PropertySheetMoment()
 	psp[4].pszTitle = TEXT("Settings");
 	psp[4].lParam = 0;
 
-	psh.dwSize = sizeof(PROPSHEETHEADER);
-	psh.dwFlags = PSH_PROPSHEETPAGE | PSH_USECALLBACK | PSH_USEICONID;
-	psh.hwndParent = 0;
-	psh.hInstance = g_hinst;
-	psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
-	psh.pszCaption = TEXT("Display Properties");
-	psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
-	psh.ppsp = (LPCPROPSHEETPAGE)&psp;
-	psh.pfnCallback = (PFNPROPSHEETCALLBACK)PropSheetCallback;
-
 	PropertySheet(&psh);
+	*/
+
+	sheet.DoModal();
 
 	// cleanup
 	Gdiplus::GdiplusShutdown(gdiplusToken);

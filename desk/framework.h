@@ -20,6 +20,12 @@
 #include <vssym32.h>
 #include <windowsx.h>
 #include <shellapi.h>
+
+#include <atlbase.h>
+#include <atlwin.h>
+#include <atlapp.h>
+#include <atldlgs.h>
+
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32")
 #pragma comment(lib, "Msimg32")

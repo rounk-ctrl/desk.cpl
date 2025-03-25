@@ -1,82 +1,116 @@
 #include "AppearancePage.h"
-#include <wil\registry.h>
+#include <wil/registry.h>
 
-#define READ_AT(TYPE, BIN, OFFSET) (*reinterpret_cast<TYPE*>((BIN).data() + (OFFSET)))
-#define READ_STRING(TYPE, BIN, OFFSET) (reinterpret_cast<TYPE*>((BIN).data() + (OFFSET)))
+#define READ_AT(TYPE, BIN, OFFSET) (*reinterpret_cast<TYPE*>((BIN) + (OFFSET)))
+#define READ_STRING(TYPE, BIN, OFFSET) (reinterpret_cast<TYPE*>((BIN)+ (OFFSET)))
 
 // 29 colors
 #define MAX_COLORS (COLOR_GRADIENTINACTIVECAPTION + 1)
 
+typedef struct tagNONCLIENTMETRICSW_2k
+{
+	UINT    cbSize;
+	int     iBorderWidth;
+	int     iScrollWidth;
+	int     iScrollHeight;
+	int     iCaptionWidth;
+	int     iCaptionHeight;
+	LOGFONTW lfCaptionFont;
+	int     iSmCaptionWidth;
+	int     iSmCaptionHeight;
+	LOGFONTW lfSmCaptionFont;
+	int     iMenuWidth;
+	int     iMenuHeight;
+	LOGFONTW lfMenuFont;
+	LOGFONTW lfStatusFont;
+	LOGFONTW lfMessageFont;
+}  NONCLIENTMETRICSW_2k;
 typedef struct {
 	DWORD version;
-	NONCLIENTMETRICS ncm;
+	NONCLIENTMETRICSW_2k ncm;
 	LOGFONT lfIconTitle;
 	COLORREF rgb[MAX_COLORS];
+	WCHAR name[40];
 } SCHEMEDATA;
 
-VOID DumpLogFont(std::vector<BYTE> value, int offset)
+HWND hThemesCombobox;
+SCHEMEDATA* schemeMap = NULL;
+UINT mapSize;
+
+#ifdef _DEBUG
+
+VOID DumpLogFont(LOGFONT font)
 {
-	printf("lfHeight: %d\n", READ_AT(LONG, value, offset));
-	printf("lfWidth: %d\n", READ_AT(LONG, value, offset + 4));
-	printf("lfEscapement: %d\n", READ_AT(LONG, value, offset + 8));
-	printf("lfOrientation: %d\n", READ_AT(LONG, value, offset + 12));
-	printf("lfWeight: %d\n", READ_AT(LONG, value, offset + 16));
-	printf("lfItalic: %d\n", READ_AT(BYTE, value, offset + 20));
-	printf("lfUnderline: %d\n", READ_AT(BYTE, value, offset + 21));
-	printf("lfStrikeOut: %d\n", READ_AT(BYTE, value, offset + 22));
-	printf("lfCharSet: %d\n", READ_AT(BYTE, value, offset + 23));
-	printf("lfOutPrecision: %d\n", READ_AT(BYTE, value, offset + 24));
-	printf("lfClipPrecision: %d\n", READ_AT(BYTE, value, offset + 25));
-	printf("lfQuality: %d\n", READ_AT(BYTE, value, offset + 26));
-	printf("lfPitchAndFamily: %d\n", READ_AT(BYTE, value, offset + 27));
-	wprintf(L"lfFaceName: %s\n", READ_STRING(WCHAR, value, offset + 28)); // size: 64
+	printf("lfHeight: %d\n", font.lfHeight);
+	printf("lfWidth: %d\n", font.lfWidth);
+	printf("lfEscapement: %d\n", font.lfEscapement);
+	printf("lfOrientation: %d\n", font.lfOrientation);
+	printf("lfWeight: %d\n", font.lfWeight);
+	printf("lfItalic: %d\n", font.lfItalic);
+	printf("lfUnderline: %d\n", font.lfUnderline);
+	printf("lfStrikeOut: %d\n", font.lfStrikeOut);
+	printf("lfCharSet: %d\n", font.lfCharSet);
+	printf("lfOutPrecision: %d\n", font.lfOutPrecision);
+	printf("lfClipPrecision: %d\n", font.lfClipPrecision);
+	printf("lfQuality: %d\n", font.lfQuality);
+	printf("lfPitchAndFamily: %d\n", font.lfPitchAndFamily);
+	wprintf(L"lfFaceName: %s\n",font.lfFaceName); // size: 64
 }
 
 VOID DumpData(LPCWSTR theme)
 {
-	auto value = wil::reg::get_value_binary(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY);
-	if (!value.empty())
-	{
-		wprintf(L"\nDumping theme info on %s:\n", theme);
-		printf("Version: %u\n", READ_AT(DWORD, value, 0));
+	BYTE* value;
+	DWORD dwSize;
+	HRESULT hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, NULL, &dwSize);
 
+	value = (BYTE*)malloc(dwSize);
+	hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, value, &dwSize);
+
+	if (value)
+	{
+		SCHEMEDATA data;
+		wprintf(L"\nDumping theme info on %s:\n", theme);
+
+		data.version = READ_AT(DWORD, value, 0);
+		printf("Version: %u\n", data.version);
+		
+		data.ncm = READ_AT(NONCLIENTMETRICSW_2k, value, 4);
 		printf("\nNONCLIENTMETRICS:\n");
-		printf("cbSize: %u\n", READ_AT(UINT, value, 4));
-		printf("iBorderWidth: %u\n", READ_AT(INT, value, 8));
-		printf("iScrollWidth: %u\n", READ_AT(INT, value, 12));
-		printf("iScrollHeight: %u\n", READ_AT(INT, value, 16));
-		printf("iCaptionWidth: %u\n", READ_AT(INT, value, 20));
-		printf("iCaptionHeight: %u\n", READ_AT(INT, value, 24));
+		printf("cbSize: %u\n", data.ncm.cbSize);
+		printf("iBorderWidth: %u\n", data.ncm.iBorderWidth);
+		printf("iScrollWidth: %u\n", data.ncm.iScrollWidth);
+		printf("iScrollHeight: %u\n", data.ncm.iScrollHeight);
+		printf("iCaptionWidth: %u\n", data.ncm.iCaptionWidth);
+		printf("iCaptionHeight: %u\n", data.ncm.iCaptionHeight);
 
 		printf("\nLOGFONT: lfCaptionFont:\n");
-		DumpLogFont(value, 28);
+		DumpLogFont(data.ncm.lfCaptionFont);
 
 		printf("\n");
-		printf("iSmCaptionWidth: %u\n", READ_AT(INT, value, 120));
-		printf("iSmCaptionHeight: %u\n", READ_AT(INT, value, 124));
+		printf("iSmCaptionWidth: %u\n", data.ncm.iSmCaptionWidth);
+		printf("iSmCaptionHeight: %u\n", data.ncm.iSmCaptionHeight);
 
 		printf("\nLOGFONT: lfSmCaptionFont:\n");
-		DumpLogFont(value, 128);
+		DumpLogFont(data.ncm.lfSmCaptionFont);
 
 		printf("\n");
-		printf("iMenuWidth: %u\n", READ_AT(INT, value, 220));
-		printf("iMenuHeight: %u\n", READ_AT(INT, value, 224));
+		printf("iMenuWidth: %u\n", data.ncm.iMenuWidth);
+		printf("iMenuHeight: %u\n", data.ncm.iMenuHeight);
 
 		printf("\nLOGFONT: lfMenuFont:\n");
-		DumpLogFont(value, 228);
+		DumpLogFont(data.ncm.lfMenuFont);
 
 		printf("\nLOGFONT: lfStatusFont:\n");
-		DumpLogFont(value, 320);
+		DumpLogFont(data.ncm.lfStatusFont);
 
 		printf("\nLOGFONT: lfMessageFont:\n");
-		DumpLogFont(value, 412);
+		DumpLogFont(data.ncm.lfMessageFont);
 
 		// doesnt have padded border ??
+		data.lfIconTitle = READ_AT(LOGFONTW, value, 504);
 		printf("\nLOGFONT: lfIconTitle:\n");
-		DumpLogFont(value, 504);
-
-		SCHEMEDATA data;
-
+		DumpLogFont(data.lfIconTitle);
+		
 		//596
 		int start = 596;
 		for (int i = 0; i < MAX_COLORS; i++)
@@ -87,14 +121,66 @@ VOID DumpData(LPCWSTR theme)
 		COLORREF bgColor = data.rgb[COLOR_BACKGROUND];
 		wprintf(L"\nCOLOR_BACKGROUND %d,%d,%d\n", GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
 
+		free(value);
 	}
+	
 }
+
+#endif
+
+VOID FillSchemeDataMap(LPCWSTR theme, int index)
+{
+	BYTE* value;
+	DWORD dwSize;
+	HRESULT hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, NULL, &dwSize);
+
+	value = (BYTE*)malloc(dwSize);
+	hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, value, &dwSize);
+
+	SCHEMEDATA data = {};
+	data.version = READ_AT(DWORD, value, 0);
+	data.ncm = READ_AT(NONCLIENTMETRICSW_2k, value, 4);
+	data.lfIconTitle = READ_AT(LOGFONTW, value, 504);
+	int start = 596;
+	for (int i = 0; i < MAX_COLORS; i++)
+	{
+		data.rgb[i] = READ_AT(COLORREF, value, start + (4 * i));
+	}
+
+	size_t len = wcslen(theme) + 1;
+	wcscpy_s(data.name, len, theme);
+	schemeMap[index] = data;
+}
+
+/*
+* classic appearance dialog code
+
+		auto key = wil::reg::open_unique_key(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes");
+		mapSize = wil::reg::get_child_value_count(key.get());
+		schemeMap = (SCHEMEDATA*)malloc(mapSize * sizeof(SCHEMEDATA));
+
+		int i = 0;
+		for (const auto& key_data : wil::make_range(wil::reg::value_iterator{ key.get() }, wil::reg::value_iterator{}))
+		{
+			if (key_data.type == REG_BINARY)
+			{
+				FillSchemeDataMap(key_data.name.c_str(), i);
+				i++;
+			}
+		}
+
+		for (UINT j = 0; j < mapSize; j++)
+		{
+			ComboBox_AddString(hThemesCombobox, schemeMap[j].name);
+		}
+*/
 
 LRESULT CALLBACK AppearanceDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (uMsg == WM_INITDIALOG)
 	{
-		DumpData(L"@themeui.dll,-850");
+		hThemesCombobox = GetDlgItem(hWnd, 1111);
+
 	}
 	return FALSE;
 }
