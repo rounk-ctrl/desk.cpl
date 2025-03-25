@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ThemesPage.h"
 #include "desk.h"
 #include "uxtheme.h"
@@ -214,8 +215,8 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 				double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
 				double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
 
-				int newprewidth = sX * prevrect.Width;
-				int newpreheight = sY * prevrect.Height;
+				int newprewidth = (int)sX * prevrect.Width;
+				int newpreheight = (int)sY * prevrect.Height;
 				prevrect.Width = newprewidth;
 				prevrect.Height = newpreheight;
 
@@ -235,8 +236,8 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 				double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
 				double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
 
-				int newprewidth = sX * prevrect.Width;
-				int newpreheight = sY * prevrect.Height;
+				int newprewidth = (int)sX * prevrect.Width;
+				int newpreheight = (int)sY * prevrect.Height;
 				prevrect.Width = newprewidth;
 				prevrect.Height = newpreheight;
 

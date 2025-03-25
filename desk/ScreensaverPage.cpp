@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ScreensaverPage.h"
 #include "desk.h"
 #include <wil/registry.h>

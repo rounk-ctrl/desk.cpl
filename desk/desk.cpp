@@ -1,9 +1,10 @@
-#include "desk.h"
 #include "pch.h"
+#include "theme.h"
 #include "ThemesPage.h"
 #include "BackgroundPage.h"
 #include "ScreensaverPage.h"
 #include "AppearancePage.h"
+#include "desk.h"
 
 namespace fs = std::filesystem;
 

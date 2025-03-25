@@ -1,4 +1,5 @@
-﻿#include "BackgroundPage.h"
+﻿#include "pch.h"
+#include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
 
