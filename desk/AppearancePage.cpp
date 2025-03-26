@@ -208,13 +208,6 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		}
 	}
 
-
-	ITheme* themeClass = new ITheme(currentITheme);
-	LPWSTR path;
-	themeClass->get_VisualStyle(&path);
-	int currentStyle = 0;
-	int counter = 0;
-
 	for (LPCWSTR style : msstyle)
 	{
 		HMODULE hStyle = LoadLibrary(style);
@@ -227,13 +220,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 			else
 				ComboBox_AddString(hThemesCombobox, PathFindFileName(style));
 			FreeLibrary(hStyle);
-
-			if (StrCmp(path, style) == 0 )
-			{
-				currentStyle = counter;
-			}
 		}
-		counter++;
 	}
 
 	EnumThemeColors = (EnumThemeColors_t)GetProcAddress(LoadLibraryW(L"uxtheme.dll"), MAKEINTRESOURCEA(9));
@@ -263,9 +250,21 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 				ComboBox_AddString(hSizeCombobox, name.szDisplayName);
 		}
 	}
-	
 
-	ComboBox_SetCurSel(hThemesCombobox, currentStyle);
+	ITheme* themeClass = new ITheme(currentITheme);
+	LPWSTR style;
+	themeClass->get_VisualStyle(&style);
+
+	HMODULE hStyle = LoadLibrary(style);
+	if (hStyle)
+	{
+		WCHAR name[MAX_PATH];
+		LoadString(hStyle, 101, name, MAX_PATH);
+		FreeLibrary(hStyle);
+
+		ComboBox_SetCurSel(hThemesCombobox, ComboBox_FindString(hThemesCombobox, 0, name));
+	}
+	
 	ComboBox_SetCurSel(hColorCombobox, 0);
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 
