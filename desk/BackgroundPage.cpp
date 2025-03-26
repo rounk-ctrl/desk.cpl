@@ -90,7 +90,7 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 	Static_SetBitmap(hBackPreview, bmp);
 	DeleteObject(bmp);
 
-	PropSheet_Changed(GetParent(), hWnd);
+	SetModified(TRUE);
 	return 0;
 }
 
@@ -146,7 +146,7 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 		Static_SetBitmap(hBackPreview, bmp);
 		DeleteObject(bmp);
 
-		PropSheet_Changed(GetParent(), hWnd);
+		SetModified(TRUE);
 	}
 	return 0;
 }
@@ -205,7 +205,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, m_hWnd, clrlv);
 		Static_SetBitmap(hBackPreview, bmp);
 
-		PropSheet_Changed(GetParent(), m_hWnd);
+		SetModified(TRUE);
 		DeleteObject(bmp);
 	}
 	return 0;
@@ -247,9 +247,7 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 
 	selectedTheme->updateWallThemesPg = true;
-	PropSheet_UnChanged(GetParent(), m_hWnd);
-	SetWindowLongPtr(DWLP_MSGRESULT, PSNRET_NOERROR);
-	return TRUE;
+	SetModified(FALSE);
 	return 0;
 }
 

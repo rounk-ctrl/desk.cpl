@@ -1,6 +1,8 @@
 #include "pch.h"
+#include "desk.h"
 #include "AppearancePage.h"
 #include <wil/registry.h>
+namespace fs = std::filesystem;
 
 #define READ_AT(TYPE, BIN, OFFSET) (*reinterpret_cast<TYPE*>((BIN) + (OFFSET)))
 #define READ_STRING(TYPE, BIN, OFFSET) (reinterpret_cast<TYPE*>((BIN)+ (OFFSET)))
@@ -33,10 +35,6 @@ typedef struct {
 	COLORREF rgb[MAX_COLORS];
 	WCHAR name[40];
 } SCHEMEDATA;
-
-HWND hThemesCombobox;
-SCHEMEDATA* schemeMap = NULL;
-UINT mapSize;
 
 #ifdef _DEBUG
 
@@ -129,6 +127,13 @@ VOID DumpData(LPCWSTR theme)
 
 #endif
 
+/*
+* classic appearance dialog code
+
+	SCHEMEDATA* schemeMap = NULL;
+	UINT mapSize;
+
+
 VOID FillSchemeDataMap(LPCWSTR theme, int index)
 {
 	BYTE* value;
@@ -153,9 +158,6 @@ VOID FillSchemeDataMap(LPCWSTR theme, int index)
 	schemeMap[index] = data;
 }
 
-/*
-* classic appearance dialog code
-
 		auto key = wil::reg::open_unique_key(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes");
 		mapSize = wil::reg::get_child_value_count(key.get());
 		schemeMap = (SCHEMEDATA*)malloc(mapSize * sizeof(SCHEMEDATA));
@@ -176,12 +178,96 @@ VOID FillSchemeDataMap(LPCWSTR theme, int index)
 		}
 */
 
-LRESULT CALLBACK AppearanceDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	if (uMsg == WM_INITDIALOG)
-	{
-		hThemesCombobox = GetDlgItem(hWnd, 1111);
 
+typedef struct tagTHEMENAMES
+{
+	WCHAR szName[MAX_PATH + 1];
+	WCHAR szDisplayName[MAX_PATH + 1];
+	WCHAR szTooltip[MAX_PATH + 1];
+} THEMENAMES, * PTHEMENAMES;
+
+typedef HRESULT(WINAPI* EnumThemeColors_t)(LPWSTR pszThemeFileName, LPWSTR pszSizeName, DWORD dwColorNum, PTHEMENAMES pszColorNames);
+typedef HRESULT(WINAPI* EnumThemeSize_t)(LPWSTR pszThemeFileName, LPWSTR pszSizeName, DWORD dwColorNum, PTHEMENAMES pszColorNames);
+EnumThemeColors_t EnumThemeColors;
+EnumThemeSize_t EnumThemeSize;
+
+BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	hThemesCombobox = GetDlgItem(1111);
+	hColorCombobox = GetDlgItem(1114);
+	hSizeCombobox = GetDlgItem(1116);
+
+	WCHAR msstyledir[MAX_PATH];
+	ExpandEnvironmentStrings(L"%windir%\\Resources\\Themes", msstyledir, MAX_PATH);
+	for (const auto& entry : fs::recursive_directory_iterator(msstyledir, fs::directory_options::skip_permission_denied))
+	{
+		if (entry.is_regular_file() && (entry.path().extension() == L".msstyles"))
+		{
+			LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
+			msstyle.push_back(lpwstrPath);
+		}
 	}
-	return FALSE;
+
+
+	ITheme* themeClass = new ITheme(currentITheme);
+	LPWSTR path;
+	themeClass->get_VisualStyle(&path);
+	int currentStyle = 0;
+	int counter = 0;
+
+	for (LPCWSTR style : msstyle)
+	{
+		HMODULE hStyle = LoadLibrary(style);
+		if (hStyle)
+		{
+			WCHAR name[MAX_PATH];
+			LoadString(hStyle, 101, name, MAX_PATH);
+			if (lstrlenW(name) != 0)
+				ComboBox_AddString(hThemesCombobox, name);
+			else
+				ComboBox_AddString(hThemesCombobox, PathFindFileName(style));
+			FreeLibrary(hStyle);
+
+			if (StrCmp(path, style) == 0 )
+			{
+				currentStyle = counter;
+			}
+		}
+		counter++;
+	}
+
+	EnumThemeColors = (EnumThemeColors_t)GetProcAddress(LoadLibraryW(L"uxtheme.dll"), MAKEINTRESOURCEA(9));
+	EnumThemeSize = (EnumThemeSize_t)GetProcAddress(LoadLibraryW(L"uxtheme.dll"), MAKEINTRESOURCEA(10));
+	THEMENAMES name;
+	HRESULT hr = S_OK;
+	for (int i = 0; hr >= 0; i++)
+	{
+		hr = EnumThemeColors(msstyle[5], NULL, i, &name);
+		if (SUCCEEDED(hr))
+		{
+			if (lstrlenW(name.szDisplayName) == 0)
+				ComboBox_AddString(hColorCombobox, name.szName);
+			else
+				ComboBox_AddString(hColorCombobox, name.szDisplayName);
+		}
+	}
+	hr = S_OK;
+	for (int i = 0; hr >= 0; i++)
+	{
+		hr = EnumThemeSize(msstyle[5], NULL, i, &name);
+		if (SUCCEEDED(hr))
+		{
+			if (lstrlenW(name.szDisplayName) == 0)
+				ComboBox_AddString(hSizeCombobox, name.szName);
+			else
+				ComboBox_AddString(hSizeCombobox, name.szDisplayName);
+		}
+	}
+	
+
+	ComboBox_SetCurSel(hThemesCombobox, currentStyle);
+	ComboBox_SetCurSel(hColorCombobox, 0);
+	ComboBox_SetCurSel(hSizeCombobox, 0);
+
+	return 0;
 }

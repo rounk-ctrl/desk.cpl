@@ -17,6 +17,7 @@ private:
         COMMAND_HANDLER(1320, BN_CLICKED, OnSecureCheck)
         NOTIFY_CODE_HANDLER(UDN_DELTAPOS, OnTimeChange)
         MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
+        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CScrSaverDlgProc>)
     END_MSG_MAP()
 
     BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);

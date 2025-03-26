@@ -57,16 +57,10 @@ void PropertySheetMoment()
 	CScrSaverDlgProc screensaverdlg;
 	sheet.AddPage(screensaverdlg);
 
-	/*
-	psp[3].dwSize = sizeof(PROPSHEETPAGE);
-	psp[3].dwFlags = PSP_USETITLE;
-	psp[3].hInstance = g_hinst;
-	psp[3].pszTemplate = MAKEINTRESOURCE(IDD_APPEARANCEDLG);
-	psp[3].pszIcon = NULL;
-	psp[3].pfnDlgProc = AppearanceDlgProc;
-	psp[3].pszTitle = TEXT("Appearance");
-	psp[3].lParam = 0;
+	CAppearanceDlgProc appearancedlg;
+	sheet.AddPage(appearancedlg);
 
+	/*
 	psp[4].dwSize = sizeof(PROPSHEETPAGE);
 	psp[4].dwFlags = PSP_USETITLE;
 	psp[4].hInstance = g_hinst;

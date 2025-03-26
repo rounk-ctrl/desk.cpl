@@ -9,6 +9,7 @@ public:
 
 private:
     BEGIN_MSG_MAP(CThemeDlgProc)
+        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CThemeDlgProc>)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         COMMAND_HANDLER(1101, CBN_SELCHANGE, OnThemeComboboxChange)
     END_MSG_MAP()

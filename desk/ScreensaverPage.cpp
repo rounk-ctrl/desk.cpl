@@ -59,7 +59,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	BOOL isSecure;
 	SystemParametersInfo(SPI_GETSCREENSAVESECURE, 0, &isSecure, 0);
 	Button_SetCheck(secureCheck, isSecure);
-	return TRUE;
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
@@ -85,8 +85,9 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 
 	ScreenPreview(hScrPreview);
 	free(name);
-	PropSheet_Changed(::GetParent(m_hWnd), hWnd);
-	return TRUE;
+
+	SetModified(TRUE);
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnScreenSaverSettings(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
@@ -99,7 +100,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverSettings(UINT code, UINT id, HWND hWnd, BOOL
 	DeleteObject(bmp);
 
 	ScreenSettings(hScrPreview);
-	return TRUE;
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
@@ -112,7 +113,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL&
 	DeleteObject(bmp);
 
 	ShellExecute(0, L"open", selectedScrSaver, NULL, NULL, SW_SHOW);
-	return TRUE;
+	return 0;
 }
 
 // to fix
@@ -125,19 +126,19 @@ BOOL CScrSaverDlgProc::OnPowerBtn(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 		ExpandEnvironmentStrings(L"shell32.dll,Control_RunDLL %windir%\\System32\\powercfg.cpl", xpcpl, MAX_PATH);
 	}
 	ShellExecute(0, L"open", L"Rundll32.exe", xpcpl, 0, SW_SHOW);
-	return TRUE;
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnSecureCheck(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
-	PropSheet_Changed(::GetParent(m_hWnd), hWnd);
-	return TRUE;
+	SetModified(TRUE);
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnTimeChange(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled)
 {
-	PropSheet_Changed(::GetParent(m_hWnd), updown);
-	return TRUE;
+	SetModified(TRUE);
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnApply()
@@ -157,15 +158,14 @@ BOOL CScrSaverDlgProc::OnApply()
 		SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, timeout * 60, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 	}
 
-	PropSheet_UnChanged(::GetParent(m_hWnd), m_hWnd);
-	SetWindowLongPtr(DWLP_MSGRESULT, PSNRET_NOERROR);
-	return TRUE;
+	SetModified(FALSE);
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnSetActive()
 {
 	ScreenPreview(hScrPreview);
-	return TRUE;
+	return 0;
 }
 
 BOOL CScrSaverDlgProc::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -179,7 +179,7 @@ BOOL CScrSaverDlgProc::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL&
 		CloseHandle(pi2.hProcess);
 		ZeroMemory(&pi2, sizeof(pi2));
 	}
-	return TRUE;
+	return 0;
 }
 
 

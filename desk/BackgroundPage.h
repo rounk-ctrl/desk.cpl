@@ -9,6 +9,7 @@ public:
 
 private:
     BEGIN_MSG_MAP(CBackgroundDlgProc)
+        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CBackgroundDlgProc>)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         COMMAND_HANDLER(1205, CBN_SELCHANGE, OnBgSizeChange)
         COMMAND_HANDLER(1203, BN_CLICKED, OnBrowse)

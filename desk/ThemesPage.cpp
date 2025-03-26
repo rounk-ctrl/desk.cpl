@@ -50,7 +50,7 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	// update THEMEINFO
 	UpdateThemeInfo(ws, currThem);
-	return TRUE;
+	return 0;
 }
 
 BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
@@ -81,10 +81,9 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	// update THEMEINFO
 	UpdateThemeInfo(ws, index);
 
-	PropSheet_Changed(m_hWnd, hWnd);
-
+	SetModified(TRUE);
 	DeleteObject(ebmp);
-	return TRUE;
+	return 0;
 }
 
 BOOL CThemeDlgProc::OnApply()
@@ -100,11 +99,10 @@ BOOL CThemeDlgProc::OnApply()
 		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
 	// apply the selected theme
-	pThemeManager->SetCurrentTheme(m_hWnd, index, TRUE, apply_flags, 0);
+	pThemeManager->SetCurrentTheme(m_hWnd, index, !!TRUE, apply_flags, 0);
 
-	PropSheet_UnChanged(::GetParent(m_hWnd), m_hWnd);
-	SetWindowLongPtr(DWLP_MSGRESULT, PSNRET_NOERROR);
-	return TRUE;
+	SetModified(FALSE);
+	return 0;
 }
 
 BOOL CThemeDlgProc::OnSetActive()
@@ -135,7 +133,7 @@ BOOL CThemeDlgProc::OnSetActive()
 		selectedTheme->updateWallThemesPg = false;
 	}
 	_TerminateProcess(pi);
-	return TRUE;
+	return 0;
 }
 
 // set relevant info accordng to this page
