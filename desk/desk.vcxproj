@@ -177,6 +177,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AppearanceDlgBox.h" />
     <ClInclude Include="AppearancePage.h" />
     <ClInclude Include="BackgroundPage.h" />
     <ClInclude Include="desk.h" />
@@ -192,6 +193,7 @@
     <ClInclude Include="uxtheme.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AppearanceDlgBox.cpp" />
     <ClCompile Include="AppearancePage.cpp" />
     <ClCompile Include="BackgroundPage.cpp" />
     <ClCompile Include="desk.cpp" />

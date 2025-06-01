@@ -16,6 +16,9 @@
     <Filter Include="Pages">
       <UniqueIdentifier>{088bfb1d-7119-401a-943f-1595d912b133}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Dialogs">
+      <UniqueIdentifier>{f74db427-9e67-4000-a11d-3fd9258387ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -57,6 +60,9 @@
     <ClInclude Include="AppearancePage.h">
       <Filter>Pages</Filter>
     </ClInclude>
+    <ClInclude Include="AppearanceDlgBox.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -88,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="AppearancePage.cpp">
       <Filter>Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="AppearanceDlgBox.cpp">
+      <Filter>Dialogs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

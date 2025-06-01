@@ -265,15 +265,16 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		hdcgraphic = graphics.GetHDC();
 		if (sii.hIcon)
 		{
+			// fix this
 			DrawIconEx(hdcgraphic, newwidth - 48, newheight - 40, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
 		}
 		graphics.ReleaseHDC(hdcgraphic);
 
 		// draw window
-		int x = 30;
+		int x = 33;
 		int y = 30;
-		int width = 260;
-		int height = 100;
+		int width = 250;
+		int height = 94;
 		hdcgraphic = graphics.GetHDC();
 		HTHEME hTheme;
 		if (hFile)
