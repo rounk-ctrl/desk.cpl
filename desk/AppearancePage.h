@@ -17,9 +17,14 @@ private:
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
+	HBITMAP WindowPreviewBmp(int newwidth, int newheight);
+
+
 
 	HWND hThemesCombobox;
 	HWND hColorCombobox;
 	HWND hSizeCombobox;
+	HWND hPreviewWnd;
+	SIZE size;
 	std::vector<LPWSTR> msstyle;
 };

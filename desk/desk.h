@@ -13,6 +13,7 @@ enum WALLPAPER_TYPE {
 	WT_SLIDESHOW
 };
 
+// convenient struct with various information used by various pages
 struct THEMEINFO {
 	WALLPAPER_TYPE wallpaperType;
 	LPWSTR wallpaperPath;
@@ -23,11 +24,26 @@ struct THEMEINFO {
 	bool updateWallThemesPg = false;
 };
 
+// global HINSTANCE for the current app
 extern HINSTANCE g_hinst;
+
+// ThemeManager2 interface
 extern IThemeManager2* pThemeManager;
+
+// DesktopWallpaper (8+) interface
 extern IDesktopWallpaper* pDesktopWallpaper;
 
+// current theme's ITheme interface, defined as a IUnknown for wrapper
+// USAGE: ITheme* = new ITheme(currentITheme);
 extern IUnknown* currentITheme;
+
+// various theme information used across multiple pages
+// defined as a struct for convenience
 extern THEMEINFO* selectedTheme;
+
+// bool to keep track if the selection in wallpaper listview is programmatically done or not
 extern BOOL selectionPicker;
+
+// process information for the loaded screen saver preview
+// defined here so it can be killed by other pages
 extern PROCESS_INFORMATION pi;

@@ -167,6 +167,7 @@ void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 	selectedTheme->useDesktopColor = false;
 }
 
+// todo: split window rendering code
 HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg)
 {
 	Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(wallpaperPath, FALSE);
@@ -184,10 +185,7 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 
 		HDC hdcgraphic = graphics.GetHDC();
 		RECT clrrect = { 0,0, newwidth, newheight };
-		if (selectedTheme->newColor)
-			FillRect(hdcgraphic, &clrrect, CreateSolidBrush(selectedTheme->newColor));
-		else
-			FillRect(hdcgraphic, &clrrect, CreateSolidBrush(clrBg));
+		FillRect(hdcgraphic, &clrrect, CreateSolidBrush(selectedTheme->newColor ? selectedTheme->newColor : clrBg));
 		graphics.ReleaseHDC(hdcgraphic);
 
 		if (wallpaperPath && PathFileExists(wallpaperPath))
@@ -276,12 +274,9 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		int width = 250;
 		int height = 94;
 		hdcgraphic = graphics.GetHDC();
-		HTHEME hTheme;
-		if (hFile)
-			hTheme = OpenThemeDataFromFile(hFile, NULL, L"Window", 0);
-		else
-			hTheme = OpenThemeData(NULL, L"Window");
 
+		HTHEME hTheme = hFile ? OpenThemeDataFromFile(hFile, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
+		
 		// caption
 		RECT rect = { x, y, width, y + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) };
 		DrawThemeBackground(hTheme, hdcgraphic, WP_CAPTION, FS_ACTIVE, &rect, NULL);
@@ -318,23 +313,23 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 
 		//scrollba
 		SIZE size = { 0 };
-		HTHEME hTheme1;
-		if (hFile)
-			hTheme1 = OpenThemeDataFromFile(hFile, NULL, L"Scrollbar", 0);
-		else
-			hTheme1 = OpenThemeData(NULL, L"Scrollbar");
+		HTHEME hTheme1 = hFile ? OpenThemeDataFromFile(hFile, NULL, L"Scrollbar", 0) : OpenThemeData(NULL, L"Scrollbar");
 
 		GetThemePartSize(hTheme1, hdcgraphic, SBP_THUMBBTNVERT, SCRBS_NORMAL, NULL, TS_TRUE, &size);
+
 		rect.left = width - GetSystemMetrics(SM_CXPADDEDBORDER) - GetSystemMetrics(SM_CXFRAME) - size.cx;
 		rect.right = rect.left + size.cx;
 		DrawThemeBackground(hTheme1, hdcgraphic, SBP_LOWERTRACKHORZ, SCRBS_NORMAL, &rect, 0);
+
 		int oldbot = rect.bottom;
 		GetThemePartSize(hTheme1, hdcgraphic, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 		rect.bottom = rect.top + size.cy;
 		DrawThemeBackground(hTheme1, hdcgraphic, SBP_ARROWBTN, ABS_UPNORMAL, &rect, 0);
+
 		rect.top += size.cy;
 		rect.bottom = rect.top + size.cy;
 		DrawThemeBackground(hTheme1, hdcgraphic, SBP_THUMBBTNVERT, SCRBS_NORMAL, &rect, 0);
+
 		rect.top = oldbot - size.cy;
 		rect.bottom = oldbot;
 		DrawThemeBackground(hTheme1, hdcgraphic, SBP_ARROWBTN, ABS_DOWNNORMAL, &rect, 0);
@@ -353,9 +348,11 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		rect.bottom = rect.top + size.cy;
 		rect.right -= btnMar.cxLeftWidth;
 		DrawThemeBackground(hTheme, hdcgraphic, WP_CLOSEBUTTON, CBS_NORMAL, &rect, NULL);
+
 		rect.left -= size.cx + btnMar.cxLeftWidth;
 		rect.right -= size.cx + btnMar.cxLeftWidth;
 		DrawThemeBackground(hTheme, hdcgraphic, WP_MAXBUTTON, MAXBS_NORMAL, &rect, NULL);
+
 		rect.left -= size.cx + btnMar.cxLeftWidth;
 		rect.right -= size.cx + btnMar.cxLeftWidth;
 		DrawThemeBackground(hTheme, hdcgraphic, WP_MINBUTTON, MINBS_NORMAL, &rect, NULL);
@@ -396,10 +393,10 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		if (hFile)
 		{
 			UXTHEMEFILE* ltf = (UXTHEMEFILE*)hFile;
-			if (ltf->sharableSectionView) UnmapViewOfFile(ltf->sharableSectionView);
-			if (ltf->nsSectionView) UnmapViewOfFile(ltf->nsSectionView);
-			if (ltf->hSharableSection) CloseHandle(ltf->hSharableSection);
-			if (ltf->hNsSection) CloseHandle(ltf->hNsSection);
+			if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
+			if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
+			if (ltf->_hSharableSection) CloseHandle(ltf->_hSharableSection);
+			if (ltf->_hNonSharableSection) CloseHandle(ltf->_hNonSharableSection);
 			free(ltf);
 			//CloseHandle(hFile);
 		}

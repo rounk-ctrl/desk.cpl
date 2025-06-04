@@ -1,159 +1,92 @@
 #pragma once
 #include "framework.h"
 
-typedef HRESULT(*GetThemeDefaults_t)(
-	LPCWSTR pszThemeFileName,
-	LPWSTR pszColorName,
-	DWORD dwColorNameLen,
-	LPWSTR pszSizeName,
-	DWORD dwSizeNameLen
-	);
-GetThemeDefaults_t GetThemeDefaults;
-
-typedef HRESULT(*LoaderLoadTheme_t)(
-	HANDLE hThemeFile,
-	HINSTANCE hInstance,
-	LPCWSTR pszThemeFileName,
-	LPCWSTR pszColorParam,
-	LPCWSTR pszSizeParam,
-	OUT HANDLE* hSharableSection,
-	LPWSTR pszSharableSectionName,
-	int cchSharableSectionName,
-	OUT HANDLE* hNonsharableSection,
-	LPWSTR pszNonsharableSectionName,
-	int cchNonsharableSectionName,
-	PVOID pfnCustomLoadHandler,
-	OUT HANDLE* hReuseSection,
-	int a,
-	int b,
-	BOOL fEmulateGlobal
-	);
-LoaderLoadTheme_t LoaderLoadTheme;
-
-typedef HRESULT(*LoaderLoadTheme_t_win11)(
-	HANDLE hThemeFile,
-	HINSTANCE hInstance,
-	LPCWSTR pszThemeFileName,
-	LPCWSTR pszColorParam,
-	LPCWSTR pszSizeParam,
-	OUT HANDLE* hSharableSection,
-	LPWSTR pszSharableSectionName,
-	int cchSharableSectionName,
-	OUT HANDLE* hNonsharableSection,
-	LPWSTR pszNonsharableSectionName,
-	int cchNonsharableSectionName,
-	PVOID pfnCustomLoadHandler,
-	OUT HANDLE* hReuseSection,
-	int a,
-	int b
-	);
-
-typedef HTHEME(*OpenThemeDataFromFile_t)(
-	HANDLE hThemeFile,
-	HWND hWnd,
-	LPCWSTR pszClassList,
-	DWORD dwFlags
-	// DWORD unknown,
-	// bool a
-	);
-OpenThemeDataFromFile_t OpenThemeDataFromFile;
-
 typedef struct _UXTHEMEFILE
 {
-	char header[7]; // must be "thmfile"
-	LPVOID sharableSectionView;
-	HANDLE hSharableSection;
-	LPVOID nsSectionView;
-	HANDLE hNsSection;
-	char end[3]; // must be "end"
+	char _szHead[8]; // must be "thmfile"
+	LPVOID _pbSharableData;
+	HANDLE _hSharableSection;
+	LPVOID _pbNonSharableData;
+	HANDLE _hNonSharableSection;
+	char _szTail[4]; // must be "end"
 } UXTHEMEFILE, * LPUXTHEMEFILE;
 
-void InitUxtheme()
+struct _THEMENAMEINFO
 {
-	HMODULE hUxtheme = GetModuleHandle(L"uxtheme.dll");
-	if (hUxtheme)
-	{
-		GetThemeDefaults = (GetThemeDefaults_t)GetProcAddress(hUxtheme, (LPCSTR)7);
-		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, (LPCSTR)92);
-		OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, (LPCSTR)16);
-		FreeLibrary(hUxtheme);
-	}
-}
+	WCHAR szName[MAX_PATH + 1];
+	WCHAR szDisplayName[MAX_PATH + 1];
+	WCHAR szTooltip[MAX_PATH + 1];
+};
 
-HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
-{
-	HRESULT hr = S_OK;
+typedef HRESULT(WINAPI *GetThemeDefaults_t)(
+	_In_ LPCWSTR pszThemeFileName,
+	_Out_ LPWSTR pszDefaultColor,
+	_In_ UINT cchMaxColorChars,
+	_Out_ LPWSTR pszDefaultSize,
+	_In_ UINT cchMaxSizeChars);
 
-	WCHAR defColor[MAX_PATH];
-	WCHAR defSize[MAX_PATH];
+typedef HRESULT(WINAPI *LoaderLoadTheme_t)(
+	_In_opt_ HANDLE hFile,
+	_In_opt_ HINSTANCE hInst,
+	_In_ LPCWSTR pszThemeName,
+	_In_ LPCWSTR pszColorParam,
+	_In_ LPCWSTR pszSizeParam,
+	_Out_ HANDLE* phSharableSection,
+	_Out_opt_ LPWSTR pszSharableSectionName,
+	_In_opt_ int cchSharableSectionName,
+	_Out_ HANDLE* phNonSharableSection,
+	_Out_opt_ LPWSTR pszNonSharableSectionName,
+	_In_opt_ int cchNonsharableSectionName,
+	_In_opt_ PVOID pfnCustomLoadHandler,
+	_Out_opt_ HANDLE* phReuseSection,
+	_In_opt_ int iCurrentScreenPpi,
+	_In_opt_ int wCurrentLangID,
+	_In_opt_ BOOL fGlobalTheme);
 
-	hr = GetThemeDefaults(
-		szThemeFileName,
-		defColor,
-		ARRAYSIZE(defColor),
-		defSize,
-		ARRAYSIZE(defSize)
+typedef HRESULT(WINAPI *LoaderLoadTheme_t_win11)(
+	_In_opt_ HANDLE hFile,
+	_In_opt_ HINSTANCE hInst,
+	_In_ LPCWSTR pszThemeName,
+	_In_ LPCWSTR pszColorParam,
+	_In_ LPCWSTR pszSizeParam,
+	_Out_ HANDLE* phSharableSection,
+	_Out_opt_ LPWSTR pszSharableSectionName,
+	_In_opt_ int cchSharableSectionName,
+	_Out_ HANDLE* phNonSharableSection,
+	_Out_opt_ LPWSTR pszNonSharableSectionName,
+	_In_opt_ int cchNonsharableSectionName,
+	_In_opt_ PVOID pfnCustomLoadHandler,
+	_Out_opt_ HANDLE* phReuseSection,
+	_In_opt_ int iCurrentScreenPpi,
+	_In_opt_ int wCurrentLangID
+	// _In_opt_ BOOL fGlobalTheme <- removed in 11
 	);
 
-	HANDLE hSharableSection;
-	HANDLE hNonsharableSection;
+typedef HTHEME(WINAPI *OpenThemeDataFromFile_t)(
+	_In_ HANDLE hLoadedThemeFile,
+	_In_opt_ HWND hwnd,
+	_In_ LPCWSTR pszClassList,
+	_In_ BOOL fClient);
 
-	if (g_osVersion.BuildNumber() < 20000)
-	{
-		hr = LoaderLoadTheme(
-			NULL,
-			NULL,
-			szThemeFileName,
-			defColor,
-			defSize,
-			&hSharableSection,
-			NULL,
-			0,
-			&hNonsharableSection,
-			NULL,
-			0,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			FALSE
-		);
-	}
-	else
-	{
-		hr = ((LoaderLoadTheme_t_win11)LoaderLoadTheme)(
-			NULL,
-			NULL,
-			szThemeFileName,
-			defColor,
-			defSize,
-			&hSharableSection,
-			NULL,
-			0,
-			&hNonsharableSection,
-			NULL,
-			0,
-			NULL,
-			NULL,
-			NULL,
-			NULL
-			);
-	}
 
-	HANDLE g_hLocalTheme = malloc(sizeof(UXTHEMEFILE));
-	if (g_hLocalTheme)
-	{
-		UXTHEMEFILE* ltf = (UXTHEMEFILE*)g_hLocalTheme;
-		memcpy(ltf->header, "thmfile", 7);
-		memcpy(ltf->end, "end", 3);
-		ltf->sharableSectionView = MapViewOfFile(hSharableSection, 4, 0, 0, 0);
-		ltf->hSharableSection = hSharableSection;
-		ltf->nsSectionView = MapViewOfFile(hNonsharableSection, 4, 0, 0, 0);
-		ltf->hNsSection = hNonsharableSection;
-	}
-	else
-	{
-		hr = E_FAIL;
-	}
-	return g_hLocalTheme;
-}
+typedef HRESULT(WINAPI* EnumThemeColors_t)(
+	_In_ LPWSTR pszThemeFileName, 
+	_In_opt_ LPWSTR pszColorScheme,
+	_In_ DWORD dwColorNum,
+	_Out_ _THEMENAMEINFO* ptn);
+
+typedef HRESULT(WINAPI* EnumThemeSize_t)(
+	_In_ LPWSTR pszThemeFileName, 
+	_In_opt_ LPWSTR pszSizeName, 
+	_In_ DWORD dwSizeIndex,
+	_Out_ _THEMENAMEINFO* ptn);
+
+// expose the variables
+extern GetThemeDefaults_t GetThemeDefaults;
+extern LoaderLoadTheme_t LoaderLoadTheme;
+extern OpenThemeDataFromFile_t OpenThemeDataFromFile;
+extern EnumThemeColors_t EnumThemeColors;
+extern EnumThemeSize_t EnumThemeSize;
+
+void InitUxtheme();
+HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName);

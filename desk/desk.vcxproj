@@ -207,6 +207,7 @@
     <ClCompile Include="ScreensaverPage.cpp" />
     <ClCompile Include="strnatcmp.cpp" />
     <ClCompile Include="ThemesPage.cpp" />
+    <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />
     <ClCompile Include="version.h" />
   </ItemGroup>

@@ -74,9 +74,6 @@
     <ClCompile Include="desk.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="strnatcmp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="version.h">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -97,6 +94,10 @@
     </ClCompile>
     <ClCompile Include="AppearanceDlgBox.cpp">
       <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="strnatcmp.cpp" />
+    <ClCompile Include="uxtheme.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
