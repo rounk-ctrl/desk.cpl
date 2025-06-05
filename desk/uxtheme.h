@@ -18,6 +18,23 @@ struct _THEMENAMEINFO
 	WCHAR szTooltip[MAX_PATH + 1];
 };
 
+enum _THEMECALLBACK
+{
+	TCB_THEMENAME,
+	TCB_COLORSCHEME,
+	TCB_SIZENAME,
+	TCB_SUBSTTABLE,
+	TCB_CDFILENAME,
+	TCB_CDFILECOMBO,
+	TCB_FILENAME,
+	TCB_DOCPROPERTY,
+	TCB_NEEDSUBST,
+	TCB_MINCOLORDEPTH,
+	TCB_FONT,
+	TCB_MIRRORIMAGE,
+	TCB_LOCALIZABLE_RECT,
+};
+
 typedef HRESULT(WINAPI *GetThemeDefaults_t)(
 	_In_ LPCWSTR pszThemeFileName,
 	_Out_ LPWSTR pszDefaultColor,
@@ -68,6 +85,12 @@ typedef HTHEME(WINAPI *OpenThemeDataFromFile_t)(
 	_In_ LPCWSTR pszClassList,
 	_In_ BOOL fClient);
 
+typedef BOOL(CALLBACK* EnumThemesFunc)(_THEMECALLBACK, LPCWSTR, LPCWSTR, LPCWSTR, int, LPARAM);
+
+typedef HRESULT(WINAPI* EnumThemes_t)(
+	_In_ LPCWSTR pszThemeRoot,
+	_In_ EnumThemesFunc lpEnumFunc,
+	_In_opt_ LPARAM lParam);
 
 typedef HRESULT(WINAPI* EnumThemeColors_t)(
 	_In_ LPWSTR pszThemeFileName, 
@@ -81,12 +104,24 @@ typedef HRESULT(WINAPI* EnumThemeSize_t)(
 	_In_ DWORD dwSizeIndex,
 	_Out_ _THEMENAMEINFO* ptn);
 
+typedef HRESULT(WINAPI* ClearTheme_t)(
+	_In_ void* hSharableSection, 
+	_In_ void* hNonSharableSection, 
+	_In_ BOOL fForce);
+
+// SetSystemVisualStyle uxtheme 65
+// GetThemeClass uxtheme 74
+// ClearTheme uxtheme 84
+// DrawTextWithGlow uxtheme 126
+
 // expose the variables
 extern GetThemeDefaults_t GetThemeDefaults;
 extern LoaderLoadTheme_t LoaderLoadTheme;
 extern OpenThemeDataFromFile_t OpenThemeDataFromFile;
 extern EnumThemeColors_t EnumThemeColors;
 extern EnumThemeSize_t EnumThemeSize;
+extern ClearTheme_t ClearTheme;
+extern EnumThemes_t EnumThemes;
 
 void InitUxtheme();
 HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName);

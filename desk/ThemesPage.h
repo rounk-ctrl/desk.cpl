@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "wndprvw.h"
 
 class CThemeDlgProc
     : public WTL::CPropertyPageImpl<CThemeDlgProc>
@@ -23,9 +24,9 @@ private:
     HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg);
     void UpdateThemeInfo(LPWSTR ws, int currThem);
 
-
     /// variables
     HWND hCombobox;
     HWND hPreview;
     SIZE size;
+    Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

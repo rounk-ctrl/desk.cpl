@@ -5,8 +5,10 @@
 GetThemeDefaults_t GetThemeDefaults;
 LoaderLoadTheme_t LoaderLoadTheme;
 OpenThemeDataFromFile_t OpenThemeDataFromFile;
+EnumThemes_t EnumThemes;
 EnumThemeColors_t EnumThemeColors;
 EnumThemeSize_t EnumThemeSize;
+ClearTheme_t ClearTheme;
 
 void InitUxtheme()
 {
@@ -14,10 +16,12 @@ void InitUxtheme()
 	if (hUxtheme)
 	{
 		GetThemeDefaults = (GetThemeDefaults_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(7));
-		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(92));
-		OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(16));
+		EnumThemes = (EnumThemes_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(8));
 		EnumThemeColors = (EnumThemeColors_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(9));
 		EnumThemeSize = (EnumThemeSize_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(10));
+		OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(16));
+		ClearTheme = (ClearTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(84));
+		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(92));
 		FreeLibrary(hUxtheme);
 	}
 }
@@ -41,10 +45,10 @@ HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
 		hr = ((LoaderLoadTheme_t_win11)LoaderLoadTheme)(NULL, NULL, szThemeFileName, defColor, defSize, &hSharableSection, NULL, 0, &hNonsharableSection, NULL, 0, NULL, NULL, NULL, NULL);
 	}
 
-	HANDLE g_hLocalTheme = malloc(sizeof(UXTHEMEFILE));
-	if (g_hLocalTheme)
+	HANDLE _hLocalTheme = malloc(sizeof(UXTHEMEFILE));
+	if (_hLocalTheme)
 	{
-		UXTHEMEFILE* ltf = (UXTHEMEFILE*)g_hLocalTheme;
+		UXTHEMEFILE* ltf = (UXTHEMEFILE*)_hLocalTheme;
 		memcpy(ltf->_szHead, "thmfile", ARRAYSIZE(ltf->_szHead));
 		memcpy(ltf->_szTail, "end", ARRAYSIZE(ltf->_szTail));
 
@@ -57,5 +61,5 @@ HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
 	{
 		hr = E_FAIL;
 	}
-	return g_hLocalTheme;
+	return _hLocalTheme;
 }

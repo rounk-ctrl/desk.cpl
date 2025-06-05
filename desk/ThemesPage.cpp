@@ -5,6 +5,9 @@
 #include "helper.h"
 #include "theme.h"
 namespace fs = std::filesystem;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Details;
+
 
 BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -16,7 +19,6 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	// initialize theme manager
 	InitUxtheme();
 
-	HBITMAP bmp;
 	WCHAR ws[MAX_PATH] = { 0 };
 	int count{};
 
@@ -44,12 +46,19 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	// set the preview bitmap to the static control
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-	bmp = ThemePreviewBmp(GETSIZE(size), ws, NULL, GetSysColor(COLOR_BACKGROUND));
+
+	// update THEMEINFO before setting bitmap for now
+	UpdateThemeInfo(ws, currThem);
+
+	HBITMAP bmp;
+	//bmp = ThemePreviewBmp(GETSIZE(size), ws, NULL, GetSysColor(COLOR_BACKGROUND));
+
+	pWndPreview = Make<CWindowPreview>(size, nullptr, 0, PAGETYPE::PT_THEMES);
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hPreview, bmp);
 	DeleteObject(bmp);
 
-	// update THEMEINFO
-	UpdateThemeInfo(ws, currThem);
+
 	return 0;
 }
 
@@ -359,8 +368,7 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 
 		// title
 		GetThemeMargins(hTheme, hdcgraphic, WP_CAPTION, 0, TMT_CAPTIONMARGINS, NULL, &mar);
-		COLORREF clr;
-		hr = GetThemeColor(hTheme, WP_CAPTION, 0, TMT_TEXTCOLOR, &clr);
+
 		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
 		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
 		HFONT fon = CreateFontIndirect(&ncm.lfCaptionFont);
@@ -368,7 +376,13 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		SetBkMode(hdcgraphic, TRANSPARENT);
 		RECT rlc = { x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXFRAME) + mar.cxLeftWidth,
 			rect.top + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) , 500.0f, GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER) };
-		DrawThemeText(hTheme, hdcgraphic, 0, 0, L"Active Window", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &rlc);
+
+		DTTOPTS dt;
+		dt.dwSize = sizeof(dt);
+		dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
+		dt.crText = RGB(255, 255, 255);
+		dt.iColorPropId = TMT_TEXTCOLOR;
+		DrawThemeTextEx(hTheme, hdcgraphic, WP_CAPTION, 0, L"Active Window", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rlc, &dt);
 
 		HFONT font = CreateFontIndirect(&ncm.lfMessageFont);
 		SelectObject(hdcgraphic, font);
@@ -393,10 +407,13 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		if (hFile)
 		{
 			UXTHEMEFILE* ltf = (UXTHEMEFILE*)hFile;
+
+			// unmaps the sections
 			if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
 			if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
-			if (ltf->_hSharableSection) CloseHandle(ltf->_hSharableSection);
-			if (ltf->_hNonSharableSection) CloseHandle(ltf->_hNonSharableSection);
+
+			// called in CUxThemeFile::CloseFile
+			ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, TRUE);
 			free(ltf);
 			//CloseHandle(hFile);
 		}

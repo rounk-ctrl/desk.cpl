@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "wndprvw.h"
 
 class CAppearanceDlgProc
 	: public WTL::CPropertyPageImpl<CAppearanceDlgProc>
@@ -17,9 +18,6 @@ private:
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
-	HBITMAP WindowPreviewBmp(int newwidth, int newheight);
-
-
 
 	HWND hThemesCombobox;
 	HWND hColorCombobox;
@@ -27,4 +25,5 @@ private:
 	HWND hPreviewWnd;
 	SIZE size;
 	std::vector<LPWSTR> msstyle;
+	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

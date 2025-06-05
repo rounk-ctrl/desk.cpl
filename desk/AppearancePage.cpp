@@ -4,8 +4,11 @@
 #include "desk.h"
 #include "helper.h"
 #include "uxtheme.h"
+
 namespace fs = std::filesystem;
 using namespace Gdiplus;
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Details;
 
 BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -101,8 +104,11 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ComboBox_SetCurSel(hColorCombobox, 0);
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 
-	HBITMAP bmp = WindowPreviewBmp(GETSIZE(size));
+	HBITMAP bmp;
+	pWndPreview = Make<CWindowPreview>(size, nullptr, 0, PAGETYPE::PT_APPEARANCE);
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hPreviewWnd, bmp);
+	DeleteObject(bmp);
 
 	return 0;
 }
@@ -112,25 +118,4 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	CAppearanceDlgBox dlg;
 	dlg.DoModal();
 	return 0;
-}
-
-HBITMAP CAppearanceDlgProc::WindowPreviewBmp(int newwidth, int newheight)
-{
-	Bitmap* bmp = new Bitmap(newwidth, newheight, PixelFormat32bppARGB);
-	if (!bmp) return NULL;
-
-	Graphics graphics(bmp);
-	graphics.SetInterpolationMode(InterpolationModeInvalid);
-
-	COLORREF clr = selectedTheme->newColor;
-	SolidBrush backgroundBrush(Color(GetRValue(clr), GetGValue(clr), GetBValue(clr)));
-	graphics.FillRectangle(&backgroundBrush, Rect(0, 0, newwidth, newheight));
-
-	HBITMAP hBitmap = NULL;
-	bmp->GetHBITMAP(Gdiplus::Color(0, 0, 0), &hBitmap);
-	
-
-
-	delete bmp;
-	return hBitmap;
 }

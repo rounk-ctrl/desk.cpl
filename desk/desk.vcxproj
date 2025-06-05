@@ -210,6 +210,8 @@
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />
     <ClCompile Include="version.h" />
+    <ClCompile Include="wndprvw.cpp" />
+    <ClCompile Include="wndprvw.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />

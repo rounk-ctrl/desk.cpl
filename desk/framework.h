@@ -20,6 +20,8 @@
 #include <vssym32.h>
 #include <windowsx.h>
 #include <shellapi.h>
+#include <wrl.h>
+#include <wil\result.h>
 
 #include <atlbase.h>
 #include <atlwin.h>

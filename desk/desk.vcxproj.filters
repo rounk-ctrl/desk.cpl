@@ -99,6 +99,12 @@
     <ClCompile Include="uxtheme.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="wndprvw.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="wndprvw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

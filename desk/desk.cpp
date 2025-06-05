@@ -79,8 +79,8 @@ void PropertySheetMoment()
 }
 
 extern "C" LONG APIENTRY CPlApplet(
-	HWND hwndCPL,       // handle of Control Panel window
-	UINT uMsg,          // message
+	HWND hwndCPL,			// handle of Control Panel window
+	UINT uMsg,				// message
 	LONG_PTR lParam1,       // first message parameter
 	LONG_PTR lParam2        // second message parameter
 )
