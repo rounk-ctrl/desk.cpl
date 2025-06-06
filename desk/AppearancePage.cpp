@@ -104,8 +104,24 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ComboBox_SetCurSel(hColorCombobox, 0);
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 
+	MYWINDOWINFO wnd[3] =
+	{
+		{
+			WT_INACTIVE,
+			{15, 10, 15 + 320, 15 + 104}
+		},
+		{
+			WT_ACTIVE,
+			{30, 35, 30 + 320, 35 + 104}
+		},
+		{
+			WT_MESSAGEBOX,
+			{(size.cx/2)-85,60,(size.cx / 2) + 85,60+70}
+		}
+	};
+
+	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
 	HBITMAP bmp;
-	pWndPreview = Make<CWindowPreview>(size, nullptr, 0, PAGETYPE::PT_APPEARANCE);
 	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hPreviewWnd, bmp);
 	DeleteObject(bmp);

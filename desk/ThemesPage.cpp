@@ -50,10 +50,18 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	// update THEMEINFO before setting bitmap for now
 	UpdateThemeInfo(ws, currThem);
 
-	HBITMAP bmp;
 	//bmp = ThemePreviewBmp(GETSIZE(size), ws, NULL, GetSysColor(COLOR_BACKGROUND));
 
-	pWndPreview = Make<CWindowPreview>(size, nullptr, 0, PAGETYPE::PT_THEMES);
+	MYWINDOWINFO wnd[1] = 
+	{
+		{
+			WT_ACTIVE,
+			{33, 30, 250, 30+94}
+		}
+	};
+
+	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, nullptr);
+	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hPreview, bmp);
 	DeleteObject(bmp);
@@ -108,7 +116,7 @@ BOOL CThemeDlgProc::OnApply()
 		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
 	// apply the selected theme
-	pThemeManager->SetCurrentTheme(m_hWnd, index, !!TRUE, apply_flags, 0);
+	pThemeManager->SetCurrentTheme(m_hWnd, index, TRUE, apply_flags, 0);
 
 	SetModified(FALSE);
 	return 0;

@@ -29,13 +29,13 @@ IWindowPreview : IUnknown
 	STDMETHOD(GetPreviewImage)(HBITMAP* pbOut) PURE;
 };
 
-class CWindowPreview : 
+class CWindowPreview final: 
 	public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>
 		, IWindowPreview
 	>
 {
 public:
-	CWindowPreview(SIZE& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType);
+	CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme);
 	~CWindowPreview();
 
 	//HRESULT RuntimeClassInitialize(SIZE& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType);
@@ -49,9 +49,11 @@ private:
 	HRESULT _RenderWallpaper(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderBin(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderSolidColor(Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics);
+	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+	HRESULT _RenderCaptionButtons(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+	HRESULT _RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics);
+	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics);
 
 	MYWINDOWINFO* _pwndInfo;
@@ -59,4 +61,5 @@ private:
 	SIZE _sizePreview;
 	MARGINS _marFrame;
 	PAGETYPE _pageType;
+	void* _hTheme;
 };
