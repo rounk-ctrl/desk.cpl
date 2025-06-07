@@ -72,6 +72,9 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 	hr = _RenderContent(pGraphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
+	hr = _RenderScrollbar(pGraphics, hTheme, wndInfo);
+
+	CloseThemeData(hTheme);
 	return hr;
 }
 
@@ -193,9 +196,39 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderScrollbar(Gdiplus::Graphics* pGraphics)
+HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
 {
-	return E_NOTIMPL;
+	HRESULT hr = S_OK;
+	if (wndInfo.wndType != WT_ACTIVE) return hr;
+
+	HTHEME hThemeScrl = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Scrollbar", 0) : OpenThemeData(NULL, L"Scrollbar");
+	HDC hdc = pGraphics->GetHDC();
+	RETURN_IF_NULL_ALLOC(hdc);
+
+	RECT crc = wndInfo.wndPos;
+	crc.top += _marFrame.cyTopHeight;
+	
+	SIZE size = { 0 };
+	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
+
+	crc.left = crc.right - _marFrame.cxRightWidth - size.cx;
+	crc.right = crc.left + size.cx;
+	crc.bottom += _marFrame.cyTopHeight;
+	DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
+
+	crc.bottom = crc.top + size.cy;
+	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0);
+
+	crc.top += size.cy;
+	crc.bottom = crc.top + size.cy;
+	DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
+
+	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - size.cy;
+	crc.bottom = crc.top + size.cy;
+	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0);
+
+	pGraphics->ReleaseHDC(hdc);
+	return hr;
 }
 
 HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
