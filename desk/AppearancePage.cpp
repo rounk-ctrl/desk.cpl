@@ -100,7 +100,6 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		}
 	}
 
-	
 	ComboBox_SetCurSel(hColorCombobox, 0);
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 
@@ -123,7 +122,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hPreviewWnd, bmp);
+	Static_SetBitmap(hPreviewWnd,bmp);
 	DeleteObject(bmp);
 
 	return 0;

@@ -385,8 +385,7 @@ HBITMAP CThemeDlgProc::ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallp
 		RECT rlc = { x + GetSystemMetrics(SM_CXPADDEDBORDER) + GetSystemMetrics(SM_CXFRAME) + mar.cxLeftWidth,
 			rect.top + GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) , 500.0f, GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CXPADDEDBORDER) };
 
-		DTTOPTS dt;
-		dt.dwSize = sizeof(dt);
+		DTTOPTS dt = { sizeof(dt) };
 		dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
 		dt.crText = RGB(255, 255, 255);
 		dt.iColorPropId = TMT_TEXTCOLOR;

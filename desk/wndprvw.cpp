@@ -54,17 +54,25 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	}
 
 	// create hbitmap
-	RETURN_IF_NULL_ALLOC(*pbOut);
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
 	return hr;
 }
 
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 {
+	HRESULT hr = S_OK;
 	HTHEME hTheme = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
-	_RenderFrame(pGraphics, hTheme, wndInfo);
-	_RenderCaption(pGraphics, hTheme, wndInfo);
-	return S_OK;
+	
+	hr = _RenderFrame(pGraphics, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
+
+	hr = _RenderCaption(pGraphics, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
+
+	hr = _RenderContent(pGraphics, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
+
+	return hr;
 }
 
 HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
@@ -120,6 +128,7 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderCaptionText(hdc, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
 
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
@@ -155,17 +164,13 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 
 	RECT rc;
-	GetThemeTextExtent(hTheme, hdc, WP_CAPTION, 0, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
+	hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, 0, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
+	RETURN_IF_FAILED(hr);
+
 	rc.left += _marFrame.cxLeftWidth + mar.cxLeftWidth;
 	rc.right += _marFrame.cxLeftWidth + mar.cxLeftWidth;
 	rc.top -= _marFrame.cyBottomHeight - 1;
 	rc.bottom -= _marFrame.cyBottomHeight - 1;
-
-	DTTOPTS dt;
-	dt.dwSize = sizeof(dt);
-	dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
-	dt.crText = RGB(255, 255, 255);
-	dt.iColorPropId = TMT_TEXTCOLOR;
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
@@ -174,12 +179,21 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	rc.top += _marFrame.cyTopHeight - _marFrame.cyBottomHeight -4;
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
+	DTTOPTS dt = { sizeof(dt) };
+	dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
+	dt.crText = RGB(255, 255, 255);
+	dt.iColorPropId = TMT_TEXTCOLOR;
 	hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, 0, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
 	RETURN_IF_FAILED(hr);
 
 	SelectObject(hdc, hOldFont);
 	DeleteObject(fon);
 	return hr;
+}
+
+HRESULT CWindowPreview::_RenderScrollbar(Gdiplus::Graphics* pGraphics)
+{
+	return E_NOTIMPL;
 }
 
 HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
@@ -208,14 +222,34 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	crc.top += _marFrame.cyTopHeight;
 	crc.right = crc.left + _marFrame.cxLeftWidth;
 	crc.bottom += _marFrame.cyTopHeight;
-	DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
+	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
 	RETURN_IF_FAILED(hr);
 
 	crc.left = wndInfo.wndPos.right - _marFrame.cxRightWidth;
 	crc.right = wndInfo.wndPos.right;
-	DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &crc, NULL);
+	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &crc, NULL);
 	RETURN_IF_FAILED(hr);
 
 	pGraphics->ReleaseHDC(hdc);
+	return hr;
+}
+
+HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
+{
+	HRESULT hr = S_OK;
+	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
+
+	COLORREF clr = GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+	if (!fIsMessageBox) GetThemeColor(hTheme, 0, 0, TMT_FILLCOLOR, &clr);
+	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
+
+	RECT crc = wndInfo.wndPos;
+	crc.left += _marFrame.cxLeftWidth;
+	crc.top += _marFrame.cyTopHeight;
+	crc.bottom += _marFrame.cyTopHeight;
+	crc.right -= _marFrame.cxRightWidth;
+
+	pGraphics->FillRectangle(&backgroundBrush, Rect(crc.left, crc.top, RECTWIDTH(crc), RECTHEIGHT(crc)));
+
 	return hr;
 }

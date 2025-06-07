@@ -54,7 +54,7 @@ private:
 	HRESULT _RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
-	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics);
+	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 
 	MYWINDOWINFO* _pwndInfo;
 	int _wndInfoCount;
