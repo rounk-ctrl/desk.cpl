@@ -137,8 +137,10 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
+	CAPTIONSTATES frameState = wndInfo.wndType == WT_INACTIVE ? CS_INACTIVE : CS_ACTIVE;
+
 	MARGINS mar;
-	hr = GetThemeMargins(hTheme, hdc, WP_CAPTION, 0, TMT_CAPTIONMARGINS, NULL, &mar);
+	hr = GetThemeMargins(hTheme, hdc, WP_CAPTION, frameState, TMT_CAPTIONMARGINS, NULL, &mar);
 	RETURN_IF_FAILED(hr);
 
 	// set proper font
@@ -164,7 +166,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 
 	RECT rc;
-	hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, 0, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
+	hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
 	RETURN_IF_FAILED(hr);
 
 	rc.left += _marFrame.cxLeftWidth + mar.cxLeftWidth;
@@ -183,7 +185,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
 	dt.crText = RGB(255, 255, 255);
 	dt.iColorPropId = TMT_TEXTCOLOR;
-	hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, 0, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
+	hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
 	RETURN_IF_FAILED(hr);
 
 	SelectObject(hdc, hOldFont);
@@ -237,11 +239,12 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
+	HDC hdc = pGraphics->GetHDC();
+	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
 	COLORREF clr = GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 	if (!fIsMessageBox) GetThemeColor(hTheme, 0, 0, TMT_FILLCOLOR, &clr);
-	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
@@ -249,7 +252,55 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.bottom += _marFrame.cyTopHeight;
 	crc.right -= _marFrame.cxRightWidth;
 
-	pGraphics->FillRectangle(&backgroundBrush, Rect(crc.left, crc.top, RECTWIDTH(crc), RECTHEIGHT(crc)));
+	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
+	FillRect(hdc, &crc, CreateSolidBrush(clr));
 
+	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+
+	if (wndInfo.wndType == WT_ACTIVE)
+	{
+		HFONT fon = CreateFontIndirect(&ncm.lfMessageFont);
+		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
+
+		RECT crc = wndInfo.wndPos;
+		crc.top += _marFrame.cyTopHeight;
+		crc.bottom = crc.top + 10;
+		crc.left += _marFrame.cxLeftWidth;
+		DrawThemeText(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &crc);
+
+		SelectObject(hdc, hOldFont);
+		DeleteObject(fon);
+	}
+
+	if (wndInfo.wndType == WT_MESSAGEBOX)
+	{
+		HFONT fon = CreateFontIndirect(&ncm.lfMessageFont);
+		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
+
+		RECT crc = wndInfo.wndPos;
+		crc.top += _marFrame.cyTopHeight;
+		crc.left += _marFrame.cxLeftWidth;
+		crc.right -= _marFrame.cxRightWidth;
+
+		int horPos = RECTWIDTH(crc) / 2;
+		int verPos = RECTHEIGHT(crc) / 2;
+
+		crc.top += verPos + 2;
+		crc.bottom += verPos - 7;
+		crc.left += 38;
+		crc.right -= 38;
+
+		// load button theme
+		HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
+		DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
+		DrawThemeText(hTheme, hdc, 0, 0, L"OK", -1, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &crc);
+
+		CloseThemeData(hThemeBtn);
+		SelectObject(hdc, hOldFont);
+		DeleteObject(fon);
+	}
+
+	pGraphics->ReleaseHDC(hdc);
 	return hr;
 }
