@@ -107,11 +107,11 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	{
 		{
 			WT_INACTIVE,
-			{15, 10, 15 + 320, 15 + 104}
+			{10, 10, 10 + 320, 10 + 104}
 		},
 		{
 			WT_ACTIVE,
-			{30, 35, 30 + 320, 35 + 104}
+			{25, 35, 25 + 320, 35 + 104}
 		},
 		{
 			WT_MESSAGEBOX,

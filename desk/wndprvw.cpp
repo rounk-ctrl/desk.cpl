@@ -55,6 +55,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 	// create hbitmap
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
+	delete gdiBmp;
 	return hr;
 }
 
@@ -87,7 +88,9 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	RETURN_IF_NULL_ALLOC(bitmap);
 	
-	return pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
+	HRESULT hr = pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
+	delete bitmap;
+	return hr;
 }
 
 HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
@@ -133,7 +136,41 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	hr = _RenderCaptionText(hdc, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
+	hr = _RenderCaptionButtons(hdc, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
+
 	pGraphics->ReleaseHDC(hdc);
+	return hr;
+}
+
+HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
+{
+	HRESULT hr = S_OK;
+
+	MARGINS btnMar;
+	GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_CONTENTMARGINS, NULL, &btnMar);
+	if (btnMar.cxLeftWidth == 0) GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_SIZINGMARGINS, NULL, &btnMar);
+
+	SIZE size = { 0 };
+	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
+
+	RECT crc = wndInfo.wndPos;
+	crc.right -= _marFrame.cxRightWidth + btnMar.cxRightWidth;
+	crc.left = crc.right - size.cx - GetSystemMetrics(SM_CXPADDEDBORDER);
+	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - size.cy ;
+	crc.bottom = crc.top + size.cy + 1;
+	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, &crc, NULL);
+
+	if (wndInfo.wndType != WT_MESSAGEBOX)
+	{
+		crc.left -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		crc.right -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, MAXBS_NORMAL, &crc, NULL);
+
+		crc.left -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		crc.right -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, MINBS_NORMAL, &crc, NULL);
+	}
 	return hr;
 }
 
@@ -181,7 +218,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	RECT rcheight = { 0,0,0,0 };
 	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
-	rc.top += _marFrame.cyTopHeight - _marFrame.cyBottomHeight -4;
+	rc.top += _marFrame.cyTopHeight - _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME);
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
 	DTTOPTS dt = { sizeof(dt) };
