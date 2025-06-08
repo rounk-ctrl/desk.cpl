@@ -253,7 +253,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	RECT rcheight = { 0,0,0,0 };
 	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
-	rc.top += _marFrame.cyTopHeight - _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME);
+	rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
 	DTTOPTS dt = { sizeof(dt) };
