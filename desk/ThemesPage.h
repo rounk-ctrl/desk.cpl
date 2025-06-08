@@ -21,7 +21,6 @@ private:
     BOOL OnSetActive();
 
     // custom methods
-    HBITMAP ThemePreviewBmp(int newwidth, int newheight, WCHAR* wallpaperPath, HANDLE hFile, COLORREF clrBg);
     void UpdateThemeInfo(LPWSTR ws, int currThem);
 
     /// variables
@@ -29,4 +28,13 @@ private:
     HWND hPreview;
     SIZE size;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
+
+    MYWINDOWINFO wnd[1] =
+    {
+        {
+            WT_ACTIVE,
+            {33, 30, 250, 30 + 94}
+        }
+    };
+
 };

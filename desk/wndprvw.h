@@ -27,6 +27,7 @@ MIDL_INTERFACE("5E7FDCC0-A398-49C0-9652-2B441A04CFCD")
 IWindowPreview : IUnknown
 {
 	STDMETHOD(GetPreviewImage)(HBITMAP* pbOut) PURE;
+	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut) PURE;
 };
 
 class CWindowPreview final: 
@@ -42,6 +43,7 @@ public:
 
 	//~ Begin IWindowPreview interface
 	STDMETHODIMP GetPreviewImage(HBITMAP* pbOut);
+	STDMETHODIMP GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut);
 	//~ End IWindowPreview interface
 
 private:
@@ -55,6 +57,7 @@ private:
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+
 
 	MYWINDOWINFO* _pwndInfo;
 	int _wndInfoCount;

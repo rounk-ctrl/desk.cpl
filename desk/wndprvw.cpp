@@ -18,6 +18,19 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 
 CWindowPreview::~CWindowPreview()
 {
+	if (_hTheme)
+	{
+		UXTHEMEFILE* ltf = (UXTHEMEFILE*)_hTheme;
+
+		// unmaps the sections
+		if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
+		if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
+
+		// called in CUxThemeFile::CloseFile
+		ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
+		free(ltf);
+		//CloseHandle(hFile);
+	}
 }
 
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
@@ -35,7 +48,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	if (_pageType != PT_APPEARANCE)
 	{
 		hr = _RenderWallpaper(&graphics);
-		RETURN_IF_FAILED(hr);
+		//RETURN_IF_FAILED(hr);
 	}
 
 	if (_pageType == PT_THEMES)
@@ -43,7 +56,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 		hr = _RenderBin(&graphics);
 		RETURN_IF_FAILED(hr);
 	}
-	
+
 	if (_wndInfoCount > 0)
 	{
 		for (int i = 0; i < _wndInfoCount; ++i)
@@ -57,6 +70,27 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
 	delete gdiBmp;
 	return hr;
+}
+
+HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut)
+{
+	if (_hTheme)
+	{
+		UXTHEMEFILE* ltf = (UXTHEMEFILE*)_hTheme;
+
+		// unmaps the sections
+		if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
+		if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
+
+		// called in CUxThemeFile::CloseFile
+		ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
+		free(ltf);
+		_hTheme = NULL;
+		//CloseHandle(hFile);
+	}
+	_pwndInfo = pwndInfo;
+	_hTheme = hTheme;
+	return GetPreviewImage(pbOut);
 }
 
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
@@ -74,6 +108,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderScrollbar(pGraphics, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
 
 	CloseThemeData(hTheme);
 	return hr;
@@ -264,6 +299,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.bottom = crc.top + size.cy;
 	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0);
 
+	CloseThemeData(hThemeScrl);
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
 }
