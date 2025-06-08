@@ -85,7 +85,14 @@ typedef HTHEME(WINAPI *OpenThemeDataFromFile_t)(
 	_In_ LPCWSTR pszClassList,
 	_In_ BOOL fClient);
 
-typedef BOOL(CALLBACK* EnumThemesFunc)(_THEMECALLBACK, LPCWSTR, LPCWSTR, LPCWSTR, int, LPARAM);
+// useless, loads signed themes
+typedef BOOL(CALLBACK* EnumThemesFunc)(
+	_THEMECALLBACK tcb, 
+	LPCWSTR pszFileName, 
+	LPCWSTR pszDisplayName, 
+	LPCWSTR pszToolTip, 
+	int, 
+	LPARAM lParam);
 
 typedef HRESULT(WINAPI* EnumThemes_t)(
 	_In_ LPCWSTR pszThemeRoot,
@@ -109,6 +116,20 @@ typedef HRESULT(WINAPI* ClearTheme_t)(
 	_In_ void* hNonSharableSection, 
 	_In_ BOOL fForce);
 
+typedef HRESULT(WINAPI* DrawTextWithGlow_t)(
+	HDC hdcMem,
+	LPCWSTR pszText,
+	int cch,
+	RECT* prc,
+	DWORD dwFlags,
+	COLORREF crText,
+	COLORREF crGlow,
+	int nGlowRadius,
+	unsigned int nGlowIntensity,
+	int fPreMultiply,
+	int(__fastcall* pfnDrawTextCallback)(HDC, wchar_t*, int, RECT*, unsigned int, __int64),
+	LPARAM lParam);
+
 // SetSystemVisualStyle uxtheme 65
 // GetThemeClass uxtheme 74
 // ClearTheme uxtheme 84
@@ -122,6 +143,7 @@ extern EnumThemeColors_t EnumThemeColors;
 extern EnumThemeSize_t EnumThemeSize;
 extern ClearTheme_t ClearTheme;
 extern EnumThemes_t EnumThemes;
+extern DrawTextWithGlow_t DrawTextWithGlow;
 
 void InitUxtheme();
 HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName);

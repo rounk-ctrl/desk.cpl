@@ -133,3 +133,43 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	dlg.DoModal();
 	return 0;
 }
+
+BOOL CAppearanceDlgProc::OnSetActive()
+{
+	ITheme* themeClass = new ITheme(currentITheme);
+	LPWSTR style;
+	themeClass->get_VisualStyle(&style);
+	for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
+	{
+		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+		if (StrCmpI(data, style) == 0)
+		{
+			ComboBox_SetCurSel(hThemesCombobox, i);
+			break;
+		}
+	}
+
+	// my bad
+	MYWINDOWINFO wnd[3] =
+	{
+		{
+			WT_INACTIVE,
+			{10, 10, 10 + 320, 10 + 104}
+		},
+		{
+			WT_ACTIVE,
+			{25, 35, 25 + 320, 35 + 104}
+		},
+		{
+			WT_MESSAGEBOX,
+			{(size.cx / 2) - 85,60,(size.cx / 2) + 85,60 + 70}
+		}
+	};
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(style), &ebmp);
+	Static_SetBitmap(hPreviewWnd, ebmp);
+	DeleteBitmap(ebmp);
+
+	_TerminateProcess(pi);
+	return 0;
+}

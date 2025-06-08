@@ -17,6 +17,7 @@ private:
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnSetActive();
 
 
 	HWND hThemesCombobox;

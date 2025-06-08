@@ -445,8 +445,9 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr = GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
-	if (!fIsMessageBox) GetThemeColor(hTheme, 0, 0, TMT_FILLCOLOR, &clr);
+	COLORREF clr;
+	ITheme* themeClass = new ITheme(currentITheme);
+	themeClass->GetColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW, &clr);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;

@@ -427,6 +427,15 @@ public:
 		return NULL;
 	}
 
+	STDMETHODIMP GetColor(unsigned int index, COLORREF* clr)
+	{
+		if (th24h2) return th24h2->GetColor(index, clr);
+		if (th1903) return th1903->GetColor(index, clr);
+		if (th1809) return th1809->GetColor(index, clr);
+		if (th10) return th10->GetColor(index, clr);
+		return NULL;
+	}
+
 private:
 	ITheme10* th10 = NULL;
 	ITheme1809* th1809 = NULL;

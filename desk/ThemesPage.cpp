@@ -76,13 +76,6 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	LPWSTR path = nullptr;
 	themeClass->get_VisualStyle(&path);
 
-	int hc;
-	themeClass->GetHighContrast(&hc);
-
-	COLORREF clr;
-	themeClass->GetBackgroundColor(&clr);
-	printf("%d, %d, %d", GetRValue(clr), GetGValue(clr), GetBValue(clr));
-
 	// update THEMEINFO
 	UpdateThemeInfo(ws, index);
 
