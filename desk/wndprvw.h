@@ -39,14 +39,13 @@ public:
 	CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme);
 	~CWindowPreview();
 
-	//HRESULT RuntimeClassInitialize(SIZE& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType);
-
 	//~ Begin IWindowPreview interface
 	STDMETHODIMP GetPreviewImage(HBITMAP* pbOut);
 	STDMETHODIMP GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut);
 	//~ End IWindowPreview interface
 
 private:
+	HRESULT _CleanupUxThemeFile(void** hFile);
 	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderWallpaper(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderBin(Gdiplus::Graphics* pGraphics);

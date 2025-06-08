@@ -20,16 +20,7 @@ CWindowPreview::~CWindowPreview()
 {
 	if (_hTheme)
 	{
-		UXTHEMEFILE* ltf = (UXTHEMEFILE*)_hTheme;
-
-		// unmaps the sections
-		if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
-		if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
-
-		// called in CUxThemeFile::CloseFile
-		ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
-		free(ltf);
-		//CloseHandle(hFile);
+		_CleanupUxThemeFile(&_hTheme);
 	}
 }
 
@@ -48,7 +39,6 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	if (_pageType != PT_APPEARANCE)
 	{
 		hr = _RenderWallpaper(&graphics);
-		//RETURN_IF_FAILED(hr);
 	}
 
 	if (_pageType == PT_THEMES)
@@ -76,21 +66,27 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 {
 	if (_hTheme)
 	{
-		UXTHEMEFILE* ltf = (UXTHEMEFILE*)_hTheme;
-
-		// unmaps the sections
-		if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
-		if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
-
-		// called in CUxThemeFile::CloseFile
-		ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
-		free(ltf);
-		_hTheme = NULL;
-		//CloseHandle(hFile);
+		_CleanupUxThemeFile(&_hTheme);
 	}
 	_pwndInfo = pwndInfo;
 	_hTheme = hTheme;
 	return GetPreviewImage(pbOut);
+}
+
+HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
+{
+	UXTHEMEFILE* ltf = (UXTHEMEFILE*)*hFile;
+
+	// unmaps the sections
+	if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
+	if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
+
+	// called in CUxThemeFile::CloseFile
+	ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
+	free(ltf);
+	*hFile = NULL;
+
+	return S_OK;
 }
 
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
