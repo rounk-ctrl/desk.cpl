@@ -35,14 +35,23 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 	HRESULT hr = S_OK;
 
-	if (_pageType == PT_BACKGROUND)
+	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER)
 	{
 		hr = _DrawMonitor(&graphics);
 		RETURN_IF_FAILED(hr);
 	}
 
-	hr = _RenderSolidColor(&graphics);
-	RETURN_IF_FAILED(hr);
+	if (_pageType == PT_SCRSAVER)
+	{
+		hr = _DesktopScreenShooter(&graphics);
+		//return hr;
+	}
+
+	if (_pageType != PT_SCRSAVER)
+	{
+		hr = _RenderSolidColor(&graphics);
+		RETURN_IF_FAILED(hr);
+	}
 
 	if (_pageType == PT_THEMES || _pageType == PT_BACKGROUND)
 	{
@@ -96,6 +105,36 @@ HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
 	*hFile = NULL;
 
 	return S_OK;
+}
+
+HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
+{
+	HRESULT hr = S_OK;
+
+	int cx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+	int cy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+	Rect rect(0, 0, GETSIZE(_sizePreview));
+	if (_marMonitor.cxLeftWidth > 0)
+	{
+		rect.X += _marMonitor.cxLeftWidth;
+		rect.Y += _marMonitor.cyTopHeight;
+		rect.Width -= _marMonitor.cxRightWidth;
+		rect.Height -= _marMonitor.cyBottomHeight;
+	}
+
+	HDC hScreenDC = ::GetDC(NULL);
+	HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+	auto g_hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
+	SelectObject(hMemoryDC, g_hbDesktop);
+	BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
+
+	Bitmap* bm = new Bitmap(g_hbDesktop, NULL);
+	hr = pGraphics->DrawImage(bm, rect) == Ok ? S_OK : E_FAIL;
+
+	delete bm;
+	DeleteObject(g_hbDesktop);
+	return hr;
 }
 
 HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)

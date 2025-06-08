@@ -47,6 +47,7 @@ public:
 
 private:
 	HRESULT _CleanupUxThemeFile(void** hFile);
+	HRESULT _DesktopScreenShooter(Gdiplus::Graphics* pGraphics);
 	HRESULT _DrawMonitor(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderWallpaper(Gdiplus::Graphics* pGraphics);

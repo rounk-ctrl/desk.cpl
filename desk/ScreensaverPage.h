@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "wndprvw.h"
 
 class CScrSaverDlgProc
     : public WTL::CPropertyPageImpl<CScrSaverDlgProc>
@@ -53,4 +54,5 @@ private:
     LPCWSTR selectedScrSaver{};
     std::map<std::wstring, std::wstring> scrSaverMap;
     PROCESS_INFORMATION pi2;
+    Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

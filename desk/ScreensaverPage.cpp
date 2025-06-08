@@ -3,6 +3,7 @@
 #include "desk.h"
 #include <wil/registry.h>
 #include "helper.h"
+using namespace Microsoft::WRL::Details;
 namespace fs = std::filesystem;
 LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -19,7 +20,10 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	scrSize = GetClientSIZE(hScrPreview);
 	energySize = GetClientSIZE(hEnergy);
 
-	HBITMAP bmp = MonitorAsBmp(GETSIZE(scrSize), IDB_BITMAP1, RGB(255, 0, 255));
+
+	pWndPreview = Make<CWindowPreview>(scrSize, nullptr, 0, PAGETYPE::PT_SCRSAVER, nullptr);
+	HBITMAP bmp;
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hScrPreview, bmp);
 	DeleteObject(bmp);
 
@@ -95,7 +99,9 @@ BOOL CScrSaverDlgProc::OnScreenSaverSettings(UINT code, UINT id, HWND hWnd, BOOL
 	_TerminateProcess(pi);
 	::DestroyWindow(hWndStatic);
 	hWndStatic = nullptr;
-	HBITMAP bmp = MonitorAsBmp(GETSIZE(scrSize), IDB_BITMAP1, RGB(255, 0, 255));
+
+	HBITMAP bmp;
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hScrPreview, bmp);
 	DeleteObject(bmp);
 
@@ -108,7 +114,9 @@ BOOL CScrSaverDlgProc::OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL&
 	_TerminateProcess(pi);
 	::DestroyWindow(hWndStatic);
 	hWndStatic = nullptr;
-	HBITMAP bmp = MonitorAsBmp(GETSIZE(scrSize), IDB_BITMAP1, RGB(255, 0, 255));
+
+	HBITMAP bmp;
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hScrPreview, bmp);
 	DeleteObject(bmp);
 
@@ -193,9 +201,6 @@ HBITMAP CScrSaverDlgProc::MonitorAsBmp(int width, int height, WORD id, COLORREF 
 
 	Gdiplus::Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(id));
 
-	int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
-	int monitorheight = GetSystemMetrics(SM_CYSCREEN);
-
 	// pink
 	Gdiplus::Color transparentColor(255, GetRValue(maskColor), GetGValue(maskColor), GetBValue(maskColor));
 
@@ -205,27 +210,9 @@ HBITMAP CScrSaverDlgProc::MonitorAsBmp(int width, int height, WORD id, COLORREF 
 	Gdiplus::Graphics graphics(resized);
 	graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
 	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
-	// draw monitor
+
+	// draw bmp
 	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
-
-	if (id == IDB_BITMAP1)
-	{
-		int cx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-		int cy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
-
-		HDC hScreenDC = ::GetDC(NULL);
-		HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-		auto g_hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
-		SelectObject(hMemoryDC, g_hbDesktop);
-		BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
-		Gdiplus::Bitmap* bm = new Gdiplus::Bitmap(g_hbDesktop, NULL);
-		graphics.DrawImage(bm, prevrect);
-
-		delete bm;
-		DeleteObject(g_hbDesktop);
-	}
 
 	// create hbitmap
 	HBITMAP hBitmap = NULL;
@@ -283,7 +270,8 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 		{
 			::DestroyWindow(hWndStatic);
 			hWndStatic = nullptr;
-			HBITMAP bmp = MonitorAsBmp(GETSIZE(scrSize), IDB_BITMAP1, RGB(255, 0, 255));
+			HBITMAP bmp;
+			pWndPreview->GetPreviewImage(&bmp);
 			Static_SetBitmap(hScrPreview, bmp);
 			DeleteObject(bmp);
 		}
