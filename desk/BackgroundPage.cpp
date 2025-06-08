@@ -2,6 +2,10 @@
 #include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
+#include "wndprvw.h"
+
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Details;
 namespace fs = std::filesystem;
 
 std::set<LPCSTR, NaturalComparator> wallpapers;
@@ -15,7 +19,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	hListView = GetDlgItem(1202);
 	hBackPreview = GetDlgItem(1200);
 	hPosCombobox = GetDlgItem(1205);
-
 	backPreviewSize = GetClientSIZE(hBackPreview);
 
 	RECT rect;
@@ -86,9 +89,10 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 	COLORREF clr;
 	pDesktopWallpaper->GetBackgroundColor(&clr);
 
-	HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, hWnd, clr);
+	HBITMAP bmp;
+	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hBackPreview, bmp);
-	DeleteObject(bmp);
+	DeleteBitmap(bmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -142,9 +146,10 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 		ITheme* themeClass = new ITheme(currentITheme);
 		themeClass->GetBackgroundColor(&clr);
 
-		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, hWnd, clr);
+		HBITMAP bmp;
+		pWndPreview->GetPreviewImage(&bmp);
 		Static_SetBitmap(hBackPreview, bmp);
-		DeleteObject(bmp);
+		DeleteBitmap(bmp);
 
 		SetModified(TRUE);
 	}
@@ -202,7 +207,10 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 			ITheme* themeClass = new ITheme(currentITheme);
 			themeClass->GetBackgroundColor(&clrlv);
 		}
-		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, m_hWnd, clrlv);
+
+		HBITMAP bmp; //WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, m_hWnd, clrlv);
+		pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr);
+		pWndPreview->GetPreviewImage(&bmp);
 		Static_SetBitmap(hBackPreview, bmp);
 
 		SetModified(TRUE);
@@ -283,8 +291,10 @@ BOOL CBackgroundDlgProc::OnSetActive()
 			themeClass->GetBackgroundColor(&clr);
 		}
 
-		HBITMAP bmp = WallpaperAsBmp(GETSIZE(backPreviewSize), NULL, m_hWnd, clr);
+		HBITMAP bmp; 
+		pWndPreview->GetPreviewImage(&bmp);
 		Static_SetBitmap(hBackPreview, bmp);
+		DeleteBitmap(bmp);
 	}
 	_TerminateProcess(pi);
 	return 0;
@@ -362,106 +372,6 @@ BOOL CBackgroundDlgProc::ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 	*clrOut = cc;
 	selectedTheme->useDesktopColor = true;
 	return out;
-}
-
-HBITMAP CBackgroundDlgProc::WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF color)
-{
-	Gdiplus::Bitmap* resized = new Gdiplus::Bitmap(width, height, PixelFormat32bppARGB);
-	if (!resized)
-	{
-		return NULL;
-	}
-
-	Gdiplus::Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
-
-	int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
-	int monitorheight = GetSystemMetrics(SM_CYSCREEN);
-
-	// pink
-	Gdiplus::Color transparentColor(255, 255, 0, 255);
-
-	Gdiplus::ImageAttributes imgAttr;
-	imgAttr.SetColorKey(transparentColor, transparentColor, Gdiplus::ColorAdjustTypeBitmap);
-
-	Gdiplus::Graphics graphics(resized);
-	graphics.SetInterpolationMode(Gdiplus::InterpolationModeInvalid);
-	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
-	// draw monitor
-	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
-
-	COLORREF colorref;
-	if (selectedTheme->newColor)
-		colorref = selectedTheme->newColor;
-	else
-		colorref = color;
-
-	Gdiplus::Color clr(255, GetRValue(colorref), GetGValue(colorref), GetBValue(colorref));
-	Gdiplus::SolidBrush* br = new Gdiplus::SolidBrush(clr);
-	graphics.FillRectangle(br, 15, 25, width - 37, height - 68);
-
-	Gdiplus::Bitmap* bitmap = Gdiplus::Bitmap::FromFile(path, FALSE);
-	if (bitmap)
-	{
-		int index = ComboBox_GetCurSel(hPosCombobox);
-		Gdiplus::Rect prevrect(15, 25, width - 37, height - 68);
-		graphics.SetClip(prevrect);
-
-
-		if (index == DWPOS_CENTER)
-		{
-			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
-			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
-
-			int newwidth = sX * prevrect.Width;
-			int newheight = sY * prevrect.Height;
-			prevrect.Width = newwidth;
-			prevrect.Height = newheight;
-
-			int marX = ((width - 37) - newwidth) / 2;
-			int marY = ((height - 68) - newheight) / 2;
-			prevrect.X += marX;
-			prevrect.Y += marY;
-			graphics.DrawImage(bitmap, prevrect);
-		}
-		else if (index == DWPOS_TILE)
-		{
-			double sX = static_cast<double>(bitmap->GetWidth()) / monitorwidth;
-			double sY = static_cast<double>(bitmap->GetHeight()) / monitorheight;
-
-			int newprewidth = sX * prevrect.Width;
-			int newpreheight = sY * prevrect.Height;
-			prevrect.Width = newprewidth;
-			prevrect.Height = newpreheight;
-
-			int sideImages = ((width - 37) / newprewidth) + 1;
-			int topImages = ((height - 68) / newpreheight) + 1;
-
-			for (int i = 0; i < topImages; i++)
-			{
-				for (int j = 0; j < sideImages; j++)
-				{
-					graphics.DrawImage(bitmap, prevrect);
-					prevrect.X += prevrect.Width;
-				}
-				prevrect.X = 15;
-				prevrect.Y += prevrect.Height;
-			}
-		}
-		else
-		{
-			graphics.DrawImage(bitmap, prevrect);
-		}
-	}
-
-
-	// create hbitmap
-	HBITMAP hBitmap = NULL;
-	resized->GetHBITMAP(Gdiplus::Color(0, 0, 0), &hBitmap);
-
-	delete bitmap;
-	delete monitor;
-	delete resized;
-	return hBitmap;
 }
 
 void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)

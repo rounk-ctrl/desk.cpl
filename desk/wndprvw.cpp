@@ -33,12 +33,21 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	RETURN_IF_NULL_ALLOC(&graphics);
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
-	HRESULT hr = _RenderSolidColor(&graphics);
+	HRESULT hr = S_OK;
+
+	if (_pageType == PT_BACKGROUND)
+	{
+		hr = _DrawMonitor(&graphics);
+		RETURN_IF_FAILED(hr);
+	}
+
+	hr = _RenderSolidColor(&graphics);
 	RETURN_IF_FAILED(hr);
 
-	if (_pageType != PT_APPEARANCE)
+	if (_pageType == PT_THEMES || _pageType == PT_BACKGROUND)
 	{
 		hr = _RenderWallpaper(&graphics);
+		// non fatal error
 	}
 
 	if (_pageType == PT_THEMES)
@@ -89,11 +98,34 @@ HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
 	return S_OK;
 }
 
+HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)
+{
+	HRESULT hr = S_OK;
+	Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
+
+	// pink
+	Color transparentColor(255, 255, 0, 255);
+	ImageAttributes imgAttr;
+	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
+
+	// draw monitor
+	Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
+	pGraphics->DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
+
+	// set monitor margins
+	_marMonitor.cxLeftWidth = 15;
+	_marMonitor.cyTopHeight = 25;
+	_marMonitor.cxRightWidth = 37;
+	_marMonitor.cyBottomHeight = 68;
+
+	return hr;
+}
+
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 {
 	HRESULT hr = S_OK;
 	HTHEME hTheme = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
-	
+
 	hr = _RenderFrame(pGraphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
@@ -114,11 +146,18 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 {
 	// todo: adjust wallpaper based on fit type 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
+	if (_marMonitor.cxLeftWidth > 0)
+	{
+		rect.X += _marMonitor.cxLeftWidth;
+		rect.Y += _marMonitor.cyTopHeight;
+		rect.Width -= _marMonitor.cxRightWidth;
+		rect.Height -= _marMonitor.cyBottomHeight;
+	}
 	// _AdjustRectForPreview(&rect);
 
 	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	RETURN_IF_NULL_ALLOC(bitmap);
-	
+
 	HRESULT hr = pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
 	delete bitmap;
 	return hr;
@@ -144,10 +183,32 @@ HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
 HRESULT CWindowPreview::_RenderSolidColor(Graphics* pGraphics)
 {
 	// todo: move selectedTheme to this class
-	COLORREF clr = selectedTheme->newColor ? selectedTheme->newColor : GetSysColor(COLOR_BACKGROUND);
+	COLORREF clr{};
+	if (selectedTheme->newColor)
+	{
+		clr = selectedTheme->newColor;
+	}
+	else if (selectedTheme->useDesktopColor)
+	{
+		pDesktopWallpaper->GetBackgroundColor(&clr);
+	}
+	else
+	{
+		ITheme* themeClass = new ITheme(currentITheme);
+		themeClass->GetBackgroundColor(&clr);
+	}
 	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
 
-	return Ok == pGraphics->FillRectangle(&backgroundBrush, Rect(0, 0, GETSIZE(_sizePreview))) ? S_OK : E_FAIL;
+	Rect rect(0, 0, GETSIZE(_sizePreview));
+	if (_marMonitor.cxLeftWidth > 0)
+	{
+		rect.X += _marMonitor.cxLeftWidth;
+		rect.Y += _marMonitor.cyTopHeight;
+		rect.Width -= _marMonitor.cxRightWidth;
+		rect.Height -= _marMonitor.cyBottomHeight;
+	}
+
+	return Ok == pGraphics->FillRectangle(&backgroundBrush, rect) ? S_OK : E_FAIL;
 }
 
 HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
@@ -188,7 +249,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	RECT crc = wndInfo.wndPos;
 	crc.right -= _marFrame.cxRightWidth + btnMar.cxRightWidth;
 	crc.left = crc.right - size.cx - GetSystemMetrics(SM_CXPADDEDBORDER);
-	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - size.cy ;
+	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - size.cy;
 	crc.bottom = crc.top + size.cy + 1;
 	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, &crc, NULL);
 
@@ -275,7 +336,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	RECT crc = wndInfo.wndPos;
 	crc.top += _marFrame.cyTopHeight;
-	
+
 	SIZE size = { 0 };
 	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 

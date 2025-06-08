@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "wndprvw.h"
 
 class CBackgroundDlgProc
     : public CPropertyPageImpl<CBackgroundDlgProc>
@@ -33,7 +34,6 @@ private:
     int AddColumn(HWND hListView, int width);
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
     BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut);
-    HBITMAP WallpaperAsBmp(int width, int height, WCHAR* path, HWND hWnd, COLORREF color);
     void AddMissingWallpapers(IUnknown* th);
     void SelectCurrentWallpaper(IUnknown* th);
 
@@ -45,4 +45,5 @@ private:
     HWND hBackPreview;
     HWND hPosCombobox;
     SIZE backPreviewSize;
+    Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

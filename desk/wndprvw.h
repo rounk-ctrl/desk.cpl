@@ -6,6 +6,7 @@ enum PAGETYPE
 {
 	PT_THEMES,
 	PT_BACKGROUND,
+	PT_SCRSAVER,
 	PT_APPEARANCE,
 };
 
@@ -46,6 +47,7 @@ public:
 
 private:
 	HRESULT _CleanupUxThemeFile(void** hFile);
+	HRESULT _DrawMonitor(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderWallpaper(Gdiplus::Graphics* pGraphics);
 	HRESULT _RenderBin(Gdiplus::Graphics* pGraphics);
@@ -62,6 +64,7 @@ private:
 	int _wndInfoCount;
 	SIZE _sizePreview;
 	MARGINS _marFrame;
+	MARGINS _marMonitor;
 	PAGETYPE _pageType;
 	void* _hTheme;
 };
