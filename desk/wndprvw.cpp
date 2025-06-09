@@ -14,6 +14,10 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
+	
+	// hell nah never not initializing a variable
+	_marFrame = {};
+	_marMonitor = {};
 }
 
 CWindowPreview::~CWindowPreview()
@@ -56,6 +60,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	if (_pageType == PT_THEMES || _pageType == PT_BACKGROUND)
 	{
 		hr = _RenderWallpaper(&graphics);
+		LOG_IF_FAILED(hr);
 		// non fatal error
 	}
 
@@ -183,6 +188,8 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 
 HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 {
+	HRESULT hr = S_OK;
+
 	// todo: adjust wallpaper based on fit type 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
 	if (_marMonitor.cxLeftWidth > 0)
@@ -197,7 +204,7 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	RETURN_IF_NULL_ALLOC(bitmap);
 
-	HRESULT hr = pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
+	hr = pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
 	delete bitmap;
 	return hr;
 }
