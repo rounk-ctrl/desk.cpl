@@ -322,10 +322,10 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	RETURN_IF_FAILED(hr);
 
 	// set proper font
-	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+	LOGFONT font{};
+	GetThemeSysFont(hTheme, TMT_CAPTIONFONT, &font);
 
-	HFONT fon = CreateFontIndirect(&ncm.lfCaptionFont);
+	HFONT fon = CreateFontIndirect(&font);
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 	SetBkMode(hdc, TRANSPARENT);
 
@@ -359,10 +359,11 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
+	COLORREF clr = GetThemeSysColor(hTheme, COLOR_CAPTIONTEXT);
+
 	DTTOPTS dt = { sizeof(dt) };
-	dt.dwFlags = DTT_TEXTCOLOR | DTT_COLORPROP;
-	dt.crText = RGB(255, 255, 255);
-	dt.iColorPropId = TMT_TEXTCOLOR;
+	dt.dwFlags = DTT_TEXTCOLOR;
+	dt.crText = clr;
 	hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
 	RETURN_IF_FAILED(hr);
 
@@ -452,9 +453,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr;
-	ITheme* themeClass = new ITheme(currentITheme);
-	themeClass->GetColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW, &clr);
+	COLORREF clr =  GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
@@ -465,19 +464,25 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
 	FillRect(hdc, &crc, CreateSolidBrush(clr));
 
-	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+	LOGFONT font{};
+	GetThemeSysFont(hTheme, TMT_MSGBOXFONT, &font);
 
 	if (wndInfo.wndType == WT_ACTIVE)
 	{
-		HFONT fon = CreateFontIndirect(&ncm.lfMessageFont);
+		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
 		RECT crc = wndInfo.wndPos;
 		crc.top += _marFrame.cyTopHeight;
 		crc.bottom = crc.top + 10;
 		crc.left += _marFrame.cxLeftWidth;
-		DrawThemeText(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &crc);
+
+		COLORREF clr = GetThemeSysColor(hTheme, COLOR_WINDOWTEXT);
+
+		DTTOPTS dt = { sizeof(dt) };
+		dt.dwFlags = DTT_TEXTCOLOR;
+		dt.crText = clr;
+		DrawThemeTextEx(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
 
 		SelectObject(hdc, hOldFont);
 		DeleteObject(fon);
@@ -485,7 +490,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	if (wndInfo.wndType == WT_MESSAGEBOX)
 	{
-		HFONT fon = CreateFontIndirect(&ncm.lfMessageFont);
+		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
 		RECT crc = wndInfo.wndPos;
