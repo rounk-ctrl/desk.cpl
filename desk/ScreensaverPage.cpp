@@ -39,7 +39,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	{
 		selectedScrSaver = _wcsdup(result.value().c_str());
 
-		HMODULE hScr = LoadLibrary(selectedScrSaver);
+		HMODULE hScr = LoadLibraryEx(selectedScrSaver, NULL, LOAD_LIBRARY_AS_DATAFILE);
 		if (hScr)
 		{
 			WCHAR name[MAX_PATH];
@@ -232,7 +232,7 @@ VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 		if (entry.path().extension() == L".scr")
 		{
 			LPWSTR path = _wcsdup(entry.path().c_str());
-			HMODULE hScr = LoadLibraryExW(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
+			HMODULE hScr = LoadLibraryEx(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
 			WCHAR name[MAX_PATH];
 			if (!hScr) continue;
 

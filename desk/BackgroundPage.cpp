@@ -26,7 +26,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	AddColumn(hListView, rect.right - rect.left - 30);
 
 	AddItem(hListView, 0, "(none)");
-	HICON barrierico = LoadIcon(LoadLibrary(L"imageres.dll"), MAKEINTRESOURCE(1027));
+	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
 	DestroyIcon(barrierico);

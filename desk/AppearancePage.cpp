@@ -31,7 +31,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	for (LPCWSTR style : msstyle)
 	{
-		HMODULE hStyle = LoadLibrary(style);
+		HMODULE hStyle = LoadLibraryEx(style, NULL, LOAD_LIBRARY_AS_DATAFILE);
 		if (hStyle)
 		{
 			WCHAR name[MAX_PATH];
