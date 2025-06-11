@@ -232,12 +232,15 @@ VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 		if (entry.path().extension() == L".scr")
 		{
 			LPWSTR path = _wcsdup(entry.path().c_str());
-			HMODULE hScr = LoadLibrary(path);
+			HMODULE hScr = LoadLibraryExW(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
 			WCHAR name[MAX_PATH];
+			if (!hScr) continue;
+
 			LoadString(hScr, 1, name, MAX_PATH);
+			FreeLibrary(hScr);
 			ComboBox_AddString(comboBox, name);
 			scrSaverMap.insert({ std::wstring(name), entry.path() });
-			FreeLibrary(hScr);
+
 			free(path);
 		}
 	}

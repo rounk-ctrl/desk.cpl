@@ -289,6 +289,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_CONTENTMARGINS, NULL, &btnMar);
 	if (btnMar.cxLeftWidth == 0) GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_SIZINGMARGINS, NULL, &btnMar);
 
+	// todo: fix high contrast themes broken
 	SIZE size = { 0 };
 	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
 

@@ -10,13 +10,13 @@ public:
 
 private:
     BEGIN_MSG_MAP(CBackgroundDlgProc)
-        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CBackgroundDlgProc>)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         COMMAND_HANDLER(1205, CBN_SELCHANGE, OnBgSizeChange)
         COMMAND_HANDLER(1203, BN_CLICKED, OnBrowse)
         COMMAND_HANDLER(1207, BN_CLICKED, OnColorPick)
         NOTIFY_HANDLER(1202, LVN_ITEMCHANGED, OnWallpaperSelection)
         MESSAGE_HANDLER(WM_SETTINGCHANGE, OnSettingChange)
+        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CBackgroundDlgProc>)
     END_MSG_MAP()
 
 

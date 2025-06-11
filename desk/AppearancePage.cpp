@@ -134,6 +134,11 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	return 0;
 }
 
+BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	return 0;
+}
+
 BOOL CAppearanceDlgProc::OnSetActive()
 {
 	ITheme* themeClass = new ITheme(currentITheme);

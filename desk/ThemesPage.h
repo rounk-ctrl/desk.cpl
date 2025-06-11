@@ -10,9 +10,9 @@ public:
 
 private:
     BEGIN_MSG_MAP(CThemeDlgProc)
-        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CThemeDlgProc>)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         COMMAND_HANDLER(1101, CBN_SELCHANGE, OnThemeComboboxChange)
+        CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CThemeDlgProc>)
     END_MSG_MAP()
 
     BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);

@@ -130,6 +130,28 @@ typedef HRESULT(WINAPI* DrawTextWithGlow_t)(
 	int(__fastcall* pfnDrawTextCallback)(HDC, wchar_t*, int, RECT*, unsigned int, __int64),
 	LPARAM lParam);
 
+enum ApplyThemeFlags
+{
+	AT_NONE = 0,
+	AT_SET_METRICS = 0x1,
+	AT_VALIDATE = 0x2,
+	AT_FORCE_GLOBAL = 0x4, 
+	AT_RESET_COLORIZATION = 0x8,  // calls DwmpResetColorizationParameter
+	AT_NO_REGISTRY_UPDATE = 0x10,  
+	AT_SET_METRICS_NOASYNC = 0x20, 
+	AT_FORCE_COLORIZATION = 0x40,  // use with 0x1 for DwmpResetColorizationParameter
+};
+
+// AT_VALIDATE must be NOT set, or it fails with E_INVALIDARG
+// pszColorParam and pszSizeParam are optional since if they are null, it will get the default stuff
+// if pszVisualStyleFile isnt null, it appends 8 to dwFlags
+// if pszVisualStyleFile is null, it calls CThemeServices::ApplyTheme with only dwFlags
+typedef HRESULT(WINAPI* SetSystemVisualStyle_t)(
+	_In_ LPCWSTR pszVisualStyleFile,
+	_In_opt_ LPCWSTR pszColorParam,
+	_In_opt_ LPCWSTR pszSizeParam,
+	_In_ ApplyThemeFlags dwFlags);
+
 // SetSystemVisualStyle uxtheme 65
 // GetThemeClass uxtheme 74
 // ClearTheme uxtheme 84
