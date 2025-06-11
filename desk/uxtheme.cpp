@@ -31,6 +31,8 @@ void InitUxtheme()
 
 HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName)
 {
+	if (!PathFileExists(szThemeFileName)) return NULL;
+
 	WCHAR defColor[MAX_PATH];
 	WCHAR defSize[MAX_PATH];
 
