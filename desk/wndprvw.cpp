@@ -399,20 +399,22 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	SIZE size = { 0 };
 	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 
-	crc.left = crc.right - _marFrame.cxRightWidth - size.cx;
-	crc.right = crc.left + size.cx;
+	int width = max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx);
+	int height = max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cy);
+	crc.left = crc.right - _marFrame.cxRightWidth - width;
+	crc.right = crc.left + width;
 	crc.bottom += _marFrame.cyTopHeight;
 	DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.bottom = crc.top + size.cy;
+	crc.bottom = crc.top + height;
 	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0);
 
-	crc.top += size.cy;
-	crc.bottom = crc.top + size.cy;
+	crc.top += height;
+	crc.bottom = crc.top + height;
 	DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - size.cy;
-	crc.bottom = crc.top + size.cy;
+	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - height;
+	crc.bottom = crc.top + height;
 	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0);
 
 	CloseThemeData(hThemeScrl);
