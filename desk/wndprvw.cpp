@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "wndprvw.h"
 #include "helper.h"
 #include "uxtheme.h"
@@ -285,31 +285,42 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 {
 	HRESULT hr = S_OK;
 
-	MARGINS btnMar;
-	GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_CONTENTMARGINS, NULL, &btnMar);
-	if (btnMar.cxLeftWidth == 0) GetThemeMargins(hTheme, hdc, WP_CLOSEBUTTON, 0, TMT_SIZINGMARGINS, NULL, &btnMar);
-
-	// todo: fix high contrast themes broken
 	SIZE size = { 0 };
 	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
 
+	// uxtheme.dll _GetNcBtnMetrics 
+	int cxEdge = GetSystemMetrics(SM_CXEDGE);
+	int cyEdge = GetSystemMetrics(SM_CYEDGE);
+
+	int cyBtn = GetThemeSysSize(hTheme, SM_CYSIZE);
+	int cxBtn = MulDiv(cyBtn, size.cx, size.cy);
+
+	// remove padding
+	cyBtn -= (cyEdge * 2);
+	cxBtn -= (cyEdge * 2);
+
 	RECT crc = wndInfo.wndPos;
-	crc.right -= _marFrame.cxRightWidth + btnMar.cxRightWidth;
-	crc.left = crc.right - size.cx - GetSystemMetrics(SM_CXPADDEDBORDER);
-	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - size.cy;
-	crc.bottom = crc.top + size.cy + 1;
+	crc.right -= _marFrame.cxRightWidth + cxEdge;
+	crc.left = crc.right - cxBtn;
+	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn;
+	crc.bottom = crc.top + cyBtn;
 	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, &crc, NULL);
 
+	
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
-		crc.left -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
-		crc.right -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		// max button
+		int width = cxBtn + cxEdge;
+		crc.left -= width;
+		crc.right -= width;
 		DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, MAXBS_NORMAL, &crc, NULL);
 
-		crc.left -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
-		crc.right -= size.cx + btnMar.cxRightWidth + GetSystemMetrics(SM_CXPADDEDBORDER);
+		// min button
+		crc.left -= width;
+		crc.right -= width;
 		DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, MINBS_NORMAL, &crc, NULL);
 	}
+	
 	return hr;
 }
 
