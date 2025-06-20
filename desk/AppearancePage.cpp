@@ -108,7 +108,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		},
 		{
 			WT_MESSAGEBOX,
-			{(size.cx / 2) - 85,60,(size.cx / 2) + 85,60 + 70}
+			{(size.cx / 2) - 75,60,(size.cx / 2) + 75,60 + 70}
 		}
 	};
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
@@ -160,7 +160,7 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		},
 		{
 			WT_MESSAGEBOX,
-			{(size.cx / 2) - 85,60,(size.cx / 2) + 85,60 + 70}
+			{(size.cx / 2) - 75,60,(size.cx / 2) + 75,60 + 70}
 		}
 	};
 	HBITMAP ebmp;

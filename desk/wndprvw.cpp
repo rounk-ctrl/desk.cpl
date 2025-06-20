@@ -429,7 +429,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	// todo: split this ??
 	RECT crc = wndInfo.wndPos;
 	crc.top = crc.bottom + _marFrame.cyTopHeight;
-	crc.bottom = crc.top + _marFrame.cyBottomHeight;
+	crc.bottom = crc.top + _marFrame.cyBottomHeight + 2;
 	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
 	RETURN_IF_FAILED(hr);
 
