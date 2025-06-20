@@ -47,13 +47,14 @@ static COLORREF GetDeskopColor()
 }
 
 
-static void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec)
+static void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec, BOOL fEnumChildDirs)
 {
 	WCHAR path[MAX_PATH];
 	StringCchPrintf(path, ARRAYSIZE(path), L"%s\\*", directory);
 
-	WIN32_FIND_DATAW data;
-	HANDLE hFind = FindFirstFile(path, &data);
+	WIN32_FIND_DATAW data = { 0 };
+	// FindExInfoBasic is faster?? according to msdn
+	HANDLE hFind = FindFirstFileEx(path, FindExInfoBasic, &data, FindExSearchNameMatch, NULL, 0);
 	if (hFind == INVALID_HANDLE_VALUE) return;
 
 	do
@@ -65,9 +66,9 @@ static void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std
 				WCHAR fullPath[MAX_PATH];
 				StringCchPrintf(fullPath, ARRAYSIZE(fullPath), L"%s\\%s", directory, data.cFileName);
 
-				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY && fEnumChildDirs)
 				{
-					EnumDir(fullPath, extensions, cExtensions, vec);
+					EnumDir(fullPath, extensions, cExtensions, vec, fEnumChildDirs);
 				}
 				else
 				{
@@ -81,6 +82,7 @@ static void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std
 				}
 			}
 		}
-	} while (FindNextFileW(hFind, &data));
+	} 
+	while (FindNextFileW(hFind, &data));
 	FindClose(hFind);
 }

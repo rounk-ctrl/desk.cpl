@@ -1,26 +1,33 @@
 #include "pch.h"
 #include "AppearanceDlgBox.h"
-#include <wil/registry.h>
 
 BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	hThemesCombobox = GetDlgItem(1400);
 
-	auto key = wil::reg::open_unique_key(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes");
-	mapSize = wil::reg::get_child_value_count(key.get());
+	HKEY key;
+	RegOpenKeyEx(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", 0, KEY_READ, &key);
+	if (!key) return FALSE;
+
+	RegQueryInfoKey(key, 0, 0, 0, 0, 0, 0, &mapSize, 0, 0, 0, 0);
 	schemeMap = (SCHEMEDATA*)malloc(mapSize * sizeof(SCHEMEDATA));
 
-	int i = 0;
-	for (const auto& key_data : wil::make_range(wil::reg::value_iterator{ key.get() }, wil::reg::value_iterator{}))
+	LSTATUS staus = ERROR_SUCCESS;
+	for (DWORD i = 0; i <= mapSize; ++i)
 	{
-		if (key_data.type == REG_BINARY)
+		if (staus != ERROR_SUCCESS) break;
+
+		WCHAR value[256];
+		DWORD dwType;
+		DWORD dwSize = ARRAYSIZE(value);
+		staus = RegEnumValue(key, i, value, &dwSize, 0, &dwType, NULL, NULL);
+		if (dwType == REG_BINARY)
 		{
-			FillSchemeDataMap(key_data.name.c_str(), i);
-			i++;
+			FillSchemeDataMap(value, i);
 		}
 	}
 
-	for (UINT j = 0; j < mapSize; j++)
+	for (ULONG j = 0; j < mapSize; j++)
 	{
 		ComboBox_AddString(hThemesCombobox, schemeMap[j].name);
 	}

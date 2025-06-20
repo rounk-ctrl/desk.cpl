@@ -20,7 +20,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	WCHAR msstyledir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Resources\\Themes", msstyledir, MAX_PATH);
 	LPCWSTR extensions[] = {L".msstyles"};
-	EnumDir(msstyledir, extensions, ARRAYSIZE(extensions), msstyle);
+	EnumDir(msstyledir, extensions, ARRAYSIZE(extensions), msstyle, TRUE);
 
 	for (LPCWSTR style : msstyle)
 	{

@@ -45,7 +45,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
 	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
 	// todo: natural sort
-	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers);
+	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers, TRUE);
 
 	// start with k=1, k=0 is (none)
 	int k = 1;

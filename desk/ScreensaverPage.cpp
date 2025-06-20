@@ -229,7 +229,7 @@ VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 	WCHAR systemdir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\system32", systemdir, MAX_PATH);
 	LPCWSTR extensions[] = { L".scr" };
-	EnumDir(systemdir, extensions, ARRAYSIZE(extensions), scrsavers);
+	EnumDir(systemdir, extensions, ARRAYSIZE(extensions), scrsavers, FALSE);
 
 	for (LPWSTR path : scrsavers)
 	{

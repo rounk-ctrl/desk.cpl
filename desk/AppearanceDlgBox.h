@@ -56,6 +56,6 @@ private:
 
 	HWND hThemesCombobox;
 	SCHEMEDATA* schemeMap = NULL;
-	UINT mapSize;
+	ULONG mapSize;
 
 };
