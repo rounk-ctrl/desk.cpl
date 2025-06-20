@@ -5,8 +5,6 @@
 
 using namespace Gdiplus;
 
-#define SPLIT_COLORREF(clr) GetRValue(clr), GetGValue(clr), GetBValue(clr)
-
 CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme)
 {
 	_pwndInfo = pwndInfo;
@@ -229,20 +227,7 @@ HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
 HRESULT CWindowPreview::_RenderSolidColor(Graphics* pGraphics)
 {
 	// todo: move selectedTheme to this class
-	COLORREF clr{};
-	if (selectedTheme->newColor)
-	{
-		clr = selectedTheme->newColor;
-	}
-	else if (selectedTheme->useDesktopColor)
-	{
-		pDesktopWallpaper->GetBackgroundColor(&clr);
-	}
-	else
-	{
-		ITheme* themeClass = new ITheme(currentITheme);
-		themeClass->GetBackgroundColor(&clr);
-	}
+	COLORREF clr = GetDeskopColor();
 	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));

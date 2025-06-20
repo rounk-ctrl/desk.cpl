@@ -6,6 +6,7 @@
 #define RECTHEIGHT(rc)  ((rc).bottom-(rc).top)
 
 #define GETSIZE(size) (size).cx, (size).cy
+#define SPLIT_COLORREF(clr) GetRValue(clr), GetGValue(clr), GetBValue(clr)
 
 struct NaturalComparator {
 	bool operator()(const LPCSTR& a, const LPCSTR& b) const {
@@ -45,4 +46,23 @@ inline SIZE GetClientSIZE(HWND _hwnd)
 	RECT rect;
 	GetClientRect(_hwnd, &rect);
 	return { RECTWIDTH(rect), RECTHEIGHT(rect) };
+}
+
+static COLORREF GetDeskopColor()
+{
+	COLORREF clr;
+	if (selectedTheme->newColor)
+	{
+		clr = selectedTheme->newColor;
+	}
+	else if (selectedTheme->useDesktopColor)
+	{
+		pDesktopWallpaper->GetBackgroundColor(&clr);
+	}
+	else
+	{
+		ITheme* themeClass = new ITheme(currentITheme);
+		themeClass->GetBackgroundColor(&clr);
+	}
+	return clr;
 }

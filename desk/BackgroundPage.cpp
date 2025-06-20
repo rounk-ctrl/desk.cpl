@@ -13,6 +13,17 @@ const COMDLG_FILTERSPEC file_types[] = {
 	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
 
+HRESULT GetSolidBtnBmp(HBITMAP* pbOut)
+{
+	// todo: use button's dimension
+	Gdiplus::Bitmap bmp(70, 14);
+	Gdiplus::Graphics g(&bmp);
+	Gdiplus::SolidBrush brush(Gdiplus::Color(SPLIT_COLORREF(GetDeskopColor())));
+	g.FillRectangle(&brush, 0, 0, bmp.GetWidth(), bmp.GetHeight());
+
+	return bmp.GetHBITMAP(Gdiplus::Color(0, 0, 0), pbOut) == Gdiplus::Ok ? S_OK : E_FAIL;
+}
+
 BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	firstInit = TRUE;
@@ -78,6 +89,12 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	AddMissingWallpapers(currentITheme);
 	SelectCurrentWallpaper(currentITheme);
+
+	HBITMAP hBmp;
+	GetSolidBtnBmp(&hBmp);
+	::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+	DeleteBitmap(hBmp);
+
 	firstInit = FALSE;
 	return 0;
 }
@@ -85,9 +102,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
-
-	COLORREF clr;
-	pDesktopWallpaper->GetBackgroundColor(&clr);
 
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
@@ -141,10 +155,10 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 	if (ColorPicker(hWnd, &cc) == TRUE)
 	{
 		selectedTheme->newColor = cc.rgbResult;
-
-		COLORREF clr;
-		ITheme* themeClass = new ITheme(currentITheme);
-		themeClass->GetBackgroundColor(&clr);
+		HBITMAP hBmp;
+		GetSolidBtnBmp(&hBmp);
+		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+		DeleteBitmap(hBmp);
 
 		HBITMAP bmp;
 		pWndPreview->GetPreviewImage(&bmp);
@@ -267,6 +281,11 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		AddMissingWallpapers(currentITheme);
 		SelectCurrentWallpaper(currentITheme);
 
+		HBITMAP hBmp;
+		GetSolidBtnBmp(&hBmp);
+		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
+		DeleteBitmap(hBmp);
+
 		if (selectedTheme->posChanged == -1)
 		{
 			// update wallpaper position 
@@ -280,17 +299,6 @@ BOOL CBackgroundDlgProc::OnSetActive()
 	// just update each time u activate
 	if (!firstInit && selectedIndex == 0)
 	{
-		COLORREF clr;
-		if (selectedTheme->useDesktopColor)
-		{
-			pDesktopWallpaper->GetBackgroundColor(&clr);
-		}
-		else
-		{
-			ITheme* themeClass = new ITheme(currentITheme);
-			themeClass->GetBackgroundColor(&clr);
-		}
-
 		HBITMAP bmp; 
 		pWndPreview->GetPreviewImage(&bmp);
 		Static_SetBitmap(hBackPreview, bmp);
@@ -348,16 +356,7 @@ LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 
 BOOL CBackgroundDlgProc::ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 {
-	COLORREF clr;
-	if (selectedTheme->useDesktopColor)
-	{
-		pDesktopWallpaper->GetBackgroundColor(&clr);
-	}
-	else
-	{
-		ITheme* themeClass = new ITheme(currentITheme);
-		themeClass->GetBackgroundColor(&clr);
-	}
+	COLORREF clr = GetDeskopColor();
 
 	CHOOSECOLOR cc;
 	COLORREF acrCustClr[16];
