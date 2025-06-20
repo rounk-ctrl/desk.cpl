@@ -13,7 +13,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_pageType = pageType;
 	_hTheme = hTheme;
 	
-	// hell nah never not initializing a variable
+	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
 }
@@ -270,6 +270,8 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 {
 	HRESULT hr = S_OK;
 
+	CLOSEBUTTONSTATES btnState = wndInfo.wndType == WT_INACTIVE ? (CLOSEBUTTONSTATES)5: CBS_NORMAL;
+
 	SIZE size = { 0 };
 	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
 
@@ -289,7 +291,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.left = crc.right - cxBtn;
 	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn;
 	crc.bottom = crc.top + cyBtn;
-	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, &crc, NULL);
+	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL);
 
 	
 	if (wndInfo.wndType != WT_MESSAGEBOX)
@@ -298,12 +300,12 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 		int width = cxBtn + cxEdge;
 		crc.left -= width;
 		crc.right -= width;
-		DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, MAXBS_NORMAL, &crc, NULL);
+		DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL);
 
 		// min button
 		crc.left -= width;
 		crc.right -= width;
-		DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, MINBS_NORMAL, &crc, NULL);
+		DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL);
 	}
 	
 	return hr;
