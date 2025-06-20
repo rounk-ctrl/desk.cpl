@@ -5,7 +5,6 @@
 #include "helper.h"
 #include "uxtheme.h"
 
-namespace fs = std::filesystem;
 using namespace Gdiplus;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
@@ -20,14 +19,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	WCHAR msstyledir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Resources\\Themes", msstyledir, MAX_PATH);
-	for (const auto& entry : fs::recursive_directory_iterator(msstyledir, fs::directory_options::skip_permission_denied))
-	{
-		if (entry.is_regular_file() && (entry.path().extension() == L".msstyles"))
-		{
-			LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
-			msstyle.push_back(lpwstrPath);
-		}
-	}
+	LPCWSTR extensions[] = {L".msstyles"};
+	EnumDir(msstyledir, extensions, ARRAYSIZE(extensions), msstyle);
 
 	for (LPCWSTR style : msstyle)
 	{

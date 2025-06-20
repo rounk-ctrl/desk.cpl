@@ -4,7 +4,6 @@
 #include "uxtheme.h"
 #include "helper.h"
 #include "theme.h"
-namespace fs = std::filesystem;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 

@@ -6,8 +6,6 @@
 #include "AppearancePage.h"
 #include "desk.h"
 
-namespace fs = std::filesystem;
-
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
 IDesktopWallpaper* pDesktopWallpaper = NULL;

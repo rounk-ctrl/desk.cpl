@@ -6,9 +6,8 @@
 
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
-namespace fs = std::filesystem;
 
-std::set<LPCSTR, NaturalComparator> wallpapers;
+std::vector<LPWSTR> wallpapers;
 const COMDLG_FILTERSPEC file_types[] = {
 	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
@@ -36,7 +35,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	::GetClientRect(hListView, &rect);
 	AddColumn(hListView, rect.right - rect.left - 30);
 
-	AddItem(hListView, 0, "(none)");
+	AddItem(hListView, 0, L"(none)");
 	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
@@ -44,21 +43,9 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	WCHAR wallpaperdir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
-	for (const auto& entry : fs::recursive_directory_iterator(wallpaperdir))
-	{
-		if (entry.is_regular_file() && (entry.path().extension() == L".jpg"
-			|| entry.path().extension() == L".png"
-			|| entry.path().extension() == L".bmp"
-			|| entry.path().extension() == L".jpeg"
-			|| entry.path().extension() == L".dib"
-			|| entry.path().extension() == L".gif"))
-		{
-			LPWSTR lpwstrPath = _wcsdup(entry.path().c_str());
-			LPCSTR path = ConvertStr(lpwstrPath);
-			wallpapers.insert(path);
-			free(lpwstrPath);
-		}
-	}
+	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
+	// todo: natural sort
+	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers);
 
 	// start with k=1, k=0 is (none)
 	int k = 1;
@@ -138,7 +125,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 		PWSTR pszFilePath = NULL;
 		hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 		if (SUCCEEDED(hr)) {
-			int inde = AddItem(hListView, ListView_GetItemCount(hListView), ConvertStr(pszFilePath));
+			int inde = AddItem(hListView, ListView_GetItemCount(hListView), pszFilePath);
 
 			ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			ListView_EnsureVisible(hListView, inde, FALSE);
@@ -178,7 +165,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		selectedIndex = pnmv->iItem;
 		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
 
-		if (StrCmpW(path, L"(none)") == 0)
+		if (lstrcmp(path, L"(none)") == 0)
 		{
 			::EnableWindow(hPosCombobox, false);
 
@@ -310,13 +297,13 @@ BOOL CBackgroundDlgProc::OnSetActive()
 
 
 #pragma region ListView helpers
-int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCSTR text)
+int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCWSTR text)
 {
 	if (text)
 	{
 		// gimmick
 		SHFILEINFO sh{};
-		SHGetFileInfo(ConvertStr2(text), FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON);
+		SHGetFileInfo(text, FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON);
 		ImageList_AddIcon(hml, sh.hIcon);
 	}
 
@@ -326,8 +313,8 @@ int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCSTR text)
 	lvItem.iItem = rowIndex;
 	lvItem.iSubItem = 0;
 	lvItem.iImage = rowIndex;
-	lvItem.pszText = (LPWSTR)PathFindFileName(ConvertStr2(text));
-	lvItem.lParam = (LPARAM)ConvertStr2(text);
+	lvItem.pszText = (LPWSTR)PathFindFileName(text);
+	lvItem.lParam = (LPARAM)text;
 
 	return ListView_InsertItem(hListView, &lvItem);
 }
@@ -377,7 +364,7 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 {
 	hListView = GetDlgItem(1202);
 
-	std::set<LPCSTR, NaturalComparator> missingWall;
+	std::vector<LPWSTR> missingWall;
 	// 1- enabled
 	// 0- disabled
 	int isEn = 0;
@@ -397,15 +384,14 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 		{
 			LPWSTR path = { 0 };
 			wlp->GetWallpaperAt(i, &path);
-			LPCSTR lpcstrPath = ConvertStr(path);
-			missingWall.insert(lpcstrPath);
+			missingWall.push_back(path);
 		}
 	}
 	for (auto path : missingWall)
 	{
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
-		findInfo.psz = PathFindFileName(ConvertStr2(path));
+		findInfo.psz = PathFindFileName(path);
 		int inde = ListView_FindItem(hListView, -1, &findInfo);
 		int k = ListView_GetItemCount(hListView);
 		if (inde == -1)
@@ -421,9 +407,9 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 	int inde = ListView_FindItem(hListView, -1, &findInfo);
 	if (inde == -1 && selectedTheme->wallpaperPath != nullptr)
 	{
-		if (fs::exists(fs::path(selectedTheme->wallpaperPath)))
+		if (PathFileExists(selectedTheme->wallpaperPath))
 		{
-			AddItem(hListView, ListView_GetItemCount(hListView), ConvertStr(selectedTheme->wallpaperPath));
+			AddItem(hListView, ListView_GetItemCount(hListView), selectedTheme->wallpaperPath);
 		}
 	}
 }

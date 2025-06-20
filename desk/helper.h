@@ -8,27 +8,6 @@
 #define GETSIZE(size) (size).cx, (size).cy
 #define SPLIT_COLORREF(clr) GetRValue(clr), GetGValue(clr), GetBValue(clr)
 
-struct NaturalComparator {
-	bool operator()(const LPCSTR& a, const LPCSTR& b) const {
-		return strnatcasecmp(a, b) < 0;
-	}
-};
-
-static LPCSTR ConvertStr(LPCWSTR wideStr) {
-	int size_needed = WideCharToMultiByte(CP_ACP, 0, wideStr, -1, NULL, 0, NULL, NULL);
-	char* narrowStr = new char[size_needed];
-	WideCharToMultiByte(CP_ACP, 0, wideStr, -1, narrowStr, size_needed, NULL, NULL);
-	return narrowStr;
-}
-
-static LPWSTR ConvertStr2(LPCSTR narrowStr) {
-	int size_needed = MultiByteToWideChar(CP_ACP, 0, narrowStr, -1, NULL, 0);
-
-	LPWSTR wideStr = new WCHAR[size_needed];
-	MultiByteToWideChar(CP_ACP, 0, narrowStr, -1, wideStr, size_needed);
-	return wideStr;
-}
-
 static VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 {
 	if (hp.hProcess != nullptr)
@@ -65,4 +44,43 @@ static COLORREF GetDeskopColor()
 		themeClass->GetBackgroundColor(&clr);
 	}
 	return clr;
+}
+
+
+static void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec)
+{
+	WCHAR path[MAX_PATH];
+	StringCchPrintf(path, ARRAYSIZE(path), L"%s\\*", directory);
+
+	WIN32_FIND_DATAW data;
+	HANDLE hFind = FindFirstFile(path, &data);
+	if (hFind == INVALID_HANDLE_VALUE) return;
+
+	do
+	{
+		if (lstrcmp(data.cFileName, L"."))
+		{
+			if (lstrcmp(data.cFileName, L".."))
+			{
+				WCHAR fullPath[MAX_PATH];
+				StringCchPrintf(fullPath, ARRAYSIZE(fullPath), L"%s\\%s", directory, data.cFileName);
+
+				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					EnumDir(fullPath, extensions, cExtensions, vec);
+				}
+				else
+				{
+					for (int i = 0; i < cExtensions; ++i)
+					{
+						if (lstrcmp(PathFindExtension(data.cFileName), extensions[i]) == 0)
+						{
+							vec.push_back(_wcsdup(fullPath));
+						}
+					}
+				}
+			}
+		}
+	} while (FindNextFileW(hFind, &data));
+	FindClose(hFind);
 }

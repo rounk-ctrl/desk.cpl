@@ -30,7 +30,7 @@ private:
     BOOL OnSetActive();
 
     /// custom methods
-    int AddItem(HWND hListView, int rowIndex, LPCSTR text);
+    int AddItem(HWND hListView, int rowIndex, LPCWSTR text);
     int AddColumn(HWND hListView, int width);
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
     BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut);

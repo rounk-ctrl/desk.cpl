@@ -4,7 +4,6 @@
 #include <wil/registry.h>
 #include "helper.h"
 using namespace Microsoft::WRL::Details;
-namespace fs = std::filesystem;
 LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -34,10 +33,10 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	ComboBox_AddString(hScrCombo, L"(none)");
 	AddScreenSavers(hScrCombo);
 
-	auto result = wil::reg::try_get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
-	if (result.has_value())
+	auto result = wil::reg::get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
+	if (!result.empty())
 	{
-		selectedScrSaver = _wcsdup(result.value().c_str());
+		selectedScrSaver = _wcsdup(result.c_str());
 
 		HMODULE hScr = LoadLibraryEx(selectedScrSaver, NULL, LOAD_LIBRARY_AS_DATAFILE);
 		if (hScr)
@@ -225,24 +224,23 @@ HBITMAP CScrSaverDlgProc::MonitorAsBmp(int width, int height, WORD id, COLORREF 
 
 VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 {
+	std::vector<LPWSTR> scrsavers;
+
 	WCHAR systemdir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\system32", systemdir, MAX_PATH);
-	for (const auto& entry : fs::directory_iterator(systemdir))
+	LPCWSTR extensions[] = { L".scr" };
+	EnumDir(systemdir, extensions, ARRAYSIZE(extensions), scrsavers);
+
+	for (LPWSTR path : scrsavers)
 	{
-		if (entry.path().extension() == L".scr")
-		{
-			LPWSTR path = _wcsdup(entry.path().c_str());
-			HMODULE hScr = LoadLibraryEx(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
-			WCHAR name[MAX_PATH];
-			if (!hScr) continue;
+		HMODULE hScr = LoadLibraryEx(path, NULL, LOAD_LIBRARY_AS_DATAFILE);
+		WCHAR name[MAX_PATH];
+		if (!hScr) continue;
 
-			LoadString(hScr, 1, name, MAX_PATH);
-			FreeLibrary(hScr);
-			ComboBox_AddString(comboBox, name);
-			scrSaverMap.insert({ std::wstring(name), entry.path() });
-
-			free(path);
-		}
+		LoadString(hScr, 1, name, MAX_PATH);
+		FreeLibrary(hScr);
+		ComboBox_AddString(comboBox, name);
+		scrSaverMap.insert({ std::wstring(name), path });
 	}
 }
 
