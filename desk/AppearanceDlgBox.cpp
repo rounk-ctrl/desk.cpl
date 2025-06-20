@@ -26,6 +26,7 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 			FillSchemeDataMap(value, i);
 		}
 	}
+	RegCloseKey(key);
 
 	for (ULONG j = 0; j < mapSize; j++)
 	{

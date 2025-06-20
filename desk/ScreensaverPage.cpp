@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "ScreensaverPage.h"
 #include "desk.h"
-#include <wil/registry.h>
 #include "helper.h"
+
 using namespace Microsoft::WRL::Details;
 LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -33,10 +33,12 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	ComboBox_AddString(hScrCombo, L"(none)");
 	AddScreenSavers(hScrCombo);
 
-	auto result = wil::reg::get_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE");
-	if (!result.empty())
+	WCHAR path[MAX_PATH];
+	DWORD size = sizeof(path);
+	LRESULT status = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE", RRF_RT_REG_SZ, NULL, &path, &size);
+	if (status == ERROR_SUCCESS)
 	{
-		selectedScrSaver = _wcsdup(result.c_str());
+		selectedScrSaver = _wcsdup(path);
 
 		HMODULE hScr = LoadLibraryEx(selectedScrSaver, NULL, LOAD_LIBRARY_AS_DATAFILE);
 		if (hScr)
@@ -158,7 +160,14 @@ BOOL CScrSaverDlgProc::OnApply()
 	}
 	else
 	{
-		wil::reg::set_value_string(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE", selectedScrSaver);
+		HKEY key;
+		RegOpenKey(HKEY_CURRENT_USER, L"Control Panel\\Desktop", &key);
+		if (key)
+		{
+			RegSetValueEx(key, L"SCRNSAVE.EXE", 0, REG_SZ, (const BYTE*)selectedScrSaver, ((DWORD)wcslen(selectedScrSaver) + 1) * sizeof(wchar_t));
+			RegCloseKey(key);
+		}
+
 		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETSCREENSAVESECURE, Button_GetCheck(secureCheck), NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		int timeout = SendMessage(updown, UDM_GETPOS32, 0, 0);
