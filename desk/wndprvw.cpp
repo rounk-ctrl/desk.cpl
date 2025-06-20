@@ -361,8 +361,8 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 
 	rc.left += _marFrame.cxLeftWidth + mar.cxLeftWidth;
 	rc.right += _marFrame.cxLeftWidth + mar.cxLeftWidth;
-	rc.top -= _marFrame.cyBottomHeight - 1;
-	rc.bottom -= _marFrame.cyBottomHeight - 1;
+	rc.top -= _marFrame.cyBottomHeight + 1;
+	rc.bottom -= _marFrame.cyBottomHeight + 1;
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
