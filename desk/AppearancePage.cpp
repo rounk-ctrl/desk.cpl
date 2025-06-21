@@ -29,15 +29,17 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		{
 			WCHAR name[MAX_PATH];
 			LoadString(hStyle, 101, name, MAX_PATH);
+
+			int index = 0;
 			if (lstrlenW(name) != 0)
 			{
-				int index = ComboBox_AddString(hThemesCombobox, name);
-				ComboBox_SetItemData(hThemesCombobox, index, style);
+				index = ComboBox_AddString(hThemesCombobox, name);
 			}
 			else
 			{
-				ComboBox_AddString(hThemesCombobox, PathFindFileName(style));
+				index = ComboBox_AddString(hThemesCombobox, PathFindFileName(style));
 			}
+			ComboBox_SetItemData(hThemesCombobox, index, style);
 			FreeLibrary(hStyle);
 		}
 	}

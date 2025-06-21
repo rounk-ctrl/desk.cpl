@@ -52,7 +52,6 @@ private:
     SIZE scrSize;
     SIZE energySize;
     LPCWSTR selectedScrSaver{};
-    std::map<std::wstring, std::wstring> scrSaverMap;
     PROCESS_INFORMATION pi2;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

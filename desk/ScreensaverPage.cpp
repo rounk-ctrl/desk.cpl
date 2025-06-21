@@ -83,7 +83,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 	}
 	else
 	{
-		selectedScrSaver = scrSaverMap[name].c_str();
+		selectedScrSaver = (LPCWSTR)ComboBox_GetItemData(hScrCombo, index);
 		::EnableWindow(hBtnPreview, TRUE);
 		::EnableWindow(hBtnSettings, TRUE);
 	}
@@ -125,16 +125,18 @@ BOOL CScrSaverDlgProc::OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL&
 	return 0;
 }
 
-// to fix
 BOOL CScrSaverDlgProc::OnPowerBtn(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	WCHAR xpcpl[MAX_PATH];
-	ExpandEnvironmentStrings(L"shell32.dll,Control_RunDLL %windir%\\System32\\xppowerc.cpl", xpcpl, MAX_PATH);
+	ExpandEnvironmentStrings(L"%windir%\\System32\\xppowerc.cpl", xpcpl, MAX_PATH);
 	if (PathFileExists(xpcpl) == FALSE)
 	{
-		ExpandEnvironmentStrings(L"shell32.dll,Control_RunDLL %windir%\\System32\\powercfg.cpl", xpcpl, MAX_PATH);
+		ExpandEnvironmentStrings(L"%windir%\\System32\\powercfg.cpl", xpcpl, MAX_PATH);
 	}
-	ShellExecute(0, L"open", L"Rundll32.exe", xpcpl, 0, SW_SHOW);
+	WCHAR execCmd[MAX_PATH] = L"shell32.dll,Control_RunDLL ";
+	StringCchCat(execCmd, ARRAYSIZE(execCmd), xpcpl);
+
+	ShellExecute(0, L"open", L"Rundll32.exe", execCmd, 0, SW_SHOW);
 	return 0;
 }
 
@@ -248,8 +250,8 @@ VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 
 		LoadString(hScr, 1, name, MAX_PATH);
 		FreeLibrary(hScr);
-		ComboBox_AddString(comboBox, name);
-		scrSaverMap.insert({ std::wstring(name), path });
+		int index = ComboBox_AddString(comboBox, name);
+		ComboBox_SetItemData(comboBox, index, path);
 	}
 }
 
