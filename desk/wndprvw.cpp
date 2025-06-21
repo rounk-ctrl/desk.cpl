@@ -3,6 +3,16 @@
 #include "helper.h"
 #include "uxtheme.h"
 
+#ifndef _DEBUG
+#undef RETURN_IF_FAILED
+#undef RETURN_IF_NULL_ALLOC
+#undef LOG_IF_FAILED
+
+#define RETURN_IF_FAILED
+#define RETURN_IF_NULL_ALLOC
+#define LOG_IF_FAILED
+#endif
+
 using namespace Gdiplus;
 
 CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme)

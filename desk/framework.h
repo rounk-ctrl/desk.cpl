@@ -1,5 +1,6 @@
 #pragma once
 
+#include <strsafe.h>
 #include <vector>
 #include <map>
 #include <string>
@@ -7,6 +8,7 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files
 #include <windows.h>
+#include <winternl.h>
 #include <cpl.h>
 #include <objbase.h>
 #include <gdiplus.h>
@@ -18,7 +20,10 @@
 #include <windowsx.h>
 #include <shellapi.h>
 #include <wrl.h>
+
+#ifdef _DEBUG
 #include <wil\result.h>
+#endif
 
 #include <atlbase.h>
 #include <atlwin.h>
