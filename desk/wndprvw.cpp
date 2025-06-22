@@ -337,7 +337,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
-				: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE);
+				: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE) == TRUE ? S_OK : E_FAIL;
 
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
@@ -346,13 +346,13 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 		crc.left -= width;
 		crc.right -= width;
 		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL)
-			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMAX);
+			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMAX) == TRUE ? S_OK : E_FAIL;
 
 		// min button
 		crc.left -= width;
 		crc.right -= width;
 		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL)
-			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMIN);
+			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMIN) == TRUE ? S_OK : E_FAIL;
 	}
 
 	return hr;
@@ -463,23 +463,27 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	SIZE size = { 0 };
 	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 
-	int width = max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx);
-	int height = max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cy);
+	int width = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx) : GetSystemMetrics(SM_CXVSCROLL);
+	int height = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cy) : GetSystemMetrics(SM_CXVSCROLL);
+
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
 	crc.bottom += _marFrame.cyTopHeight;
-	DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
+	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0)
+				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLSIZEGRIP) == TRUE ? S_OK : E_FAIL;
 
 	crc.bottom = crc.top + height;
-	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0);
+	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
+				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLUP) == TRUE ? S_OK : E_FAIL;
 
 	crc.top += height;
 	crc.bottom = crc.top + height;
-	DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
+	if (_fIsThemed) DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
 	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - height;
 	crc.bottom = crc.top + height;
-	DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0);
+	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
+				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
 
 	CloseThemeData(hThemeScrl);
 	pGraphics->ReleaseHDC(hdc);
