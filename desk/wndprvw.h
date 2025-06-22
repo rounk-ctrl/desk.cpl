@@ -68,4 +68,5 @@ private:
 	MARGINS _marMonitor;
 	PAGETYPE _pageType;
 	void* _hTheme;
+	BOOL _fIsThemed;
 };

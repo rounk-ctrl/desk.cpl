@@ -22,7 +22,8 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	
+	_fIsThemed = 0;
+
 	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
@@ -263,7 +264,38 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	// caption frame
 	RECT crc = wndInfo.wndPos;
 	crc.bottom = crc.top + _marFrame.cyTopHeight;
-	hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &crc, NULL);
+	if (_fIsThemed)
+	{
+		hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &crc, NULL);
+	}
+	else
+	{
+		// do we have gradients
+		BOOL fGradients = FALSE;
+		SystemParametersInfo(SPI_GETGRADIENTCAPTIONS, 0, &fGradients, 0);
+
+		COLORREF clrCaption = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
+		if (fGradients)
+		{
+			COLORREF clrGradient = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
+
+			TRIVERTEX tex[2]{};
+			tex[0].x = crc.left;
+			tex[0].y = crc.top;
+			tex[0].Red = GetRValue(clrCaption) << 8;
+			tex[0].Green = GetGValue(clrCaption) << 8;
+			tex[0].Blue = GetBValue(clrCaption) << 8;
+
+			tex[1].x = crc.right;
+			tex[1].y = crc.bottom;
+			tex[1].Red = GetRValue(clrGradient) << 8;
+			tex[1].Green = GetGValue(clrGradient) << 8;
+			tex[1].Blue = GetBValue(clrGradient) << 8;
+
+			GRADIENT_RECT rect = { 0,1 };
+			hr = GradientFill(hdc, tex, ARRAYSIZE(tex), &rect, 1, GRADIENT_FILL_RECT_H) == TRUE ? S_OK : E_FAIL;
+		}
+	}
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderCaptionText(hdc, hTheme, wndInfo);
@@ -280,7 +312,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 {
 	HRESULT hr = S_OK;
 
-	CLOSEBUTTONSTATES btnState = wndInfo.wndType == WT_INACTIVE ? (CLOSEBUTTONSTATES)5: CBS_NORMAL;
+	CLOSEBUTTONSTATES btnState = wndInfo.wndType == WT_INACTIVE ? (CLOSEBUTTONSTATES)5 : CBS_NORMAL;
 
 	SIZE size = { 0 };
 	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
@@ -289,8 +321,9 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	int cxEdge = GetSystemMetrics(SM_CXEDGE);
 	int cyEdge = GetSystemMetrics(SM_CYEDGE);
 
-	int cyBtn = GetThemeSysSize(hTheme, SM_CYSIZE);
-	int cxBtn = MulDiv(cyBtn, size.cx, size.cy);
+	// SM_CXSIZE is trash in windows 10
+	int cyBtn = _fIsThemed ? GetThemeSysSize(hTheme, SM_CYSIZE) : GetSystemMetrics(SM_CYSIZE);
+	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : GetSystemMetrics(SM_CYSIZE);
 
 	// remove padding
 	cyBtn -= (cyEdge * 2);
@@ -299,25 +332,29 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	RECT crc = wndInfo.wndPos;
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
 	crc.left = crc.right - cxBtn;
-	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn;
+	crc.top += _fIsThemed ? _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn
+		: (_marFrame.cyTopHeight - cyBtn) / 2;
 	crc.bottom = crc.top + cyBtn;
-	DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL);
 
-	
+	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
+				: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE);
+
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
 		// max button
 		int width = cxBtn + cxEdge;
 		crc.left -= width;
 		crc.right -= width;
-		DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL);
+		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL)
+			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMAX);
 
 		// min button
 		crc.left -= width;
 		crc.right -= width;
-		DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL);
+		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL)
+			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMIN);
 	}
-	
+
 	return hr;
 }
 
@@ -326,13 +363,25 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	HRESULT hr = S_OK;
 	CAPTIONSTATES frameState = wndInfo.wndType == WT_INACTIVE ? CS_INACTIVE : CS_ACTIVE;
 
-	MARGINS mar;
-	hr = GetThemeMargins(hTheme, hdc, WP_CAPTION, frameState, TMT_CAPTIONMARGINS, NULL, &mar);
-	RETURN_IF_FAILED(hr);
+	MARGINS mar = { 0 };
+	if (_fIsThemed)
+	{
+		hr = GetThemeMargins(hTheme, hdc, WP_CAPTION, frameState, TMT_CAPTIONMARGINS, NULL, &mar);
+		RETURN_IF_FAILED(hr);
+	}
 
 	// set proper font
 	LOGFONT font{};
-	GetThemeSysFont(hTheme, TMT_CAPTIONFONT, &font);
+	if (_fIsThemed)
+	{
+		GetThemeSysFont(hTheme, TMT_CAPTIONFONT, &font);
+	}
+	else
+	{
+		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+		font = ncm.lfCaptionFont;
+	}
 
 	HFONT fon = CreateFontIndirect(&font);
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
@@ -352,28 +401,46 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 		break;
 	}
 
-	RECT rc;
-	hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
-	RETURN_IF_FAILED(hr);
+	RECT rc = wndInfo.wndPos;
+	if (_fIsThemed)
+	{
+		hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
+		RETURN_IF_FAILED(hr);
+	}
 
 	rc.left += _marFrame.cxLeftWidth + mar.cxLeftWidth;
 	rc.right += _marFrame.cxLeftWidth + mar.cxLeftWidth;
-	rc.top -= _marFrame.cyBottomHeight + 1;
-	rc.bottom -= _marFrame.cyBottomHeight + 1;
+	rc.top -= _marFrame.cyBottomHeight;
+	rc.bottom -= _marFrame.cyBottomHeight;
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
 	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
-	rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
+	if (_fIsThemed)
+	{
+		rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
+	}
+	else
+	{
+		rc.top += (_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2;
+	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
-	COLORREF clr = GetThemeSysColor(hTheme, COLOR_CAPTIONTEXT);
+	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_CAPTIONTEXT) : GetSysColor(COLOR_CAPTIONTEXT);
 
-	DTTOPTS dt = { sizeof(dt) };
-	dt.dwFlags = DTT_TEXTCOLOR;
-	dt.crText = clr;
-	hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
+	if (_fIsThemed)
+	{
+		DTTOPTS dt = { sizeof(dt) };
+		dt.dwFlags = DTT_TEXTCOLOR;
+		dt.crText = clr;
+		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
+	}
+	else
+	{
+		SetTextColor(hdc, clr);
+		hr = DrawText(hdc, text, -1, &rc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+	}
 	RETURN_IF_FAILED(hr);
 
 	SelectObject(hdc, hOldFont);
@@ -427,19 +494,29 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 	// calculate frame margins
 	// probably make another function
-	int cxPaddedBorder = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
-	int cyCaptionHeight = GetThemeSysSize(hTheme, SM_CYSIZE) + cxPaddedBorder +2; // i think
-	_marFrame.cxLeftWidth = cxPaddedBorder + GetSystemMetrics(SM_CXFRAME);
-	_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-	_marFrame.cyTopHeight = cyCaptionHeight + GetSystemMetrics(SM_CYFRAME);
-	_marFrame.cyBottomHeight = GetSystemMetrics(SM_CYFRAME) + cxPaddedBorder - 2;
+	if (_fIsThemed)
+	{
+		int cxPaddedBorder = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
+		int cyCaptionHeight = GetThemeSysSize(hTheme, SM_CYSIZE) + cxPaddedBorder; // i think
+		_marFrame.cxLeftWidth = cxPaddedBorder + GetSystemMetrics(SM_CXFRAME);
+		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
+		_marFrame.cyTopHeight = cyCaptionHeight + GetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyBottomHeight = GetSystemMetrics(SM_CYFRAME) + cxPaddedBorder;
+	}
+	else
+	{
+		_marFrame.cxLeftWidth = 0;
+		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
+		_marFrame.cyTopHeight = GetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
+		_marFrame.cyBottomHeight = 0;
+	}
 
 	FRAMESTATES frameState = wndInfo.wndType == WT_INACTIVE ? FS_INACTIVE : FS_ACTIVE;
 
 	// todo: split this ??
 	RECT crc = wndInfo.wndPos;
 	crc.top = crc.bottom + _marFrame.cyTopHeight;
-	crc.bottom = crc.top + _marFrame.cyBottomHeight + 2;
+	crc.bottom = crc.top + _marFrame.cyBottomHeight;
 	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
 	RETURN_IF_FAILED(hr);
 
@@ -466,7 +543,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr =  GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+	COLORREF clr = GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
@@ -516,8 +593,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		crc.top += verPos + 2;
 		crc.bottom += verPos - 7;
-		crc.left += 38;
-		crc.right -= 38;
+		crc.left += 30;
+		crc.right -= 30;
 
 		// load button theme
 		HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");

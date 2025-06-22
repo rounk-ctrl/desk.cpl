@@ -172,7 +172,7 @@ BOOL CScrSaverDlgProc::OnApply()
 
 		SystemParametersInfo(SPI_SETSCREENSAVEACTIVE, TRUE, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETSCREENSAVESECURE, Button_GetCheck(secureCheck), NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-		int timeout = SendMessage(updown, UDM_GETPOS32, 0, 0);
+		int timeout = (int)SendMessage(updown, UDM_GETPOS32, 0, 0);
 		SystemParametersInfo(SPI_SETSCREENSAVETIMEOUT, timeout * 60, NULL, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 	}
 
