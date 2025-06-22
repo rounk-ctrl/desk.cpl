@@ -543,7 +543,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr = GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
+								: GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
@@ -555,7 +556,16 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	FillRect(hdc, &crc, CreateSolidBrush(clr));
 
 	LOGFONT font{};
-	GetThemeSysFont(hTheme, TMT_MSGBOXFONT, &font);
+	if (_fIsThemed)
+	{
+		GetThemeSysFont(hTheme, TMT_MSGBOXFONT, &font);
+	}
+	else
+	{
+		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+		font = ncm.lfMessageFont;
+	}
 
 	if (wndInfo.wndType == WT_ACTIVE)
 	{
@@ -567,12 +577,22 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		crc.bottom = crc.top + 10;
 		crc.left += _marFrame.cxLeftWidth;
 
-		COLORREF clr = GetThemeSysColor(hTheme, COLOR_WINDOWTEXT);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : GetSysColor(COLOR_WINDOWTEXT);
 
-		DTTOPTS dt = { sizeof(dt) };
-		dt.dwFlags = DTT_TEXTCOLOR;
-		dt.crText = clr;
-		DrawThemeTextEx(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
+		if (_fIsThemed)
+		{
+
+			DTTOPTS dt = { sizeof(dt) };
+			dt.dwFlags = DTT_TEXTCOLOR;
+			dt.crText = clr;
+			hr = DrawThemeTextEx(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
+		}
+		else
+		{
+			SetTextColor(hdc, clr);
+			hr = DrawText(hdc, L"Window Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		}
+		RETURN_IF_FAILED(hr);
 
 		SelectObject(hdc, hOldFont);
 		DeleteObject(fon);
@@ -583,16 +603,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		RECT crc = wndInfo.wndPos;
-		crc.top += _marFrame.cyTopHeight;
-		crc.left += _marFrame.cxLeftWidth;
-		crc.right -= _marFrame.cxRightWidth;
-
-		int horPos = RECTWIDTH(crc) / 2;
-		int verPos = RECTHEIGHT(crc) / 2;
-
-		crc.top += verPos + 2;
-		crc.bottom += verPos - 7;
+		crc.top += 20;
+		crc.bottom -= 20;
 		crc.left += 30;
 		crc.right -= 30;
 
