@@ -428,6 +428,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	else
 	{
 		rc.top += (_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2;
+		rc.left += GetSystemMetrics(SM_CXBORDER);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
@@ -525,11 +526,19 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	RECT crc = wndInfo.wndPos;
 	if (!_fIsThemed)
 	{
-		crc.top -= GetSystemMetrics(SM_CYFRAME) - 2;
-		crc.bottom += GetSystemMetrics(SM_CYFRAME) + _marFrame.cyTopHeight - 2;
-		crc.left += 2;
-		crc.right -= 2;
+		crc.top -= GetSystemMetrics(SM_CYFRAME);
+		crc.bottom += GetSystemMetrics(SM_CYFRAME) + _marFrame.cyTopHeight;
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
+
+		int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE);
+		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CXEDGE));
+		for (int i = 0; i < count; i++)
+		{
+			// framerect draws a 1px border
+			// so do (frame - edge) times
+			FrameRect(hdc, &crc, GetSysColorBrush(COLOR_ACTIVEBORDER));
+			InflateRect(&crc, -1, -1);
+		}
 	}
 
 	crc = wndInfo.wndPos;
@@ -596,6 +605,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	if (wndInfo.wndType == WT_ACTIVE)
 	{
+		font.lfWeight = FW_BOLD;
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
@@ -617,6 +627,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			SetTextColor(hdc, clr);
+			crc.left += GetSystemMetrics(SM_CXBORDER);
+
 			hr = DrawText(hdc, L"Window Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 		}
 		RETURN_IF_FAILED(hr);
@@ -635,12 +647,22 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		crc.left += 30;
 		crc.right -= 30;
 
-		// load button theme
-		HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
-		DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
-		DrawThemeText(hTheme, hdc, 0, 0, L"OK", -1, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER, 0, &crc);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : GetSysColor(COLOR_BTNTEXT);
+		SetTextColor(hdc, clr);
 
-		CloseThemeData(hThemeBtn);
+		// load button theme
+		if (_fIsThemed)
+		{
+			HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
+			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
+			CloseThemeData(hThemeBtn);
+		}
+		else
+		{
+			DrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
+		}
+		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+
 		SelectObject(hdc, hOldFont);
 		DeleteObject(fon);
 	}
