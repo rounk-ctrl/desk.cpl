@@ -473,9 +473,15 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
-	crc.bottom += _marFrame.cyTopHeight;
-	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0)
-				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLSIZEGRIP) == TRUE ? S_OK : E_FAIL;
+	crc.bottom += _marFrame.cyTopHeight - (_marFrame.cyBottomHeight * 2); // SM_CYEDGE gets added twice
+	if (_fIsThemed)
+	{
+		DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
+	}
+	else
+	{
+		FillRect(hdc, &crc, GetSysColorBrush(COLOR_SCROLLBAR));
+	}
 
 	crc.bottom = crc.top + height;
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
@@ -485,7 +491,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.bottom = crc.top + height;
 	if (_fIsThemed) DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - height;
+	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - (_marFrame.cyBottomHeight * 2) - height;
 	crc.bottom = crc.top + height;
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
@@ -587,6 +593,18 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.top += _marFrame.cyTopHeight;
 	crc.bottom += _marFrame.cyTopHeight;
 	crc.right -= _marFrame.cxRightWidth;
+
+	if (!_fIsThemed && !fIsMessageBox)
+	{
+		DrawEdge(hdc, &crc, EDGE_SUNKEN, BF_RECT);
+		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CYEDGE));
+
+		// update margins
+		_marFrame.cxLeftWidth += GetSystemMetrics(SM_CXEDGE);
+		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
+		_marFrame.cyTopHeight += GetSystemMetrics(SM_CYEDGE);
+		_marFrame.cyBottomHeight += GetSystemMetrics(SM_CYEDGE);
+	}
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
 	FillRect(hdc, &crc, CreateSolidBrush(clr));
