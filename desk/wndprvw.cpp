@@ -280,13 +280,13 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			COLORREF clrGradient = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
 			TRIVERTEX tex[2]{};
-			tex[0].x = crc.left;
+			tex[0].x = crc.left + _marFrame.cxLeftWidth;
 			tex[0].y = crc.top;
 			tex[0].Red = GetRValue(clrCaption) << 8;
 			tex[0].Green = GetGValue(clrCaption) << 8;
 			tex[0].Blue = GetBValue(clrCaption) << 8;
 
-			tex[1].x = crc.right;
+			tex[1].x = crc.right - _marFrame.cxRightWidth;
 			tex[1].y = crc.bottom;
 			tex[1].Red = GetRValue(clrGradient) << 8;
 			tex[1].Green = GetGValue(clrGradient) << 8;
@@ -327,7 +327,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 
 	// remove padding
 	cyBtn -= (cyEdge * 2);
-	cxBtn -= (cyEdge * 2);
+	cxBtn -= _fIsThemed ? (cyEdge * 2) : cyEdge;
 
 	RECT crc = wndInfo.wndPos;
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
@@ -349,6 +349,10 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMAX) == TRUE ? S_OK : E_FAIL;
 
 		// min button
+		if (!_fIsThemed)
+		{
+			width = cxBtn;
+		}
 		crc.left -= width;
 		crc.right -= width;
 		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL)
@@ -509,7 +513,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	}
 	else
 	{
-		_marFrame.cxLeftWidth = 0;
+		_marFrame.cxLeftWidth = GetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight = GetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
 		_marFrame.cyBottomHeight = 0;
@@ -519,22 +523,41 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 	// todo: split this ??
 	RECT crc = wndInfo.wndPos;
+	if (!_fIsThemed)
+	{
+		crc.top -= GetSystemMetrics(SM_CYFRAME) - 2;
+		crc.bottom += GetSystemMetrics(SM_CYFRAME) + _marFrame.cyTopHeight - 2;
+		crc.left += 2;
+		crc.right -= 2;
+		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
+	}
+
+	crc = wndInfo.wndPos;
 	crc.top = crc.bottom + _marFrame.cyTopHeight;
 	crc.bottom = crc.top + _marFrame.cyBottomHeight;
-	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
-	RETURN_IF_FAILED(hr);
+	if (_fIsThemed)
+	{
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
+		RETURN_IF_FAILED(hr);
+	}
 
 	crc = wndInfo.wndPos;
 	crc.top += _marFrame.cyTopHeight;
 	crc.right = crc.left + _marFrame.cxLeftWidth;
 	crc.bottom += _marFrame.cyTopHeight;
-	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
-	RETURN_IF_FAILED(hr);
+	if (_fIsThemed)
+	{
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
+		RETURN_IF_FAILED(hr);
+	}
 
 	crc.left = wndInfo.wndPos.right - _marFrame.cxRightWidth;
 	crc.right = wndInfo.wndPos.right;
-	hr = DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &crc, NULL);
-	RETURN_IF_FAILED(hr);
+	if (_fIsThemed)
+	{
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &crc, NULL);
+		RETURN_IF_FAILED(hr);
+	}
 
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
