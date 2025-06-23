@@ -179,6 +179,32 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 	HRESULT hr = S_OK;
 	HTHEME hTheme = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
 
+	// my bad
+	// separate this
+	if (_pageType == PT_APPEARANCE && !_fIsThemed)
+	{
+		wndInfo.wndPos.top += 5;
+		wndInfo.wndPos.bottom += 5;
+		if (wndInfo.wndType == WT_INACTIVE)
+		{
+			wndInfo.wndPos.bottom += 10;
+		}
+		if (wndInfo.wndType == WT_ACTIVE)
+		{
+			wndInfo.wndPos.left -= 6;
+			wndInfo.wndPos.top -= 2;
+			wndInfo.wndPos.right += 6;
+			wndInfo.wndPos.bottom -= 10;
+		}
+		if (wndInfo.wndType == WT_MESSAGEBOX)
+		{
+			wndInfo.wndPos.left = 22;
+			wndInfo.wndPos.top += 10+35;
+			wndInfo.wndPos.bottom += 30 - 10;
+			wndInfo.wndPos.right -= 20;
+		}
+	}
+
 	hr = _RenderFrame(pGraphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
@@ -473,7 +499,12 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
-	crc.bottom += _marFrame.cyTopHeight - (_marFrame.cyBottomHeight * 2); // SM_CYEDGE gets added twice
+	crc.bottom += _marFrame.cyTopHeight - _marFrame.cyBottomHeight; 
+	if (!_fIsThemed)
+	{
+		crc.bottom -= (_marFrame.cyBottomHeight); // SM_CYEDGE gets added twice
+	}
+
 	if (_fIsThemed)
 	{
 		DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
@@ -491,8 +522,13 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.bottom = crc.top + height;
 	if (_fIsThemed) DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight - (_marFrame.cyBottomHeight * 2) - height;
+	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight  - height;
+	if (!_fIsThemed)
+	{
+		crc.top -= (_marFrame.cyBottomHeight * 2);
+	}
 	crc.bottom = crc.top + height;
+
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
 
@@ -549,7 +585,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 	crc = wndInfo.wndPos;
 	crc.top = crc.bottom + _marFrame.cyTopHeight;
-	crc.bottom = crc.top + _marFrame.cyBottomHeight;
+	crc.bottom = crc.top + _marFrame.cyBottomHeight + 2;
 	if (_fIsThemed)
 	{
 		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
@@ -623,7 +659,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	if (wndInfo.wndType == WT_ACTIVE)
 	{
-		font.lfWeight = FW_BOLD;
+		if (!_fIsThemed) font.lfWeight = FW_BOLD;
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
@@ -660,23 +696,31 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		crc.top += 20;
-		crc.bottom -= 20;
-		crc.left += 30;
-		crc.right -= 30;
-
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : GetSysColor(COLOR_BTNTEXT);
 		SetTextColor(hdc, clr);
 
 		// load button theme
 		if (_fIsThemed)
 		{
+			crc.top += 20;
+			crc.bottom -= 20;
+			crc.left += 30;
+			crc.right -= 30;
+
 			HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
 			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
 			CloseThemeData(hThemeBtn);
 		}
 		else
 		{
+			crc.left += GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
+			crc.right -= GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
+			DrawText(hdc, L"Message Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
+
+			crc.top += 17;
+			crc.bottom -= 3;
+			crc.left += 62;
+			crc.right -= 62;
 			DrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);

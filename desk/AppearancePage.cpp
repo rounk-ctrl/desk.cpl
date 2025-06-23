@@ -114,10 +114,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		}
 	};
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
-	HBITMAP bmp;
-	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hPreviewWnd,bmp);
-	DeleteObject(bmp);
+	// preview set in OnSetActive
 
 	return 0;
 }
@@ -158,11 +155,11 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		},
 		{
 			WT_ACTIVE,
-			{25, 35, 25 + 320, 35 + 104}
+			{20, 35, 25 + 320, 35 + 104}
 		},
 		{
 			WT_MESSAGEBOX,
-			{(size.cx / 2) - 75,60,(size.cx / 2) + 75,60 + 70}
+			{(size.cx / 2) - 75,64,(size.cx / 2) + 75,64 + 68}
 		}
 	};
 	HBITMAP ebmp;
