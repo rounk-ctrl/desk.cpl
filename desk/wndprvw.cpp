@@ -27,6 +27,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
+	_szMenuBar = { 0, GetSystemMetrics(SM_CYMENU)};
 }
 
 CWindowPreview::~CWindowPreview()
@@ -505,6 +506,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	if (!_fIsThemed)
 	{
 		crc.bottom -= (_marFrame.cyBottomHeight); // SM_CYEDGE gets added twice
+		if (wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 	}
 
 	if (_fIsThemed)
@@ -629,6 +631,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
 	crc.top += _marFrame.cyTopHeight;
+	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
+
 	crc.bottom += _marFrame.cyTopHeight;
 	crc.right -= _marFrame.cxRightWidth;
 
@@ -667,6 +671,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		RECT crc = wndInfo.wndPos;
 		crc.top += _marFrame.cyTopHeight;
+		if (!_fIsThemed) crc.top += _szMenuBar.cy;
+
 		crc.bottom = crc.top + 10;
 		crc.left += _marFrame.cxLeftWidth;
 

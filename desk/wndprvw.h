@@ -69,4 +69,5 @@ private:
 	PAGETYPE _pageType;
 	void* _hTheme;
 	BOOL _fIsThemed;
+	SIZE _szMenuBar;
 };
