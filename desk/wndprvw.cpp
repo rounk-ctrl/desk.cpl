@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = 0;
+	_fIsThemed = IsCompositionActive();
 
 	// always initialize variables
 	_marFrame = {};
@@ -458,7 +458,9 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
-	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_CAPTIONTEXT) : GetSysColor(COLOR_CAPTIONTEXT);
+	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
+	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT) 
+							: GetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
 	{
