@@ -321,6 +321,18 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 			GRADIENT_RECT rect = { 0,1 };
 			hr = GradientFill(hdc, tex, ARRAYSIZE(tex), &rect, 1, GRADIENT_FILL_RECT_H) == TRUE ? S_OK : E_FAIL;
+
+			// 1px border below caption
+			HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
+			POINT pt[2]{};
+			pt[0] = { crc.left + _marFrame.cxLeftWidth, crc.top + _marFrame.cyTopHeight };
+			pt[1] = { crc.right - _marFrame.cxRightWidth, crc.top + _marFrame.cyTopHeight };
+			Polyline(hdc, pt, ARRAYSIZE(pt));
+
+			SelectObject(hdc, oldPen);
+			DeletePen(pen);
 		}
 	}
 	RETURN_IF_FAILED(hr);
@@ -657,7 +669,21 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	if (!_fIsThemed && !fIsMessageBox)
 	{
-		DrawEdge(hdc, &crc, EDGE_SUNKEN, BF_RECT);
+		// QUIRK: same behaviour as old desk.cpl
+		if (wndInfo.wndType == WT_ACTIVE) DrawEdge(hdc, &crc, EDGE_SUNKEN, BF_RECT);
+
+		// 1px border above edge
+		HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
+		POINT pt[2]{};
+		pt[0] = { crc.left, crc.top - 1};
+		pt[1] = { crc.right, crc.top - 1 };
+		Polyline(hdc, pt, ARRAYSIZE(pt));
+
+		SelectObject(hdc, oldPen);
+		DeletePen(pen);
+
 		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CYEDGE));
 
 		// update margins
@@ -668,7 +694,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	}
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
-	FillRect(hdc, &crc, CreateSolidBrush(clr));
+	// QUIRK: same behaviour as old desk.cpl
+	if (_fIsThemed || (wndInfo.wndType != WT_INACTIVE && !_fIsThemed)) FillRect(hdc, &crc, CreateSolidBrush(clr));
 
 	LOGFONT font{};
 	if (_fIsThemed)
