@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = IsCompositionActive();
+	_fIsThemed = 0;
 
 	// always initialize variables
 	_marFrame = {};
@@ -560,6 +560,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	}
 	else
 	{
+		// todo: account for padded borders
 		_marFrame.cxLeftWidth = GetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight = GetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
@@ -572,19 +573,37 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	RECT crc = wndInfo.wndPos;
 	if (!_fIsThemed)
 	{
+		bool fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
+
 		crc.top -= GetSystemMetrics(SM_CYFRAME);
 		crc.bottom += GetSystemMetrics(SM_CYFRAME) + _marFrame.cyTopHeight;
+		if (fIsMessageBox)
+		{
+			int offset = GetSystemMetrics(SM_CXBORDER);
+			InflateRect(&crc, -offset, -offset);
+		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
 
-		int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE);
-		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CXEDGE));
-		for (int i = 0; i < count; i++)
+		if (!fIsMessageBox)
 		{
-			// framerect draws a 1px border
-			// so do (frame - edge) times
-			FrameRect(hdc, &crc, GetSysColorBrush(COLOR_ACTIVEBORDER));
-			InflateRect(&crc, -1, -1);
+			int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE) - GetSystemMetrics(SM_CXBORDER);
+			InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CXEDGE));
+			for (int i = 0; i < count; i++)
+			{
+				bool fInactiveWnd = wndInfo.wndType == WT_INACTIVE;
+				// framerect draws a 1px border
+				// so do (frame - edge - border) times
+				FrameRect(hdc, &crc, GetSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER));
+				InflateRect(&crc, -1, -1);
+			}
 		}
+		else
+		{
+			int offset = GetSystemMetrics(SM_CXEDGE);
+			InflateRect(&crc, -offset, -offset);
+		}
+		FrameRect(hdc, &crc, GetSysColorBrush(COLOR_3DFACE));
+		InflateRect(&crc, -1, -1);
 	}
 
 	crc = wndInfo.wndPos;
