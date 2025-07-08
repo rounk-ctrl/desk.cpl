@@ -43,20 +43,21 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	pThemeManager->GetTheme(currThem, &currentITheme);
 
-	// set the preview bitmap to the static control
-	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+	ITheme* themeClass = new ITheme(currentITheme);
+	LPWSTR path = nullptr;
+	themeClass->get_VisualStyle(&path);
+	StringCpy(selectedTheme->szMsstylePath, path);
 
 	// update THEMEINFO before setting bitmap for now
+	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
 	UpdateThemeInfo(ws, currThem);
 
-	//bmp = ThemePreviewBmp(GETSIZE(size), ws, NULL, GetSysColor(COLOR_BACKGROUND));
-
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, nullptr);
+
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hPreview, bmp);
 	DeleteObject(bmp);
-
 
 	return 0;
 }
@@ -74,6 +75,16 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 	LPWSTR path = nullptr;
 	themeClass->get_VisualStyle(&path);
+
+	// update the string if different
+	if (PathFileExists(path) 
+		&& StrCmpI(selectedTheme->szMsstylePath, path) != 0)
+	{
+		FreeString(selectedTheme->szMsstylePath);
+		StringCpy(selectedTheme->szMsstylePath, path);
+		wprintf(selectedTheme->szMsstylePath);
+		selectedTheme->fMsstyleChanged = true;
+	}
 
 	// update THEMEINFO
 	UpdateThemeInfo(ws, index);
@@ -146,24 +157,22 @@ BOOL CThemeDlgProc::OnSetActive()
 void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 {
 	printf("\nupdate themeinfo\n");
+
+	// free 
+	FreeString(selectedTheme->wallpaperPath);
+
 	// update THEMEINFO
 	if (lstrlenW(ws) == 0 || PathFileExists(ws) == FALSE)
 	{
 		// no wallpaper applied
 		selectedTheme->wallpaperType = WT_NOWALL;
-		if (selectedTheme->wallpaperPath != nullptr)
-		{
-			delete[] selectedTheme->wallpaperPath;
-		}
-		selectedTheme->wallpaperPath = nullptr;
 	}
 	else
 	{
 		selectedTheme->wallpaperType = WT_PICTURE;
-		size_t len = wcslen(ws) + 1;
-		selectedTheme->wallpaperPath = new wchar_t[len];
-		wcscpy_s(selectedTheme->wallpaperPath, len, ws);
+		StringCpy(selectedTheme->wallpaperPath, ws);
 	}
+
 	// common properties
 	selectedTheme->newColor = NULL;
 	selectedTheme->customWallpaperSelection = false;

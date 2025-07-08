@@ -133,13 +133,13 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 BOOL CAppearanceDlgProc::OnSetActive()
 {
-	ITheme* themeClass = new ITheme(currentITheme);
-	LPWSTR style;
-	themeClass->get_VisualStyle(&style);
+	_TerminateProcess(pi);
+	if (!selectedTheme->fMsstyleChanged) return TRUE;
+
 	for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 	{
 		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-		if (StrCmpI(data, style) == 0)
+		if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
 		{
 			ComboBox_SetCurSel(hThemesCombobox, i);
 			break;
@@ -163,10 +163,11 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		}
 	};
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(style), &ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp);
 	Static_SetBitmap(hPreviewWnd, ebmp);
 	DeleteBitmap(ebmp);
 
-	_TerminateProcess(pi);
+	selectedTheme->fMsstyleChanged = false;
+
 	return 0;
 }

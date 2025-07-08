@@ -25,6 +25,8 @@ LRESULT CALLBACK SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 void PropertySheetMoment()
 {
+	//SetThemeAppProperties(0);
+
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 

@@ -72,3 +72,17 @@ void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vecto
 	} while (FindNextFileW(hFind, &data));
 	FindClose(hFind);
 }
+
+void FreeString(LPWSTR& str)
+{
+	delete[] str;
+	str = nullptr;
+}
+
+void StringCpy(LPWSTR& dest, LPWSTR src)
+{
+	size_t len = wcslen(src) + 1;
+	dest = new wchar_t[len];
+	wcscpy_s(dest, len, src);
+
+}

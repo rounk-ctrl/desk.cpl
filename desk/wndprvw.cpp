@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = 0;
+	_fIsThemed = 1;
 
 	// always initialize variables
 	_marFrame = {};

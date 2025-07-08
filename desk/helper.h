@@ -11,6 +11,8 @@
 void _TerminateProcess(PROCESS_INFORMATION& hp);
 COLORREF GetDeskopColor();
 void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec, BOOL fEnumChildDirs);
+void FreeString(LPWSTR& str);
+void StringCpy(LPWSTR& dest, LPWSTR src);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

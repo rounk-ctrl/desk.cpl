@@ -13,6 +13,7 @@ enum WALLPAPER_TYPE {
 	WT_SLIDESHOW
 };
 
+// todo: convert this to a single class
 // convenient struct with various information used by various pages
 struct THEMEINFO {
 	WALLPAPER_TYPE wallpaperType;
@@ -22,6 +23,10 @@ struct THEMEINFO {
 	int posChanged = -1;
 	bool useDesktopColor = false;
 	bool updateWallThemesPg = false;
+
+	// reduce overhead every time u load appearancepage
+	LPWSTR szMsstylePath;
+	bool fMsstyleChanged = false;
 };
 
 // global HINSTANCE for the current app
