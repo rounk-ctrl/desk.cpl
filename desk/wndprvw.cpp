@@ -162,9 +162,13 @@ HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)
 	ImageAttributes imgAttr;
 	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
 
+	// cache it to improve performance
+	_bmpMonitor = new Bitmap(_sizePreview.cx, _sizePreview.cy);
+	Graphics graphics(_bmpMonitor);
+
 	// draw monitor
 	Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
-	pGraphics->DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
+	graphics.DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
 
 	// set monitor margins
 	_marMonitor.cxLeftWidth = 15;
@@ -235,12 +239,16 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 		rect.Width -= _marMonitor.cxRightWidth;
 		rect.Height -= _marMonitor.cyBottomHeight;
 	}
-	// _AdjustRectForPreview(&rect);
 
 	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	RETURN_IF_NULL_ALLOC(bitmap);
 
-	hr = pGraphics->DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
+	// cache it to improve performance
+	_bmpWallpaper = new Bitmap(rect.Width, rect.Height);
+	Graphics graphics(_bmpWallpaper);
+	graphics.SetInterpolationMode(InterpolationModeInvalid);
+
+	hr = graphics.DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
 	delete bitmap;
 	return hr;
 }
@@ -251,14 +259,28 @@ HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
 	SHSTOCKICONINFO sii = { sizeof(sii) };
 	SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 
-	HDC hdcgraphic = pGraphics->GetHDC();
-	RETURN_IF_NULL_ALLOC(hdcgraphic);
+	// cache it to improve performance
+	_bmpBin = new Bitmap(32, 32);
+	Graphics graphics(_bmpBin);
+
+	// todo: try DIB
+	HDC hdcgraphic = graphics.GetHDC();
+	HDC memdc = CreateCompatibleDC(hdcgraphic);
+
+	HBITMAP hbitmap = CreateDiscardableBitmap(hdcgraphic, 32, 32);
+	HBITMAP oldBmp = (HBITMAP)SelectObject(memdc, hbitmap);
 	if (sii.hIcon)
 	{
-		// fix this
-		bRet = DrawIconEx(hdcgraphic, _sizePreview.cx - 48, _sizePreview.cy - 40, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
+		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
+		bRet = AlphaBlend(hdcgraphic, 0, 0, 32, 32, 
+			memdc, 0, 0, 32, 32, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
 	}
-	pGraphics->ReleaseHDC(hdcgraphic);
+	SelectObject(memdc, oldBmp);
+	DeleteBitmap(oldBmp);
+	DeleteBitmap(hbitmap);
+	DeleteDC(memdc);
+
+	graphics.ReleaseHDC(hdcgraphic);
 	return bRet ? S_OK : E_FAIL;
 }
 
@@ -277,7 +299,11 @@ HRESULT CWindowPreview::_RenderSolidColor(Graphics* pGraphics)
 		rect.Height -= _marMonitor.cyBottomHeight;
 	}
 
-	return Ok == pGraphics->FillRectangle(&backgroundBrush, rect) ? S_OK : E_FAIL;
+	// cache it to improve performance
+	_bmpSolidColor = new Bitmap(rect.Width, rect.Height);
+	Graphics graphics(_bmpSolidColor);
+
+	return Ok == graphics.FillRectangle(&backgroundBrush, rect) ? S_OK : E_FAIL;
 }
 
 HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)

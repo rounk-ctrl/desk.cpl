@@ -38,7 +38,7 @@ class CWindowPreview final:
 {
 public:
 	CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme);
-	~CWindowPreview();
+	~CWindowPreview() override;
 
 	//~ Begin IWindowPreview interface
 	STDMETHODIMP GetPreviewImage(HBITMAP* pbOut);
@@ -60,7 +60,7 @@ private:
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 
-
+	// variables
 	MYWINDOWINFO* _pwndInfo;
 	int _wndInfoCount;
 	SIZE _sizePreview;
@@ -70,4 +70,11 @@ private:
 	void* _hTheme;
 	BOOL _fIsThemed;
 	SIZE _szMenuBar;
+
+	// layer bitmaps, compose all for the final preview
+	Gdiplus::Bitmap* _bmpSolidColor;
+	Gdiplus::Bitmap* _bmpWallpaper;
+	Gdiplus::Bitmap* _bmpBin;
+	Gdiplus::Bitmap* _bmpMonitor;
+	Gdiplus::Bitmap** _bmpWindows; // todo: maybe split this ??
 };
