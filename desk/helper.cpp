@@ -86,3 +86,12 @@ void StringCpy(LPWSTR& dest, LPWSTR src)
 	wcscpy_s(dest, len, src);
 
 }
+
+void FreeBitmap(Gdiplus::Bitmap** bmp)
+{
+	if (*bmp)
+	{
+		delete *bmp;
+		*bmp = nullptr;
+	}
+}

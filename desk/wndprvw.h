@@ -48,17 +48,18 @@ public:
 private:
 	HRESULT _CleanupUxThemeFile(void** hFile);
 	HRESULT _DesktopScreenShooter(Gdiplus::Graphics* pGraphics);
-	HRESULT _DrawMonitor(Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderWallpaper(Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderBin(Gdiplus::Graphics* pGraphics);
-	HRESULT _RenderSolidColor(Gdiplus::Graphics* pGraphics);
+	HRESULT _DrawMonitor();
+	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, int index);
+	HRESULT _RenderWallpaper();
+	HRESULT _RenderBin();
+	HRESULT _RenderSolidColor();
 	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+	HRESULT _ComposePreview();
 
 	// variables
 	MYWINDOWINFO* _pwndInfo;

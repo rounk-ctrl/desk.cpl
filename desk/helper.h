@@ -13,6 +13,7 @@ COLORREF GetDeskopColor();
 void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec, BOOL fEnumChildDirs);
 void FreeString(LPWSTR& str);
 void StringCpy(LPWSTR& dest, LPWSTR src);
+void FreeBitmap(Gdiplus::Bitmap** bmp);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

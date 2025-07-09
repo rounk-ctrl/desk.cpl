@@ -28,6 +28,16 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_marFrame = {};
 	_marMonitor = {};
 	_szMenuBar = { 0, GetSystemMetrics(SM_CYMENU)};
+	_bmpBin = nullptr;
+	_bmpSolidColor = nullptr;
+	_bmpWallpaper = nullptr;
+	_bmpMonitor = nullptr;
+	_bmpWindows = (Bitmap**)malloc(_wndInfoCount * sizeof(Bitmap*));
+	for (int i = 0; i < _wndInfoCount; ++i)
+	{
+		_bmpWindows[i] = nullptr;
+	}
+
 }
 
 CWindowPreview::~CWindowPreview()
@@ -51,32 +61,30 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER)
 	{
-		hr = _DrawMonitor(&graphics);
+		hr = _DrawMonitor();
 		RETURN_IF_FAILED(hr);
 	}
 
 	if (_pageType == PT_SCRSAVER)
 	{
 		hr = _DesktopScreenShooter(&graphics);
-		//return hr;
 	}
-
-	if (_pageType != PT_SCRSAVER)
+	else
 	{
-		hr = _RenderSolidColor(&graphics);
+		hr = _RenderSolidColor();
 		RETURN_IF_FAILED(hr);
 	}
 
 	if (_pageType == PT_THEMES || _pageType == PT_BACKGROUND)
 	{
-		hr = _RenderWallpaper(&graphics);
+		hr = _RenderWallpaper();
 		LOG_IF_FAILED(hr);
 		// non fatal error
 	}
 
 	if (_pageType == PT_THEMES)
 	{
-		hr = _RenderBin(&graphics);
+		hr = _RenderBin();
 		RETURN_IF_FAILED(hr);
 	}
 
@@ -84,10 +92,12 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	{
 		for (int i = 0; i < _wndInfoCount; ++i)
 		{
-			hr = _RenderWindow(_pwndInfo[i], &graphics);
+			hr = _RenderWindow(_pwndInfo[i], i);
 			RETURN_IF_FAILED(hr);
 		}
 	}
+
+	//graphics.DrawImage(_bmpWindows[0], Rect(0, 0, 250,120));
 
 	// create hbitmap
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
@@ -152,7 +162,7 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	return hr;
 }
 
-HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)
+HRESULT CWindowPreview::_DrawMonitor()
 {
 	HRESULT hr = S_OK;
 	Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -163,6 +173,7 @@ HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)
 	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
 
 	// cache it to improve performance
+	FreeBitmap(&_bmpMonitor);
 	_bmpMonitor = new Bitmap(_sizePreview.cx, _sizePreview.cy);
 	Graphics graphics(_bmpMonitor);
 
@@ -179,7 +190,7 @@ HRESULT CWindowPreview::_DrawMonitor(Gdiplus::Graphics* pGraphics)
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
+HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 {
 	HRESULT hr = S_OK;
 	HTHEME hTheme = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
@@ -210,23 +221,35 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, Graphics* pGraphics)
 		}
 	}
 
-	hr = _RenderFrame(pGraphics, hTheme, wndInfo);
+	// remove top and left values
+	// we add them back while composing
+	wndInfo.wndPos.bottom -= wndInfo.wndPos.top;
+	wndInfo.wndPos.right -= wndInfo.wndPos.left;
+	wndInfo.wndPos.left = 0;
+	wndInfo.wndPos.top = 0;
+
+	// cache it to improve performance
+	FreeBitmap(&_bmpWindows[index]);
+	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
+	Graphics graphics(_bmpWindows[index]);
+
+	hr = _RenderFrame(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaption(pGraphics, hTheme, wndInfo);
+	hr = _RenderCaption(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderContent(pGraphics, hTheme, wndInfo);
+	hr = _RenderContent(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderScrollbar(pGraphics, hTheme, wndInfo);
+	hr = _RenderScrollbar(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	CloseThemeData(hTheme);
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
+HRESULT CWindowPreview::_RenderWallpaper()
 {
 	HRESULT hr = S_OK;
 
@@ -244,6 +267,7 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 	RETURN_IF_NULL_ALLOC(bitmap);
 
 	// cache it to improve performance
+	FreeBitmap(&_bmpWallpaper);
 	_bmpWallpaper = new Bitmap(rect.Width, rect.Height);
 	Graphics graphics(_bmpWallpaper);
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
@@ -253,13 +277,14 @@ HRESULT CWindowPreview::_RenderWallpaper(Graphics* pGraphics)
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
+HRESULT CWindowPreview::_RenderBin()
 {
 	BOOL bRet = FALSE;
 	SHSTOCKICONINFO sii = { sizeof(sii) };
 	SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 
 	// cache it to improve performance
+	FreeBitmap(&_bmpBin);
 	_bmpBin = new Bitmap(32, 32);
 	Graphics graphics(_bmpBin);
 
@@ -284,7 +309,7 @@ HRESULT CWindowPreview::_RenderBin(Graphics* pGraphics)
 	return bRet ? S_OK : E_FAIL;
 }
 
-HRESULT CWindowPreview::_RenderSolidColor(Graphics* pGraphics)
+HRESULT CWindowPreview::_RenderSolidColor()
 {
 	// todo: move selectedTheme to this class
 	COLORREF clr = GetDeskopColor();
@@ -300,6 +325,7 @@ HRESULT CWindowPreview::_RenderSolidColor(Graphics* pGraphics)
 	}
 
 	// cache it to improve performance
+	FreeBitmap(&_bmpSolidColor);
 	_bmpSolidColor = new Bitmap(rect.Width, rect.Height);
 	Graphics graphics(_bmpSolidColor);
 
