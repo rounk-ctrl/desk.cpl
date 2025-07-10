@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = 1;
+	_fIsThemed = 0;
 
 	// always initialize variables
 	_marFrame = {};
@@ -97,7 +97,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 		}
 	}
 
-	//graphics.DrawImage(_bmpWindows[0], Rect(0, 0, 250,120));
+	graphics.DrawImage(_bmpWindows[0], Rect(_pwndInfo->wndPos.left, _pwndInfo->wndPos.top, RECTWIDTH(_pwndInfo->wndPos), RECTHEIGHT(_pwndInfo->wndPos)));
 
 	// create hbitmap
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
@@ -197,6 +197,8 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 
 	// my bad
 	// separate this
+	// todo: fix
+	/*
 	if (_pageType == PT_APPEARANCE && !_fIsThemed)
 	{
 		wndInfo.wndPos.top += 5;
@@ -220,6 +222,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 			wndInfo.wndPos.right -= 20;
 		}
 	}
+	*/
 
 	// remove top and left values
 	// we add them back while composing
@@ -232,6 +235,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
 	Graphics graphics(_bmpWindows[index]);
+	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
 	hr = _RenderFrame(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
@@ -342,7 +346,9 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	// caption frame
 	RECT crc = wndInfo.wndPos;
+	if (!_fIsThemed) crc.top += GetSystemMetrics(SM_CYFRAME);
 	crc.bottom = crc.top + _marFrame.cyTopHeight;
+
 	if (_fIsThemed)
 	{
 		hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &crc, NULL);
@@ -412,7 +418,6 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	int cxEdge = GetSystemMetrics(SM_CXEDGE);
 	int cyEdge = GetSystemMetrics(SM_CYEDGE);
 
-	// SM_CXSIZE is trash in windows 10
 	int cyBtn = _fIsThemed ? GetThemeSysSize(hTheme, SM_CYSIZE) : GetSystemMetrics(SM_CYSIZE);
 	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : GetSystemMetrics(SM_CYSIZE);
 
@@ -424,7 +429,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
 	crc.left = crc.right - cxBtn;
 	crc.top += _fIsThemed ? _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn
-		: (_marFrame.cyTopHeight - cyBtn) / 2;
+		: ((_marFrame.cyTopHeight - cyBtn) / 2 ) + GetSystemMetrics(SM_CYFRAME);
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
@@ -518,7 +523,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 	else
 	{
-		rc.top += (_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2;
+		rc.top += ((_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2) + GetSystemMetrics(SM_CXFRAME);
 		rc.left += GetSystemMetrics(SM_CXBORDER);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
@@ -566,10 +571,11 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
-	crc.bottom += _marFrame.cyTopHeight - _marFrame.cyBottomHeight; 
+	//crc.bottom += _marFrame.cyTopHeight - _marFrame.cyBottomHeight; 
+	crc.bottom -= _marFrame.cyBottomHeight;
 	if (!_fIsThemed)
 	{
-		crc.bottom -= (_marFrame.cyBottomHeight); // SM_CYEDGE gets added twice
+		//crc.bottom -= (_marFrame.cyBottomHeight); // SM_CYEDGE gets added twice
 		if (wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 	}
 
@@ -590,12 +596,14 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.bottom = crc.top + height;
 	if (_fIsThemed) DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.top = wndInfo.wndPos.bottom + _marFrame.cyTopHeight  - height;
+	crc.top = wndInfo.wndPos.bottom - height;
+	crc.bottom = wndInfo.wndPos.bottom;
 	if (!_fIsThemed)
 	{
-		crc.top -= (_marFrame.cyBottomHeight * 2);
+		//crc.top -= (_marFrame.cyBottomHeight * 2);
+		crc.bottom -= _marFrame.cyBottomHeight;
+		crc.top -= _marFrame.cyBottomHeight;
 	}
-	crc.bottom = crc.top + height;
 
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
@@ -639,8 +647,8 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	{
 		bool fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-		crc.top -= GetSystemMetrics(SM_CYFRAME);
-		crc.bottom += GetSystemMetrics(SM_CYFRAME) + _marFrame.cyTopHeight;
+		//crc.top = GetSystemMetrics(SM_CYFRAME);
+		//crc.bottom += GetSystemMetrics(SM_CYFRAME);
 		if (fIsMessageBox)
 		{
 			int offset = GetSystemMetrics(SM_CXBORDER);
@@ -716,7 +724,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.top += _marFrame.cyTopHeight;
 	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 
-	crc.bottom += _marFrame.cyTopHeight;
+	crc.bottom -= _marFrame.cyBottomHeight + GetSystemMetrics(SM_CYEDGE) + GetSystemMetrics(SM_CYBORDER);
 	crc.right -= _marFrame.cxRightWidth;
 
 	if (!_fIsThemed && !fIsMessageBox)
@@ -724,17 +732,20 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		// QUIRK: same behaviour as old desk.cpl
 		if (wndInfo.wndType == WT_ACTIVE) DrawEdge(hdc, &crc, EDGE_SUNKEN, BF_RECT);
 
-		// 1px border above edge
-		HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
-		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+		if (wndInfo.wndType == WT_ACTIVE)
+		{
+			// 1px border above edge
+			HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
-		POINT pt[2]{};
-		pt[0] = { crc.left, crc.top - 1};
-		pt[1] = { crc.right, crc.top - 1 };
-		Polyline(hdc, pt, ARRAYSIZE(pt));
+			POINT pt[2]{};
+			pt[0] = { crc.left, crc.top - 1 };
+			pt[1] = { crc.right, crc.top - 1 };
+			Polyline(hdc, pt, ARRAYSIZE(pt));
 
-		SelectObject(hdc, oldPen);
-		DeletePen(pen);
+			SelectObject(hdc, oldPen);
+			DeletePen(pen);
+		}
 
 		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CYEDGE));
 
@@ -742,7 +753,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		_marFrame.cxLeftWidth += GetSystemMetrics(SM_CXEDGE);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight += GetSystemMetrics(SM_CYEDGE);
-		_marFrame.cyBottomHeight += GetSystemMetrics(SM_CYEDGE);
+		_marFrame.cyBottomHeight += GetSystemMetrics(SM_CYFRAME);
 	}
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
