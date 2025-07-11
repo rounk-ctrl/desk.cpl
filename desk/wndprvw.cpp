@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = 0;
+	_fIsThemed = 1;
 
 	// always initialize variables
 	_marFrame = {};
@@ -571,11 +571,9 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
-	//crc.bottom += _marFrame.cyTopHeight - _marFrame.cyBottomHeight; 
-	crc.bottom -= _marFrame.cyBottomHeight;
+	crc.bottom -= _marFrame.cyBottomHeight+2;
 	if (!_fIsThemed)
 	{
-		//crc.bottom -= (_marFrame.cyBottomHeight); // SM_CYEDGE gets added twice
 		if (wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 	}
 
@@ -598,12 +596,8 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.top = wndInfo.wndPos.bottom - height;
 	crc.bottom = wndInfo.wndPos.bottom;
-	if (!_fIsThemed)
-	{
-		//crc.top -= (_marFrame.cyBottomHeight * 2);
-		crc.bottom -= _marFrame.cyBottomHeight;
-		crc.top -= _marFrame.cyBottomHeight;
-	}
+	crc.bottom -= _marFrame.cyBottomHeight + 2;
+	crc.top -= _marFrame.cyBottomHeight + 2;
 
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
@@ -647,8 +641,6 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	{
 		bool fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-		//crc.top = GetSystemMetrics(SM_CYFRAME);
-		//crc.bottom += GetSystemMetrics(SM_CYFRAME);
 		if (fIsMessageBox)
 		{
 			int offset = GetSystemMetrics(SM_CXBORDER);
@@ -679,8 +671,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	}
 
 	crc = wndInfo.wndPos;
-	crc.top = crc.bottom + _marFrame.cyTopHeight;
-	crc.bottom = crc.top + _marFrame.cyBottomHeight + 2;
+	crc.top = crc.bottom - (_marFrame.cyBottomHeight + 2);
 	if (_fIsThemed)
 	{
 		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
@@ -690,7 +681,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	crc = wndInfo.wndPos;
 	crc.top += _marFrame.cyTopHeight;
 	crc.right = crc.left + _marFrame.cxLeftWidth;
-	crc.bottom += _marFrame.cyTopHeight;
+	crc.bottom -= _marFrame.cyBottomHeight + 2;
 	if (_fIsThemed)
 	{
 		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
