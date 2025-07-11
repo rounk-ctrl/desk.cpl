@@ -59,7 +59,7 @@ private:
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
-	HRESULT _ComposePreview();
+	HRESULT _ComposePreview(HBITMAP* pbOut);
 
 	// variables
 	MYWINDOWINFO* _pwndInfo;

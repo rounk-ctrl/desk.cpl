@@ -95,3 +95,11 @@ void FreeBitmap(Gdiplus::Bitmap** bmp)
 		*bmp = nullptr;
 	}
 }
+
+HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdiplus::Rect rect)
+{
+	if (bmp != nullptr)
+	{
+		return graph->DrawImage(bmp, rect) == Gdiplus::Ok ? S_OK : E_FAIL;
+	}
+}

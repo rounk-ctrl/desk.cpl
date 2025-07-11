@@ -14,6 +14,7 @@ void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vecto
 void FreeString(LPWSTR& str);
 void StringCpy(LPWSTR& dest, LPWSTR src);
 void FreeBitmap(Gdiplus::Bitmap** bmp);
+HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdiplus::Rect rect);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

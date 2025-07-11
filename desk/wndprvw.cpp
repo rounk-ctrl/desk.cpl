@@ -50,13 +50,6 @@ CWindowPreview::~CWindowPreview()
 
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
-	Bitmap* gdiBmp = new Bitmap(GETSIZE(_sizePreview), PixelFormat32bppARGB);
-	RETURN_IF_NULL_ALLOC(gdiBmp);
-
-	Graphics graphics(gdiBmp);
-	RETURN_IF_NULL_ALLOC(&graphics);
-	graphics.SetInterpolationMode(InterpolationModeInvalid);
-
 	HRESULT hr = S_OK;
 
 	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER)
@@ -65,11 +58,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 		RETURN_IF_FAILED(hr);
 	}
 
-	if (_pageType == PT_SCRSAVER)
-	{
-		hr = _DesktopScreenShooter(&graphics);
-	}
-	else
+	if (_pageType != PT_SCRSAVER)
 	{
 		hr = _RenderSolidColor();
 		RETURN_IF_FAILED(hr);
@@ -96,8 +85,48 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 			RETURN_IF_FAILED(hr);
 		}
 	}
+	
+	hr = _ComposePreview(pbOut);
+	return hr;
+}
 
-	graphics.DrawImage(_bmpWindows[0], Rect(_pwndInfo->wndPos.left, _pwndInfo->wndPos.top, RECTWIDTH(_pwndInfo->wndPos), RECTHEIGHT(_pwndInfo->wndPos)));
+HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
+{
+	Bitmap* gdiBmp = new Bitmap(GETSIZE(_sizePreview), PixelFormat32bppARGB);
+	RETURN_IF_NULL_ALLOC(gdiBmp);
+
+	Graphics graphics(gdiBmp);
+	RETURN_IF_NULL_ALLOC(&graphics);
+	graphics.SetInterpolationMode(InterpolationModeInvalid);
+
+	HRESULT hr = S_OK;
+
+	Rect rect(0, 0, GETSIZE(_sizePreview));
+	hr = DrawBitmapIfNotNull(_bmpMonitor, &graphics, rect);
+
+	if (_marMonitor.cxLeftWidth > 0)
+	{
+		rect.X += _marMonitor.cxLeftWidth;
+		rect.Y += _marMonitor.cyTopHeight;
+		rect.Width -= _marMonitor.cxRightWidth;
+		rect.Height -= _marMonitor.cyBottomHeight;
+	}
+	hr = DrawBitmapIfNotNull(_bmpSolidColor, &graphics, rect);
+	hr = DrawBitmapIfNotNull(_bmpWallpaper, &graphics, rect);
+
+	if (_pageType == PT_SCRSAVER)
+	{
+		hr = _DesktopScreenShooter(&graphics);
+	}
+
+	rect = { _sizePreview.cx - 48, _sizePreview.cy - 40, 32, 32};
+	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
+
+	for (int i = 0; i < _wndInfoCount; ++i)
+	{
+		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos)};
+		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
+	}
 
 	// create hbitmap
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
@@ -182,10 +211,7 @@ HRESULT CWindowPreview::_DrawMonitor()
 	graphics.DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor.cxLeftWidth = 15;
-	_marMonitor.cyTopHeight = 25;
-	_marMonitor.cxRightWidth = 37;
-	_marMonitor.cyBottomHeight = 68;
+	_marMonitor = {15, 37, 25, 68};
 
 	return hr;
 }
@@ -235,7 +261,6 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
 	Graphics graphics(_bmpWindows[index]);
-	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
 	hr = _RenderFrame(&graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
@@ -259,14 +284,7 @@ HRESULT CWindowPreview::_RenderWallpaper()
 
 	// todo: adjust wallpaper based on fit type 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
-	if (_marMonitor.cxLeftWidth > 0)
-	{
-		rect.X += _marMonitor.cxLeftWidth;
-		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width -= _marMonitor.cxRightWidth;
-		rect.Height -= _marMonitor.cyBottomHeight;
-	}
-
+	
 	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	RETURN_IF_NULL_ALLOC(bitmap);
 
@@ -320,13 +338,6 @@ HRESULT CWindowPreview::_RenderSolidColor()
 	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
-	if (_marMonitor.cxLeftWidth > 0)
-	{
-		rect.X += _marMonitor.cxLeftWidth;
-		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width -= _marMonitor.cxRightWidth;
-		rect.Height -= _marMonitor.cyBottomHeight;
-	}
 
 	// cache it to improve performance
 	FreeBitmap(&_bmpSolidColor);
@@ -715,7 +726,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.top += _marFrame.cyTopHeight;
 	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 
-	crc.bottom -= _marFrame.cyBottomHeight + GetSystemMetrics(SM_CYEDGE) + GetSystemMetrics(SM_CYBORDER);
+	crc.bottom -= _marFrame.cyBottomHeight + 2;
+	if (!_fIsThemed) crc.bottom -= GetSystemMetrics(SM_CYFRAME);
 	crc.right -= _marFrame.cxRightWidth;
 
 	if (!_fIsThemed && !fIsMessageBox)
@@ -810,8 +822,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		// load button theme
 		if (_fIsThemed)
 		{
-			crc.top += 20;
-			crc.bottom -= 20;
+			crc.top += 16;
+			crc.bottom -= 16;
 			crc.left += 30;
 			crc.right -= 30;
 
