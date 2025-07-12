@@ -29,4 +29,21 @@ private:
 	SIZE size;
 	std::vector<LPWSTR> msstyle;
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
+
+	MYWINDOWINFO wnd[3] =
+	{
+		{
+			WT_INACTIVE,
+			{10, 10, 10 + 320, 10 + 134}
+		},
+		{
+			WT_ACTIVE,
+			{20, 35, 25 + 320, 35 + 134}
+		},
+		{
+			WT_MESSAGEBOX,
+			{(357 / 2) - 75,64,(357 / 2) + 75,64 + 98}
+		}
+	};
+
 };

@@ -47,7 +47,6 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	LPWSTR path = nullptr;
 	themeClass->get_VisualStyle(&path);
 	StringCpy(selectedTheme->szMsstylePath, path);
-	selectedTheme->fMsstyleChanged = true;
 
 	// update THEMEINFO before setting bitmap for now
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);

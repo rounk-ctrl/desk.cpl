@@ -140,8 +140,8 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	{
 		_CleanupUxThemeFile(&_hTheme);
 	}
-	_pwndInfo = pwndInfo;
 	_hTheme = hTheme;
+	_pwndInfo = pwndInfo;
 	return GetPreviewImage(pbOut);
 }
 
@@ -179,15 +179,19 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 
 	HDC hScreenDC = ::GetDC(NULL);
 	HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-	auto g_hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
-	SelectObject(hMemoryDC, g_hbDesktop);
+	HBITMAP _hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
+	HBITMAP oldBmp = (HBITMAP)SelectObject(hMemoryDC, _hbDesktop);
 	BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
 
-	Bitmap* bm = new Bitmap(g_hbDesktop, NULL);
+	Bitmap* bm = new Bitmap(_hbDesktop, NULL);
 	hr = pGraphics->DrawImage(bm, rect) == Ok ? S_OK : E_FAIL;
 
+	SelectObject(hMemoryDC, oldBmp);
+	DeleteBitmap(_hbDesktop);
+	DeleteBitmap(oldBmp);
+	DeleteDC(hScreenDC);
+	DeleteDC(hMemoryDC);
 	delete bm;
-	DeleteObject(g_hbDesktop);
 	return hr;
 }
 
@@ -260,18 +264,19 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	// cache it to improve performance
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
-	Graphics graphics(_bmpWindows[index]);
+	
+	Graphics* graphics = Gdiplus::Graphics::FromImage(_bmpWindows[index]);
 
-	hr = _RenderFrame(&graphics, hTheme, wndInfo);
+	hr = _RenderFrame(graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaption(&graphics, hTheme, wndInfo);
+	hr = _RenderCaption(graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderContent(&graphics, hTheme, wndInfo);
+	hr = _RenderContent(graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderScrollbar(&graphics, hTheme, wndInfo);
+	hr = _RenderScrollbar(graphics, hTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	CloseThemeData(hTheme);
@@ -281,21 +286,10 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 HRESULT CWindowPreview::_RenderWallpaper()
 {
 	HRESULT hr = S_OK;
-
-	// todo: adjust wallpaper based on fit type 
-	Rect rect(0, 0, GETSIZE(_sizePreview));
 	
-	Bitmap* bitmap = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
-	RETURN_IF_NULL_ALLOC(bitmap);
-
 	// cache it to improve performance
 	FreeBitmap(&_bmpWallpaper);
-	_bmpWallpaper = new Bitmap(rect.Width, rect.Height);
-	Graphics graphics(_bmpWallpaper);
-	graphics.SetInterpolationMode(InterpolationModeInvalid);
-
-	hr = graphics.DrawImage(bitmap, rect) == Ok ? S_OK : E_FAIL;
-	delete bitmap;
+	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
 	return hr;
 }
 
@@ -727,7 +721,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	if (!_fIsThemed) crc.bottom -= GetSystemMetrics(SM_CYFRAME);
+	int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE) - GetSystemMetrics(SM_CXBORDER);
+	if (!_fIsThemed) crc.bottom -= GetSystemMetrics(SM_CYBORDER) + count;
 	crc.right -= _marFrame.cxRightWidth;
 
 	if (!_fIsThemed && !fIsMessageBox)

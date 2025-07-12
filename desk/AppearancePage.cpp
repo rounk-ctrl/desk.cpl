@@ -98,13 +98,11 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ComboBox_SetCurSel(hColorCombobox, 0);
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 
-	// bogus values
-	MYWINDOWINFO wnd[3] =
-	{
-		{WT_INACTIVE, {0}},{WT_ACTIVE, {0}},{WT_MESSAGEBOX,{0}}
-	};
+	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
-	// preview set in OnSetActive
+	pWndPreview->GetPreviewImage(&ebmp);
+	Static_SetBitmap(hPreviewWnd, ebmp);
+	DeleteBitmap(ebmp);
 
 	return 0;
 }
@@ -136,22 +134,6 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		}
 	}
 
-	// my bad
-	MYWINDOWINFO wnd[3] =
-	{
-		{
-			WT_INACTIVE,
-			{10, 10, 10 + 320, 10 + 134}
-		},
-		{
-			WT_ACTIVE,
-			{20, 35, 25 + 320, 35 + 134}
-		},
-		{
-			WT_MESSAGEBOX,
-			{(size.cx / 2) - 75,64,(size.cx / 2) + 75,64 + 98}
-		}
-	};
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp);
 	Static_SetBitmap(hPreviewWnd, ebmp);
