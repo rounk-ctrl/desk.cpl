@@ -116,30 +116,52 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 
 BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
+	int i = ComboBox_GetCurSel(hThemesCombobox);
+	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+
+	FreeString(selectedTheme->szMsstylePath);
+	StringCpy(selectedTheme->szMsstylePath, data);
+	selectedTheme->fMsstyleChanged = true;
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
+	Static_SetBitmap(hPreviewWnd, ebmp);
+	DeleteBitmap(ebmp);
+
+	SetModified(TRUE);
 	return 0;
 }
 
 BOOL CAppearanceDlgProc::OnSetActive()
 {
 	_TerminateProcess(pi);
-	if (!selectedTheme->fMsstyleChanged) return TRUE;
-
-	for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
+	UINT flags = UPDATE_SOLIDCLR;
+	if (selectedTheme->fMsstyleChanged)
 	{
-		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-		if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
+		flags |= UPDATE_WINDOW;
+		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 		{
-			ComboBox_SetCurSel(hThemesCombobox, i);
-			break;
+			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+			if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
+			{
+				ComboBox_SetCurSel(hThemesCombobox, i);
+				break;
+			}
 		}
+		selectedTheme->fMsstyleChanged = false;
 	}
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
 	Static_SetBitmap(hPreviewWnd, ebmp);
 	DeleteBitmap(ebmp);
 
-	selectedTheme->fMsstyleChanged = false;
+	return 0;
+}
 
+BOOL CAppearanceDlgProc::OnApply()
+{
+	SetSystemVisualStyle(selectedTheme->szMsstylePath, nullptr, nullptr, AT_NONE);
+	selectedTheme->fThemePgMsstyleUpdate = true;
 	return 0;
 }

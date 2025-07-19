@@ -102,4 +102,5 @@ HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdip
 	{
 		return graph->DrawImage(bmp, rect) == Gdiplus::Ok ? S_OK : E_FAIL;
 	}
+	return E_FAIL;
 }

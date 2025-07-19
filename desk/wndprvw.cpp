@@ -27,7 +27,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
-	_szMenuBar = { 0, GetSystemMetrics(SM_CYMENU)};
+	_szMenuBar = { 0, GetSystemMetrics(SM_CYMENU) };
 	_bmpBin = nullptr;
 	_bmpSolidColor = nullptr;
 	_bmpWallpaper = nullptr;
@@ -85,9 +85,32 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 			RETURN_IF_FAILED(hr);
 		}
 	}
-	
+
 	hr = _ComposePreview(pbOut);
 	return hr;
+}
+
+HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags)
+{
+	if (_hTheme)
+	{
+		_CleanupUxThemeFile(&_hTheme);
+	}
+	_hTheme = hTheme;
+	_pwndInfo = pwndInfo;
+
+	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
+	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
+	if (flags & UPDATE_BIN) _RenderBin();
+	if (flags & UPDATE_WINDOW)
+	{
+		for (int i = 0; i < _wndInfoCount; ++i)
+		{
+			_RenderWindow(_pwndInfo[i], i);
+		}
+	}
+
+	return _ComposePreview(pbOut);
 }
 
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
@@ -119,12 +142,12 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		hr = _DesktopScreenShooter(&graphics);
 	}
 
-	rect = { _sizePreview.cx - 48, _sizePreview.cy - 40, 32, 32};
+	rect = { _sizePreview.cx - 48, _sizePreview.cy - 40, 32, 32 };
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
 
 	for (int i = 0; i < _wndInfoCount; ++i)
 	{
-		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos)};
+		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos) };
 		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
 	}
 
@@ -132,17 +155,6 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
 	delete gdiBmp;
 	return hr;
-}
-
-HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut)
-{
-	if (_hTheme)
-	{
-		_CleanupUxThemeFile(&_hTheme);
-	}
-	_hTheme = hTheme;
-	_pwndInfo = pwndInfo;
-	return GetPreviewImage(pbOut);
 }
 
 HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
@@ -215,7 +227,7 @@ HRESULT CWindowPreview::_DrawMonitor()
 	graphics.DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor = {15, 37, 25, 68};
+	_marMonitor = { 15, 37, 25, 68 };
 
 	return hr;
 }
@@ -264,7 +276,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	// cache it to improve performance
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
-	
+
 	Graphics* graphics = Gdiplus::Graphics::FromImage(_bmpWindows[index]);
 
 	hr = _RenderFrame(graphics, hTheme, wndInfo);
@@ -286,7 +298,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 HRESULT CWindowPreview::_RenderWallpaper()
 {
 	HRESULT hr = S_OK;
-	
+
 	// cache it to improve performance
 	FreeBitmap(&_bmpWallpaper);
 	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
@@ -313,7 +325,7 @@ HRESULT CWindowPreview::_RenderBin()
 	if (sii.hIcon)
 	{
 		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
-		bRet = AlphaBlend(hdcgraphic, 0, 0, 32, 32, 
+		bRet = AlphaBlend(hdcgraphic, 0, 0, 32, 32,
 			memdc, 0, 0, 32, 32, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
 	}
 	SelectObject(memdc, oldBmp);
@@ -434,11 +446,11 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
 	crc.left = crc.right - cxBtn;
 	crc.top += _fIsThemed ? _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn
-		: ((_marFrame.cyTopHeight - cyBtn) / 2 ) + GetSystemMetrics(SM_CYFRAME);
+		: ((_marFrame.cyTopHeight - cyBtn) / 2) + GetSystemMetrics(SM_CYFRAME);
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
-				: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE) == TRUE ? S_OK : E_FAIL;
+		: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE) == TRUE ? S_OK : E_FAIL;
 
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
@@ -534,8 +546,8 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
-	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT) 
-							: GetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
+	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
+		: GetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
 	{
@@ -576,7 +588,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
-	crc.bottom -= _marFrame.cyBottomHeight+2;
+	crc.bottom -= _marFrame.cyBottomHeight + 2;
 	if (!_fIsThemed)
 	{
 		if (wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
@@ -593,7 +605,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.bottom = crc.top + height;
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
-				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLUP) == TRUE ? S_OK : E_FAIL;
+		: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLUP) == TRUE ? S_OK : E_FAIL;
 
 	crc.top += height;
 	crc.bottom = crc.top + height;
@@ -605,7 +617,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.top -= _marFrame.cyBottomHeight + 2;
 
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
-				: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
+		: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
 
 	CloseThemeData(hThemeScrl);
 	pGraphics->ReleaseHDC(hdc);
@@ -713,11 +725,12 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
-								: GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+		: GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
 	crc.top += _marFrame.cyTopHeight;
+	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += GetSystemMetrics(SM_CYFRAME);
 	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
 
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
@@ -745,6 +758,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			DeletePen(pen);
 		}
 
+		// offset the rect by edge to actually show the inner border
 		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CYEDGE));
 
 		// update margins
@@ -817,10 +831,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		// load button theme
 		if (_fIsThemed)
 		{
-			crc.top += 16;
-			crc.bottom -= 16;
-			crc.left += 30;
-			crc.right -= 30;
+			InflateRect(&crc, -30, -16);
 
 			HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
 			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
@@ -833,9 +844,9 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			DrawText(hdc, L"Message Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 			crc.top += 17;
-			crc.bottom -= 3;
-			crc.left += 62;
-			crc.right -= 62;
+			crc.bottom -= 17;
+			crc.left += 32;
+			crc.right -= 32;
 			DrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);

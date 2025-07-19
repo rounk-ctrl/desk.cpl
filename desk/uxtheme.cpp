@@ -10,6 +10,7 @@ EnumThemeColors_t EnumThemeColors;
 EnumThemeSize_t EnumThemeSize;
 ClearTheme_t ClearTheme;
 DrawTextWithGlow_t DrawTextWithGlow;
+SetSystemVisualStyle_t SetSystemVisualStyle;
 
 void InitUxtheme()
 {
@@ -24,6 +25,8 @@ void InitUxtheme()
 		ClearTheme = (ClearTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(84));
 		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(92));
 		DrawTextWithGlow = (DrawTextWithGlow_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(126));
+
+		SetSystemVisualStyle = (SetSystemVisualStyle_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(65));
 		FreeLibrary(hUxtheme);
 	}
 }

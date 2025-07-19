@@ -166,6 +166,7 @@ extern EnumThemeSize_t EnumThemeSize;
 extern ClearTheme_t ClearTheme;
 extern EnumThemes_t EnumThemes;
 extern DrawTextWithGlow_t DrawTextWithGlow;
+extern SetSystemVisualStyle_t SetSystemVisualStyle;
 
 void InitUxtheme();
 HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName);

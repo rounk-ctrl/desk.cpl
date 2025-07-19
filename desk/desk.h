@@ -27,6 +27,7 @@ struct THEMEINFO {
 	// reduce overhead every time u load appearancepage
 	LPWSTR szMsstylePath;
 	bool fMsstyleChanged = false;
+	bool fThemePgMsstyleUpdate = false;		// bruh
 };
 
 // global HINSTANCE for the current app

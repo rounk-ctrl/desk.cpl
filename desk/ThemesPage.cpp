@@ -82,7 +82,6 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	{
 		FreeString(selectedTheme->szMsstylePath);
 		StringCpy(selectedTheme->szMsstylePath, path);
-		wprintf(selectedTheme->szMsstylePath);
 		selectedTheme->fMsstyleChanged = true;
 	}
 
@@ -91,7 +90,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 	// set the preview bitmap to the static control
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
 	Static_SetBitmap(hPreview, ebmp);
 
 	SetModified(TRUE);
@@ -141,11 +140,20 @@ BOOL CThemeDlgProc::OnSetActive()
 
 		// set the preview bitmap to the static control
 		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp);
+		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
 		Static_SetBitmap(hPreview, ebmp);
-		
 		DeleteBitmap(ebmp);
+
 		selectedTheme->updateWallThemesPg = false;
+	}
+	if (selectedTheme->fMsstyleChanged || selectedTheme->fThemePgMsstyleUpdate)
+	{
+		HBITMAP ebmp;
+		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
+		Static_SetBitmap(hPreview, ebmp);
+		DeleteBitmap(ebmp);
+
+		selectedTheme->fThemePgMsstyleUpdate = selectedTheme->fMsstyleChanged = false;
 	}
 	_TerminateProcess(pi);
 	return 0;

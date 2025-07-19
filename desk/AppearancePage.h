@@ -20,6 +20,7 @@ private:
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSetActive();
+	BOOL OnApply();
 
 
 	HWND hThemesCombobox;

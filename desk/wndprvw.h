@@ -17,6 +17,16 @@ enum WINDOWTYPE
 	WT_MESSAGEBOX,
 };
 
+enum UPDATEFLAGS
+{
+	UPDATE_NONE = 0,
+	UPDATE_SOLIDCLR = 1,
+	UPDATE_WALLPAPER = 2,
+	UPDATE_BIN = 4,
+	UPDATE_WINDOW = 8,
+	UPDATE_ALL = UPDATE_SOLIDCLR | UPDATE_WALLPAPER | UPDATE_BIN | UPDATE_WINDOW
+};
+
 struct MYWINDOWINFO
 {
 	WINDOWTYPE wndType;
@@ -28,7 +38,7 @@ MIDL_INTERFACE("5E7FDCC0-A398-49C0-9652-2B441A04CFCD")
 IWindowPreview : IUnknown
 {
 	STDMETHOD(GetPreviewImage)(HBITMAP* pbOut) PURE;
-	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut) PURE;
+	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags) PURE;
 };
 
 class CWindowPreview final: 
@@ -42,7 +52,7 @@ public:
 
 	//~ Begin IWindowPreview interface
 	STDMETHODIMP GetPreviewImage(HBITMAP* pbOut);
-	STDMETHODIMP GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut);
+	STDMETHODIMP GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags);
 	//~ End IWindowPreview interface
 
 private:

@@ -9,7 +9,8 @@ using namespace Microsoft::WRL::Details;
 
 std::vector<LPWSTR> wallpapers;
 const COMDLG_FILTERSPEC file_types[] = {
-	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)", L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
+	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)",
+	L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
 
 HRESULT GetSolidBtnBmp(HBITMAP* pbOut)
@@ -209,9 +210,16 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 			themeClass->GetBackgroundColor(&clrlv);
 		}
 
-		HBITMAP bmp; //WallpaperAsBmp(GETSIZE(backPreviewSize), selectedTheme->wallpaperPath, m_hWnd, clrlv);
-		pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr);
-		pWndPreview->GetPreviewImage(&bmp);
+		HBITMAP bmp;
+		if (!pWndPreview)
+		{
+			pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr);
+			pWndPreview->GetPreviewImage(&bmp);
+		}
+		else
+		{
+			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
+		}
 		Static_SetBitmap(hBackPreview, bmp);
 
 		SetModified(TRUE);
@@ -287,7 +295,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 	if (!firstInit && selectedIndex == 0)
 	{
 		HBITMAP bmp; 
-		pWndPreview->GetPreviewImage(&bmp);
+		pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		Static_SetBitmap(hBackPreview, bmp);
 		DeleteBitmap(bmp);
 	}
