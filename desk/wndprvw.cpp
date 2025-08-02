@@ -98,6 +98,7 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	}
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
+	if (hTheme == nullptr) _fIsThemed = 0;
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
 	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
@@ -235,7 +236,7 @@ HRESULT CWindowPreview::_DrawMonitor()
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 {
 	HRESULT hr = S_OK;
-	HTHEME hTheme = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Window", 0) : OpenThemeData(NULL, L"Window");
+	HTHEME hTheme = OpenNcThemeData(_hTheme, L"Window");
 
 	// my bad
 	// separate this
@@ -276,7 +277,6 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	// cache it to improve performance
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
-
 	Graphics* graphics = Gdiplus::Graphics::FromImage(_bmpWindows[index]);
 
 	hr = _RenderFrame(graphics, hTheme, wndInfo);
@@ -425,7 +425,6 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
-
 	CLOSEBUTTONSTATES btnState = wndInfo.wndType == WT_INACTIVE ? (CLOSEBUTTONSTATES)5 : CBS_NORMAL;
 
 	SIZE size = { 0 };
@@ -573,7 +572,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	HRESULT hr = S_OK;
 	if (wndInfo.wndType != WT_ACTIVE) return hr;
 
-	HTHEME hThemeScrl = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Scrollbar", 0) : OpenThemeData(NULL, L"Scrollbar");
+	HTHEME hThemeScrl = OpenNcThemeData(_hTheme, L"Scrollbar");
 	HDC hdc = pGraphics->GetHDC();
 	RETURN_IF_NULL_ALLOC(hdc);
 
@@ -833,7 +832,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		{
 			InflateRect(&crc, -30, -16);
 
-			HTHEME hThemeBtn = _hTheme ? OpenThemeDataFromFile(_hTheme, NULL, L"Button", 0) : OpenThemeData(NULL, L"Button");
+			HTHEME hThemeBtn = OpenNcThemeData(_hTheme, L"Button");
 			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
 			CloseThemeData(hThemeBtn);
 		}
