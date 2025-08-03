@@ -43,10 +43,17 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	pThemeManager->GetTheme(currThem, &currentITheme);
 
-	ITheme* themeClass = new ITheme(currentITheme);
-	LPWSTR path = nullptr;
-	themeClass->get_VisualStyle(&path);
-	StringCpy(selectedTheme->szMsstylePath, path);
+	if (!IsClassicThemeEnabled())
+	{
+		ITheme* themeClass = new ITheme(currentITheme);
+		LPWSTR path = nullptr;
+		themeClass->get_VisualStyle(&path);
+		StringCpy(selectedTheme->szMsstylePath, path);
+	}
+	else
+	{
+		StringCpy(selectedTheme->szMsstylePath, (LPWSTR)L"(classic)");
+	}
 
 	// update THEMEINFO before setting bitmap for now
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
@@ -78,12 +85,14 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 	// update the string if different
 	if (PathFileExists(path) 
+		&& !IsClassicThemeEnabled()
 		&& StrCmpI(selectedTheme->szMsstylePath, path) != 0)
 	{
 		FreeString(selectedTheme->szMsstylePath);
 		StringCpy(selectedTheme->szMsstylePath, path);
 		selectedTheme->fMsstyleChanged = true;
 	}
+
 
 	// update THEMEINFO
 	UpdateThemeInfo(ws, index);

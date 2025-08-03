@@ -92,14 +92,15 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags)
 {
-	if (_hTheme)
-	{
-		_CleanupUxThemeFile(&_hTheme);
-	}
+	if (_hTheme) _CleanupUxThemeFile(&_hTheme);
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
 	if (hTheme == nullptr) _fIsThemed = 0;
-	else _fIsThemed = 1;
+	else
+	{
+		if (lstrcmp(selectedTheme->szMsstylePath, L"(classic)") == 0) _fIsThemed = 0;
+		else _fIsThemed = 1;
+	}
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
 	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
