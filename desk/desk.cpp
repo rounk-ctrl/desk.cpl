@@ -5,6 +5,7 @@
 #include "ScreensaverPage.h"
 #include "AppearancePage.h"
 #include "desk.h"
+#include "helper.h"
 
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
@@ -23,10 +24,8 @@ LRESULT CALLBACK SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	return FALSE;
 }
 
-void PropertySheetMoment()
+void PropertySheetMoment(LPWSTR lpCmdLine)
 {
-	//SetThemeAppProperties(0);
-
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
@@ -76,6 +75,9 @@ void PropertySheetMoment()
 	// cleanup
 	Gdiplus::GdiplusShutdown(gdiplusToken);
 	pThemeManager->Release();
+	pDesktopWallpaper->Release();
+	currentITheme->Release();
+	free(selectedTheme);
 }
 
 extern "C" LONG APIENTRY CPlApplet(
@@ -101,11 +103,14 @@ extern "C" LONG APIENTRY CPlApplet(
 		lpCPlInfo->idIcon = IDI_ICON1;
 		lpCPlInfo->idName = IDS_THEMESCPL;
 		lpCPlInfo->idInfo = IDS_THEMESDESC;
-		lpCPlInfo->lData = 0L;
-		break;
+		return (LONG)TRUE;
+
 	case CPL_DBLCLK:
-		PropertySheetMoment();
-		break;
+		lParam2 = 0L;
+
+	case CPL_STARTWPARMS:
+		PropertySheetMoment((LPWSTR)lParam2);
+		return (LONG)TRUE;
 	}
 	return retCode;
 }

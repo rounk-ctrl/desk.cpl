@@ -39,9 +39,6 @@
     <ClInclude Include="uxtheme.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="strnatcmp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -95,7 +92,6 @@
     <ClCompile Include="AppearanceDlgBox.cpp">
       <Filter>Dialogs</Filter>
     </ClCompile>
-    <ClCompile Include="strnatcmp.cpp" />
     <ClCompile Include="uxtheme.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,5 +132,6 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natstepfilter" />
   </ItemGroup>
 </Project>

@@ -37,8 +37,8 @@ struct MYWINDOWINFO
 MIDL_INTERFACE("5E7FDCC0-A398-49C0-9652-2B441A04CFCD")
 IWindowPreview : IUnknown
 {
-	STDMETHOD(GetPreviewImage)(HBITMAP* pbOut) PURE;
-	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags) PURE;
+	STDMETHOD(GetPreviewImage)(HBITMAP* pbOut) = 0;
+	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags) = 0;
 };
 
 class CWindowPreview final: 

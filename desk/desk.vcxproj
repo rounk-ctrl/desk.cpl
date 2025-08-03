@@ -192,7 +192,6 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="helper.h" />
     <ClInclude Include="ScreensaverPage.h" />
-    <ClInclude Include="strnatcmp.h" />
     <ClInclude Include="theme.h" />
     <ClInclude Include="ThemesPage.h" />
     <ClInclude Include="todo.h" />
@@ -212,7 +211,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ScreensaverPage.cpp" />
-    <ClCompile Include="strnatcmp.cpp" />
     <ClCompile Include="ThemesPage.cpp" />
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />

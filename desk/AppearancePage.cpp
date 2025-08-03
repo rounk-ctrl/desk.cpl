@@ -29,6 +29,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	// add classic style
 	int index = ComboBox_AddString(hThemesCombobox, L"Windows Classic style");
 	ComboBox_SetItemData(hThemesCombobox, index, L"(classic)");
+	msstyle.push_back((LPWSTR)L"(classic)");
 
 	HKEY key;
 	RegOpenKeyEx(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", 0, KEY_READ, &key);
@@ -76,20 +77,26 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	}
 
 	int selindex = 0;
-
-	ITheme* themeClass = new ITheme(currentITheme);
-	LPWSTR style;
-	themeClass->get_VisualStyle(&style);
-	for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
+	if (IsClassicThemeEnabled())
 	{
-		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-		if (StrCmpI(data, style) == 0)
+		selindex = ComboBox_FindString(hThemesCombobox, 0, L"Windows Classic style");
+	}
+	else
+	{
+		ITheme* themeClass = new ITheme(currentITheme);
+		LPWSTR style;
+		themeClass->get_VisualStyle(&style);
+		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 		{
-			selindex = i;
-			ComboBox_SetCurSel(hThemesCombobox, i);
-			break;
+			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+			if (StrCmpI(data, style) == 0)
+			{
+				selindex = i;
+				break;
+			}
 		}
 	}
+	ComboBox_SetCurSel(hThemesCombobox, selindex);
 
 	_UpdateColorBox(msstyle[selindex]);
 	_UpdateFontBox(msstyle[selindex]);
@@ -168,7 +175,29 @@ BOOL CAppearanceDlgProc::OnSetActive()
 
 BOOL CAppearanceDlgProc::OnApply()
 {
-	SetSystemVisualStyle(selectedTheme->szMsstylePath, nullptr, nullptr, AT_NONE);
+	int i = ComboBox_GetCurSel(hThemesCombobox);
+	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+	if (StrCmpI(data, L"(classic)") == 0)
+	{
+		if (FAILED(ClassicThemeControl(TRUE)))
+		{
+			MessageBox(L"Please run this applet as admin", L"Notice", MB_ICONINFORMATION);
+			return 1;
+		}
+		MessageBox(L"Any new window you open will have the classic style set", L"Notice", MB_ICONINFORMATION);
+	}
+	else
+	{
+		if (IsClassicThemeEnabled())
+		{
+			if (FAILED(ClassicThemeControl(FALSE)))
+			{
+				MessageBox(L"Please run this applet as admin", L"Notice", MB_ICONINFORMATION);
+				return 1;
+			}
+		}
+		SetSystemVisualStyle(selectedTheme->szMsstylePath, nullptr, nullptr, AT_NONE);
+	}
 	selectedTheme->fThemePgMsstyleUpdate = true;
 	return 0;
 }

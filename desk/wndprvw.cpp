@@ -22,7 +22,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = 1;
+	_fIsThemed = !IsClassicThemeEnabled();
 
 	// always initialize variables
 	_marFrame = {};
@@ -99,6 +99,7 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
 	if (hTheme == nullptr) _fIsThemed = 0;
+	else _fIsThemed = 1;
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
 	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
@@ -149,6 +150,28 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	for (int i = 0; i < _wndInfoCount; ++i)
 	{
 		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos) };
+		if (_pageType == PT_APPEARANCE && !_fIsThemed)
+		{
+			rect.Y += 5;
+			if (_pwndInfo[i].wndType == WT_INACTIVE)
+			{
+				rect.Height += 10;
+			}
+			if (_pwndInfo[i].wndType == WT_ACTIVE)
+			{
+				rect.X -= 6;
+				rect.Y -= 2;
+				rect.Width += 12;
+				rect.Height -= 5;
+			}
+			if (_pwndInfo[i].wndType == WT_MESSAGEBOX)
+			{
+				rect.X = 22;
+				rect.Y += 10 + 35;
+				rect.Width += 60;
+				rect.Height -= 30;
+			}
+		}
 		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
 	}
 
@@ -240,32 +263,23 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 
 	// my bad
 	// separate this
-	// todo: fix
-	/*
 	if (_pageType == PT_APPEARANCE && !_fIsThemed)
 	{
-		wndInfo.wndPos.top += 5;
-		wndInfo.wndPos.bottom += 5;
 		if (wndInfo.wndType == WT_INACTIVE)
 		{
 			wndInfo.wndPos.bottom += 10;
 		}
 		if (wndInfo.wndType == WT_ACTIVE)
 		{
-			wndInfo.wndPos.left -= 6;
-			wndInfo.wndPos.top -= 2;
-			wndInfo.wndPos.right += 6;
-			wndInfo.wndPos.bottom -= 10;
+			wndInfo.wndPos.right += 12;
+			wndInfo.wndPos.bottom -= 5;
 		}
 		if (wndInfo.wndType == WT_MESSAGEBOX)
 		{
-			wndInfo.wndPos.left = 22;
-			wndInfo.wndPos.top += 10+35;
-			wndInfo.wndPos.bottom += 30 - 10;
-			wndInfo.wndPos.right -= 20;
+			wndInfo.wndPos.bottom -= 30;
+			wndInfo.wndPos.right += 60;
 		}
 	}
-	*/
 
 	// remove top and left values
 	// we add them back while composing
@@ -730,7 +744,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.left += _marFrame.cxLeftWidth;
 	crc.top += _marFrame.cyTopHeight;
 	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += GetSystemMetrics(SM_CYFRAME);
-	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
+	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy + GetSystemMetrics(SM_CYFRAME);
 
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
 	int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE) - GetSystemMetrics(SM_CXBORDER);
@@ -763,7 +777,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		// update margins
 		_marFrame.cxLeftWidth += GetSystemMetrics(SM_CXEDGE);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight += GetSystemMetrics(SM_CYEDGE);
+		_marFrame.cyTopHeight += GetSystemMetrics(SM_CYEDGE) + GetSystemMetrics(SM_CYFRAME);
 		_marFrame.cyBottomHeight += GetSystemMetrics(SM_CYFRAME);
 	}
 
@@ -843,9 +857,9 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			DrawText(hdc, L"Message Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 			crc.top += 17;
-			crc.bottom -= 17;
-			crc.left += 32;
-			crc.right -= 32;
+			crc.bottom -= 2;
+			crc.left += 62;
+			crc.right -= 62;
 			DrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);

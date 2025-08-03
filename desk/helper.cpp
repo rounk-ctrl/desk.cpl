@@ -2,6 +2,10 @@
 #include "helper.h"
 #include "desk.h"
 #include "uxtheme.h"
+#include <sddl.h>
+#include <AclAPI.h>
+
+#define STATUS_ACCESS_DENIED             ((NTSTATUS)0xC0000022L)
 
 VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 {
@@ -109,4 +113,93 @@ HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdip
 HTHEME OpenNcThemeData(LPVOID file, LPCWSTR pszClassList)
 {
 	return file ? OpenThemeDataFromFile(file, NULL, pszClassList, 0) : OpenThemeData(NULL, pszClassList);
+}
+
+NTSTATUS _OpenThemeSection(ACCESS_MASK mask, HANDLE* hSection)
+{
+	DWORD sessionId;
+	ProcessIdToSessionId(GetCurrentProcessId(), &sessionId);
+
+	WCHAR szNtSection[MAX_PATH];
+	StringCchPrintf(szNtSection, ARRAYSIZE(szNtSection), L"\\Sessions\\%lu\\Windows\\ThemeSection", sessionId);
+
+	UNICODE_STRING szNtString;
+	RtlInitUnicodeString(&szNtString, szNtSection);
+
+	OBJECT_ATTRIBUTES objAttributes;
+	InitializeObjectAttributes(&objAttributes, &szNtString, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+	return NtOpenSection(hSection, mask, &objAttributes);
+}
+
+HRESULT ClassicThemeControl(BOOL fEnable)
+{
+	HANDLE hSection;
+	NTSTATUS status = _OpenThemeSection(WRITE_DAC, &hSection);
+	if (status == STATUS_ACCESS_DENIED)
+	{
+		return E_FAIL;
+	}
+
+	LPCWSTR sddl =
+		TEXT("O:BA")			// owner: built in administrators
+		TEXT("G:SY")			// group: local system
+		TEXT("D:")				// discretionary ACL
+		TEXT("(A;;")
+		SDDL_READ_CONTROL
+		TEXT(";;;IU)")			// set read control to the themesection to all interactive users
+		TEXT("(A;;DCSWRPSDRCWDWO;;;SY)");	// set GENERIC_ALL permissions excluding read ability
+	
+	if (!fEnable)
+	{
+		sddl = TEXT("O:BA")
+			TEXT("G:SY")
+			TEXT("D:")
+			TEXT("(A;;")
+			SDDL_READ_CONTROL
+			SDDL_CREATE_CHILD 
+			SDDL_LIST_CHILDREN
+			TEXT(";;;IU)")
+			TEXT("(A;;GA;;;SY)");
+	}
+
+	PSECURITY_DESCRIPTOR psd = NULL;
+	BOOL bResult = ConvertStringSecurityDescriptorToSecurityDescriptor(sddl, SDDL_REVISION, &psd, NULL);
+	if (!bResult)
+	{
+		CloseHandle(hSection);
+		return bResult;
+	}
+
+	bResult = SetKernelObjectSecurity(hSection, DACL_SECURITY_INFORMATION, psd);
+
+	LocalFree(psd);
+	CloseHandle(hSection);
+	return S_OK;
+}
+
+// ugh
+BOOL IsClassicThemeEnabled()
+{
+	HANDLE hSection;
+	_OpenThemeSection(READ_CONTROL, &hSection);
+
+	DWORD neededSize = 0;
+	GetKernelObjectSecurity(hSection, DACL_SECURITY_INFORMATION, nullptr, 0, &neededSize);
+	PSECURITY_DESCRIPTOR pSD = (PSECURITY_DESCRIPTOR)LocalAlloc(LPTR, neededSize);
+	GetKernelObjectSecurity(hSection, DACL_SECURITY_INFORMATION, pSD, neededSize, &neededSize);
+
+	LPWSTR sddlString = nullptr;
+	ConvertSecurityDescriptorToStringSecurityDescriptor(pSD, SDDL_REVISION, DACL_SECURITY_INFORMATION, &sddlString, nullptr);
+
+	BOOL bRet = FALSE;
+	if (StrStrI(sddlString, SDDL_CREATE_CHILD) == NULL)
+	{
+		bRet = TRUE;
+	}
+
+	LocalFree(pSD);
+	LocalFree(sddlString);
+	CloseHandle(hSection);
+	return bRet;
 }
