@@ -132,52 +132,6 @@ NTSTATUS _OpenThemeSection(ACCESS_MASK mask, HANDLE* hSection)
 	return NtOpenSection(hSection, mask, &objAttributes);
 }
 
-HRESULT ClassicThemeControl(BOOL fEnable)
-{
-	HANDLE hSection;
-	NTSTATUS status = _OpenThemeSection(WRITE_DAC, &hSection);
-	if (status == STATUS_ACCESS_DENIED)
-	{
-		return E_FAIL;
-	}
-
-	LPCWSTR sddl =
-		TEXT("O:BA")			// owner: built in administrators
-		TEXT("G:SY")			// group: local system
-		TEXT("D:")				// discretionary ACL
-		TEXT("(A;;")
-		SDDL_READ_CONTROL
-		TEXT(";;;IU)")			// set read control to the themesection to all interactive users
-		TEXT("(A;;DCSWRPSDRCWDWO;;;SY)");	// set GENERIC_ALL permissions excluding read ability
-	
-	if (!fEnable)
-	{
-		sddl = TEXT("O:BA")
-			TEXT("G:SY")
-			TEXT("D:")
-			TEXT("(A;;")
-			SDDL_READ_CONTROL
-			SDDL_CREATE_CHILD 
-			SDDL_LIST_CHILDREN
-			TEXT(";;;IU)")
-			TEXT("(A;;GA;;;SY)");
-	}
-
-	PSECURITY_DESCRIPTOR psd = NULL;
-	BOOL bResult = ConvertStringSecurityDescriptorToSecurityDescriptor(sddl, SDDL_REVISION, &psd, NULL);
-	if (!bResult)
-	{
-		CloseHandle(hSection);
-		return bResult;
-	}
-
-	bResult = SetKernelObjectSecurity(hSection, DACL_SECURITY_INFORMATION, psd);
-
-	LocalFree(psd);
-	CloseHandle(hSection);
-	return S_OK;
-}
-
 // ugh
 BOOL IsClassicThemeEnabled()
 {

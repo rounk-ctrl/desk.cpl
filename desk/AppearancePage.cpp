@@ -179,23 +179,10 @@ BOOL CAppearanceDlgProc::OnApply()
 	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
 	if (StrCmpI(data, L"(classic)") == 0)
 	{
-		if (FAILED(ClassicThemeControl(TRUE)))
-		{
-			MessageBox(L"Please run this applet as admin", L"Notice", MB_ICONINFORMATION);
-			return 1;
-		}
-		MessageBox(L"Any new window you open will have the classic style set", L"Notice", MB_ICONINFORMATION);
+		// todo: 
 	}
 	else
 	{
-		if (IsClassicThemeEnabled())
-		{
-			if (FAILED(ClassicThemeControl(FALSE)))
-			{
-				MessageBox(L"Please run this applet as admin", L"Notice", MB_ICONINFORMATION);
-				return 1;
-			}
-		}
 		SetSystemVisualStyle(selectedTheme->szMsstylePath, nullptr, nullptr, AT_NONE);
 	}
 	selectedTheme->fThemePgMsstyleUpdate = true;

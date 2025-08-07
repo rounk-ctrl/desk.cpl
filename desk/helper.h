@@ -24,7 +24,6 @@ void StringCpy(LPWSTR& dest, LPWSTR src);
 void FreeBitmap(Gdiplus::Bitmap** bmp);
 HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdiplus::Rect rect);
 HTHEME OpenNcThemeData(LPVOID file, LPCWSTR pszClassList);
-HRESULT ClassicThemeControl(BOOL fEnable);
 BOOL IsClassicThemeEnabled();
 
 inline SIZE GetClientSIZE(HWND _hwnd)
