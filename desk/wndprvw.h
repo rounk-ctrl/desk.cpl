@@ -47,7 +47,7 @@ class CWindowPreview final:
 	>
 {
 public:
-	CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme);
+	CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme, int dpi);
 	~CWindowPreview() override;
 
 	//~ Begin IWindowPreview interface
@@ -81,6 +81,7 @@ private:
 	void* _hTheme;
 	BOOL _fIsThemed;
 	SIZE _szMenuBar;
+	int _dpiWindow;
 
 	// layer bitmaps, compose all for the final preview
 	Gdiplus::Bitmap* _bmpSolidColor;

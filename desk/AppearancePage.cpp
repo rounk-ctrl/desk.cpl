@@ -102,7 +102,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	_UpdateFontBox(msstyle[selindex]);
 
 	HBITMAP ebmp;
-	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr);
+	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
 	pWndPreview->GetPreviewImage(&ebmp);
 	Static_SetBitmap(hPreviewWnd, ebmp);
 	DeleteBitmap(ebmp);

@@ -15,7 +15,7 @@
 
 using namespace Gdiplus;
 
-CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme)
+CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme, int dpi)
 {
 	_pwndInfo = pwndInfo;
 	_wndInfoCount = wndInfoCount;
@@ -23,6 +23,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_pageType = pageType;
 	_hTheme = hTheme;
 	_fIsThemed = !IsClassicThemeEnabled();
+	_dpiWindow = dpi;
 
 	// always initialize variables
 	_marFrame = {};
@@ -81,6 +82,17 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 	{
 		for (int i = 0; i < _wndInfoCount; ++i)
 		{
+			// adjust size for dpi
+			int width = RECTWIDTH(_pwndInfo[i].wndPos);
+			int height = RECTHEIGHT(_pwndInfo[i].wndPos);
+
+			_pwndInfo[i].wndPos.left = MulDiv(_pwndInfo[i].wndPos.left, _dpiWindow, 96);
+			_pwndInfo[i].wndPos.top = MulDiv(_pwndInfo[i].wndPos.top, _dpiWindow, 96);
+
+			_pwndInfo[i].wndPos.right = _pwndInfo[i].wndPos.left + MulDiv(width, _dpiWindow, 96);
+			_pwndInfo[i].wndPos.bottom = _pwndInfo[i].wndPos.top + MulDiv(height, _dpiWindow, 96);
+
+
 			hr = _RenderWindow(_pwndInfo[i], i);
 			RETURN_IF_FAILED(hr);
 		}
@@ -248,11 +260,11 @@ HRESULT CWindowPreview::_DrawMonitor()
 	Graphics graphics(_bmpMonitor);
 
 	// draw monitor
-	Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
-	graphics.DrawImage(monitor, rect, 0, 0, _sizePreview.cx, _sizePreview.cy, UnitPixel, &imgAttr);
+	Rect rect(0, 0, GETSIZE(_sizePreview));
+	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor = { 15, 37, 25, 68 };
+	_marMonitor = { MulDiv(15, _dpiWindow, 96), 37, 25, 68 };
 
 	return hr;
 }
@@ -808,7 +820,12 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		crc.top += _marFrame.cyTopHeight;
 		if (!_fIsThemed) crc.top += _szMenuBar.cy;
 
-		crc.bottom = crc.top + 10;
+
+		// get height
+		RECT rcheight = { 0,0,0,0 };
+		DrawText(hdc, L"Window Text", -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
+
+		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 		crc.left += _marFrame.cxLeftWidth;
 
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : GetSysColor(COLOR_WINDOWTEXT);

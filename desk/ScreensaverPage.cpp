@@ -20,7 +20,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	energySize = GetClientSIZE(hEnergy);
 
 
-	pWndPreview = Make<CWindowPreview>(scrSize, nullptr, 0, PAGETYPE::PT_SCRSAVER, nullptr);
+	pWndPreview = Make<CWindowPreview>(scrSize, nullptr, 0, PAGETYPE::PT_SCRSAVER, nullptr, GetDpiForWindow(m_hWnd));
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
 	Static_SetBitmap(hScrPreview, bmp);
