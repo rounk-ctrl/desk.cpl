@@ -260,8 +260,11 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 	_TerminateProcess(pi);
 	if (!hWndStatic)
 	{
+		int dpi = GetDpiForWindow(preview);
+		MARGINS _marMonitor = { MulDiv(15, dpi, 96), MulDiv(30, dpi, 96), MulDiv(17, dpi, 96), MulDiv(53, dpi, 96) };
+
 		hWndStatic = CreateWindow(WC_STATIC, 0,
-			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, 15, 25, scrSize.cx - 37, scrSize.cy - 68,
+			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, _marMonitor.cxLeftWidth, _marMonitor.cyTopHeight, scrSize.cx - _marMonitor.cxRightWidth, scrSize.cy - _marMonitor.cyBottomHeight,
 			preview, NULL, g_hinst, NULL);
 		::SetWindowLongPtr(hWndStatic, GWLP_WNDPROC, (LONG_PTR)StaticProc);
 	}

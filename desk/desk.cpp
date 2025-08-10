@@ -69,6 +69,7 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	pDesktopWallpaper->Release();
 	currentITheme->Release();
 	free(selectedTheme);
+	_TerminateProcess(pi);
 }
 
 extern "C" LONG APIENTRY CPlApplet(

@@ -177,7 +177,6 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	for (int i = 0; i < _wndInfoCount; ++i)
 	{
 		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos) };
-		//wprintf(L"preview size cx: %d; cy: %d\n", _sizePreview.cx, _sizePreview.cy);
 
 		if (_pageType == PT_APPEARANCE && !_fIsThemed)
 		{
@@ -230,8 +229,8 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 {
 	HRESULT hr = S_OK;
 
-	int cx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-	int cy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+	int cx = GetSystemMetrics(SM_CXSCREEN);
+	int cy = GetSystemMetrics(SM_CYSCREEN);
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
 	if (_marMonitor.cxLeftWidth > 0)
@@ -254,7 +253,7 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	SelectObject(hMemoryDC, oldBmp);
 	DeleteBitmap(_hbDesktop);
 	DeleteBitmap(oldBmp);
-	DeleteDC(hScreenDC);
+	ReleaseDC(0, hScreenDC);
 	DeleteDC(hMemoryDC);
 	delete bm;
 	return hr;
