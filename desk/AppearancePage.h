@@ -79,19 +79,20 @@ private:
 	SCHEMEDATA* schemeMap = NULL;
 	ULONG mapSize;
 
+	// -ve sizes are fixed with preview size in wndprvw
 	MYWINDOWINFO wnd[3] =
 	{
 		{
 			WT_INACTIVE,
-			{10, 10, 10 + 357 - 37, 10 + 134}
+			{10, 10, -37, 10 + 134}
 		},
 		{
 			WT_ACTIVE,
-			{20, 35, 25 + 357-37, 35 + 134}
+			{20, 35, -30, 35 + 134}
 		},
 		{
 			WT_MESSAGEBOX,
-			{(357 / 2) - 75,64,(357 / 2) + 75,64 + 98}
+			{-75, 64, 75, 64 + 98}
 		}
 	};
 

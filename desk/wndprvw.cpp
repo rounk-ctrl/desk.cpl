@@ -92,6 +92,17 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 			_pwndInfo[i].wndPos.right = _pwndInfo[i].wndPos.left + MulDiv(width, _dpiWindow, 96);
 			_pwndInfo[i].wndPos.bottom = _pwndInfo[i].wndPos.top + MulDiv(height, _dpiWindow, 96);
 
+			// fix window sizes which are based on preview size
+			if (_pwndInfo[i].wndPos.right < 0)
+			{
+				_pwndInfo[i].wndPos.right = _sizePreview.cx + _pwndInfo[i].wndPos.right + _pwndInfo[i].wndPos.left;
+			}
+
+			if (_pwndInfo[i].wndPos.left < 0)
+			{
+				_pwndInfo[i].wndPos.left = (_sizePreview.cx / 2) + _pwndInfo[i].wndPos.left;
+				_pwndInfo[i].wndPos.right = (_sizePreview.cx / 2) + _pwndInfo[i].wndPos.right;
+			}
 
 			hr = _RenderWindow(_pwndInfo[i], i);
 			RETURN_IF_FAILED(hr);
@@ -163,6 +174,8 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	for (int i = 0; i < _wndInfoCount; ++i)
 	{
 		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos) };
+		//wprintf(L"preview size cx: %d; cy: %d\n", _sizePreview.cx, _sizePreview.cy);
+
 		if (_pageType == PT_APPEARANCE && !_fIsThemed)
 		{
 			rect.Y += 5;
@@ -862,7 +875,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		// load button theme
 		if (_fIsThemed)
 		{
-			InflateRect(&crc, -30, -16);
+			InflateRect(&crc, MulDiv(-30, _dpiWindow, 96), MulDiv(-16, _dpiWindow, 96));
 
 			HTHEME hThemeBtn = OpenNcThemeData(_hTheme, L"Button");
 			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
