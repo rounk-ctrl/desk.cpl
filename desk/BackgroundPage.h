@@ -36,6 +36,7 @@ private:
     BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut);
     void AddMissingWallpapers(IUnknown* th);
     void SelectCurrentWallpaper(IUnknown* th);
+    HRESULT GetSolidBtnBmp(SIZE size, HBITMAP* pbOut);
 
     /// custom variables
     HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);

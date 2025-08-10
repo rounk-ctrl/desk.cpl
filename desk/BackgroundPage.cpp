@@ -13,10 +13,10 @@ const COMDLG_FILTERSPEC file_types[] = {
 	L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
 
-HRESULT GetSolidBtnBmp(HBITMAP* pbOut)
+HRESULT CBackgroundDlgProc::GetSolidBtnBmp(SIZE size, HBITMAP* pbOut)
 {
-	// todo: use button's dimension
-	Gdiplus::Bitmap bmp(70, 14);
+	int i = MulDiv(10, GetDpiForWindow(m_hWnd), 96);
+	Gdiplus::Bitmap bmp(size.cx - i, size.cy - i);
 	Gdiplus::Graphics g(&bmp);
 	Gdiplus::SolidBrush brush(Gdiplus::Color(SPLIT_COLORREF(GetDeskopColor())));
 	g.FillRectangle(&brush, 0, 0, bmp.GetWidth(), bmp.GetHeight());
@@ -79,7 +79,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	SelectCurrentWallpaper(currentITheme);
 
 	HBITMAP hBmp;
-	GetSolidBtnBmp(&hBmp);
+	GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
 	::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 	DeleteBitmap(hBmp);
 
@@ -144,7 +144,7 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 	{
 		selectedTheme->newColor = cc.rgbResult;
 		HBITMAP hBmp;
-		GetSolidBtnBmp(&hBmp);
+		GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
 		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 		DeleteBitmap(hBmp);
 
@@ -277,7 +277,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		SelectCurrentWallpaper(currentITheme);
 
 		HBITMAP hBmp;
-		GetSolidBtnBmp(&hBmp);
+		GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
 		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
 		DeleteBitmap(hBmp);
 

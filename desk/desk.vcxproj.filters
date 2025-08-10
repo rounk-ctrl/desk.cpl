@@ -60,6 +60,9 @@
     <ClInclude Include="AppearanceDlgBox.h">
       <Filter>Dialogs</Filter>
     </ClInclude>
+    <ClInclude Include="SettingsPage.h">
+      <Filter>Pages</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -103,6 +106,9 @@
     </ClCompile>
     <ClCompile Include="helper.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SettingsPage.cpp">
+      <Filter>Pages</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

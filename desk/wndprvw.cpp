@@ -277,7 +277,7 @@ HRESULT CWindowPreview::_DrawMonitor()
 	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor = { MulDiv(15, _dpiWindow, 96), 37, 25, 68 };
+	_marMonitor = { MulDiv(15, _dpiWindow, 96), MulDiv(30, _dpiWindow, 96), MulDiv(17, _dpiWindow, 96), MulDiv(53, _dpiWindow, 96) };
 
 	return hr;
 }

@@ -4,6 +4,7 @@
 #include "BackgroundPage.h"
 #include "ScreensaverPage.h"
 #include "AppearancePage.h"
+#include "SettingsPage.h"
 #include "desk.h"
 #include "helper.h"
 
@@ -18,11 +19,6 @@ BOOL selectionPicker;
 PROCESS_INFORMATION pi;
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
-
-LRESULT CALLBACK SettingsDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	return FALSE;
-}
 
 void PropertySheetMoment(LPWSTR lpCmdLine)
 {
@@ -61,17 +57,10 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	CAppearanceDlgProc appearancedlg;
 	sheet.AddPage(appearancedlg);
 
-	/*
-	psp[4].dwSize = sizeof(PROPSHEETPAGE);
-	psp[4].dwFlags = PSP_USETITLE;
-	psp[4].hInstance = g_hinst;
-	psp[4].pszTemplate = MAKEINTRESOURCE(IDD_SETTINGSDLG);
-	psp[4].pszIcon = NULL;
-	psp[4].pfnDlgProc = SettingsDlgProc;
-	psp[4].pszTitle = TEXT("Settings");
-	psp[4].lParam = 0;
-	*/
+	CSettingsDlgProc settingsdlg;
+	sheet.AddPage(settingsdlg);
 
+	//show
 	sheet.DoModal();
 
 	// cleanup
