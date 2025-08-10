@@ -168,7 +168,10 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		hr = _DesktopScreenShooter(&graphics);
 	}
 
-	rect = { _sizePreview.cx - 48, _sizePreview.cy - 40, 32, 32 };
+	int xOff = MulDiv(48, _dpiWindow, 96);
+	int yOff = MulDiv(40, _dpiWindow, 96);
+
+	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)};
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
 
 	for (int i = 0; i < _wndInfoCount; ++i)
@@ -351,22 +354,25 @@ HRESULT CWindowPreview::_RenderBin()
 	SHSTOCKICONINFO sii = { sizeof(sii) };
 	SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 
+	int size = GetSystemMetrics(SM_CXICON);
+
 	// cache it to improve performance
 	FreeBitmap(&_bmpBin);
-	_bmpBin = new Bitmap(32, 32);
+	_bmpBin = new Bitmap(size, size);
 	Graphics graphics(_bmpBin);
 
 	// todo: try DIB
 	HDC hdcgraphic = graphics.GetHDC();
 	HDC memdc = CreateCompatibleDC(hdcgraphic);
 
-	HBITMAP hbitmap = CreateDiscardableBitmap(hdcgraphic, 32, 32);
+
+	HBITMAP hbitmap = CreateDiscardableBitmap(hdcgraphic, size, size);
 	HBITMAP oldBmp = (HBITMAP)SelectObject(memdc, hbitmap);
 	if (sii.hIcon)
 	{
-		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, 32, 32, 0, NULL, DI_NORMAL);
-		bRet = AlphaBlend(hdcgraphic, 0, 0, 32, 32,
-			memdc, 0, 0, 32, 32, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
+		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, size, size, 0, NULL, DI_NORMAL);
+		bRet = AlphaBlend(hdcgraphic, 0, 0, size, size,
+			memdc, 0, 0, size, size, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
 	}
 	SelectObject(memdc, oldBmp);
 	DeleteBitmap(oldBmp);
