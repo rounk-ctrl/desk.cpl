@@ -63,6 +63,9 @@
     <ClInclude Include="SettingsPage.h">
       <Filter>Pages</Filter>
     </ClInclude>
+    <ClInclude Include="EffectsDlg.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -109,6 +112,9 @@
     </ClCompile>
     <ClCompile Include="SettingsPage.cpp">
       <Filter>Pages</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectsDlg.cpp">
+      <Filter>Dialogs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

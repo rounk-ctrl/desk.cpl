@@ -20,4 +20,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>shell32.dll, Control_RunDLL "$(TargetPath)"</LocalDebuggerCommandArguments>
   </PropertyGroup>
+  <PropertyGroup>
+    <RESOURCE_FILE>Resource.rc</RESOURCE_FILE>
+  </PropertyGroup>
 </Project>

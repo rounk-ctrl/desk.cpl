@@ -6,15 +6,14 @@
 #define IDD_SCRSVRDLG                   103
 #define IDD_BACKGROUNDDLG               105
 #define IDD_APPEARANCEDLG               107
-#define IDD_DIALOG1                     109
 #define IDD_SETTINGSDLG                 109
 #define IDI_ICON1                       111
 #define IDS_THEMESCPL                   112
 #define IDS_THEMESDESC                  113
 #define IDB_BITMAP1                     115
 #define IDB_BITMAP2                     116
-#define IDD_DIALOG2                     117
 #define IDD_APPEARANCEBOX               117
+#define IDD_EFFECTSDLG	                118
 #define IDC_SPLIT1                      1003
 #define IDC_COMBO1                      1004
 

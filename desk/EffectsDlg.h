@@ -1,11 +1,11 @@
 #pragma once
 #include "pch.h"
 
-class CAppearanceDlgBox :
-	public CDialogImpl<CAppearanceDlgBox>
+class CEffectsDlg :
+    public CDialogImpl<CEffectsDlg>
 {
 public:
-	enum {IDD = IDD_APPEARANCEBOX };
+    enum { IDD = IDD_EFFECTSDLG };
 
 private:
 	BEGIN_MSG_MAP(CAppearanceDlgBox)
@@ -16,11 +16,8 @@ private:
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	void OnClose();
 	LRESULT OnOK(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
 	LRESULT OnCancel(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
-
-
-	HWND hThemesCombobox;
-
+	void OnClose();
 };
+

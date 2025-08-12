@@ -53,11 +53,13 @@ private:
 		COMMAND_HANDLER(1111, CBN_SELCHANGE, OnComboboxChange)
 		COMMAND_HANDLER(1114, CBN_SELCHANGE, OnClrComboboxChange)
 		COMMAND_HANDLER(1117, BN_CLICKED, OnAdvanced)
+		COMMAND_HANDLER(1118, BN_CLICKED, OnEffects)
 		CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CAppearanceDlgProc>)
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSetActive();

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "AppearanceDlgBox.h"
 #include "AppearancePage.h"
+#include "EffectsDlg.h"
 #include "desk.h"
 #include "helper.h"
 #include "uxtheme.h"
@@ -113,6 +114,13 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	CAppearanceDlgBox dlg;
+	dlg.DoModal();
+	return 0;
+}
+
+BOOL CAppearanceDlgProc::OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	CEffectsDlg dlg;
 	dlg.DoModal();
 	return 0;
 }

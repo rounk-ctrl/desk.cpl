@@ -186,6 +186,7 @@
     <ClInclude Include="AppearanceDlgBox.h" />
     <ClInclude Include="AppearancePage.h" />
     <ClInclude Include="BackgroundPage.h" />
+    <ClInclude Include="EffectsDlg.h" />
     <ClInclude Include="desk.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="AppearanceDlgBox.cpp" />
     <ClCompile Include="AppearancePage.cpp" />
     <ClCompile Include="BackgroundPage.cpp" />
+    <ClCompile Include="EffectsDlg.cpp" />
     <ClCompile Include="desk.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="helper.cpp" />
