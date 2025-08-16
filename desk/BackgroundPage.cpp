@@ -65,7 +65,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	thcr->Release();
 
 	// combobox with positions of wallpaper
-	const wchar_t* items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
+	LPCWSTR items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
 	for (int i = 0; i < _countof(items); i++)
 	{
 		ComboBox_AddString(hPosCombobox, items[i]);
