@@ -4,10 +4,10 @@
 
 BOOL CEffectsDlg::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	_chkFont = GetDlgItem(1177);
-	_cmbFont = GetDlgItem(1184);
 	_chkAnim = GetDlgItem(1175);
 	_cmbAnim = GetDlgItem(1182);
+	_chkFont = GetDlgItem(1177);
+	_cmbFont = GetDlgItem(1184);
 	_chkShadow = GetDlgItem(1185);
 	_chkDragWnd = GetDlgItem(1179);
 	_chkAltIndicator = GetDlgItem(1181);
@@ -22,9 +22,9 @@ BOOL CEffectsDlg::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 	{
 		ComboBox_AddString(_cmbFont, items[i]);
 	}
-	UINT iSmoothingType;
-	SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &iSmoothingType, 0);
-	ComboBox_SetCurSel(_cmbFont, iSmoothingType - 1);
+
+	SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, &_iSmoothingType, 0);
+	ComboBox_SetCurSel(_cmbFont, _iSmoothingType - 1);
 
 	BOOL fMenuAnim, fToolTipAnim;
 	SystemParametersInfo(SPI_GETMENUANIMATION, 0, &fMenuAnim, 0);
@@ -53,6 +53,7 @@ BOOL CEffectsDlg::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 	// check both
 	if (fToolTipAnim) index = fTooltipFade ? 0 : 1;
 	if (fMenuAnim) index = fMenuFade ? 0 : 1;
+	_fAnimType = index;
 	ComboBox_SetCurSel(_cmbAnim, index);
 
 	SystemParametersInfo(SPI_GETDROPSHADOW, 0, &_fDropShadows, 0);
@@ -67,23 +68,101 @@ BOOL CEffectsDlg::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bH
 	return TRUE;
 }
 
-BOOL CEffectsDlg::OnFontChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
-{
-	BOOL bChecked = Button_GetCheck(hWnd);
-	::ComboBox_Enable(_cmbFont, bChecked);
-	return 0;
-}
-
 BOOL CEffectsDlg::OnAnimChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	BOOL bChecked = Button_GetCheck(hWnd);
 	::ComboBox_Enable(_cmbAnim, !bChecked);
-	Button_SetCheck(_chkAnim, !bChecked);
+	Button_SetCheck(hWnd, !bChecked);
+	_iAnimEnabled = !bChecked;
+
+	flags |= UPDATE_ANIM;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnAnimCmbChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	// 0- fade, 1- scroll
+	int index = ComboBox_GetCurSel(hWnd);
+	_fAnimType = index;
+
+	flags |= UPDATE_ANIM;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnFontChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	BOOL bChecked = Button_GetCheck(hWnd);
+	::ComboBox_Enable(_cmbFont, bChecked);
+	_fSmoothingEnabled = bChecked;
+
+	flags |= UPDATE_FONT;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnFontCmbChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	_iSmoothingType = ComboBox_GetCurSel(hWnd) + 1;
+
+	flags |= UPDATE_FONT;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnShadowChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	_fDropShadows = Button_GetCheck(hWnd);
+
+	flags |= UPDATE_DROPSHADOW;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnWindowChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	_fDragWindow = Button_GetCheck(hWnd);
+
+	flags |= UPDATE_WINDOWDRAG;
+	return 0;
+}
+
+BOOL CEffectsDlg::OnAltChk(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	_fAltIndicator = !Button_GetCheck(hWnd);
+
+	flags |= UPDATE_ALT;
 	return 0;
 }
 
 LRESULT CEffectsDlg::OnOK(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled)
 {	
+	if (flags & UPDATE_ANIM)
+	{
+		// set both menu and tooltip, like xp
+		SystemParametersInfo(SPI_SETMENUANIMATION, 0, (PVOID)(_iAnimEnabled > 0 ? 1 : 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETTOOLTIPANIMATION, 0, (PVOID)(_iAnimEnabled > 0 ? 1 : 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+
+		SystemParametersInfo(SPI_SETMENUFADE, 0, (PVOID)!_fAnimType, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETTOOLTIPFADE, 0, (PVOID)!_fAnimType, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	}
+
+	if (flags & UPDATE_FONT)
+	{
+		SystemParametersInfo(SPI_SETFONTSMOOTHING, _fSmoothingEnabled, 0, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, (PVOID)_iSmoothingType, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	}
+
+	if (flags & UPDATE_DROPSHADOW)
+	{
+		SystemParametersInfo(SPI_SETDROPSHADOW, 0, (PVOID)_fDropShadows, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	}
+
+	if (flags & UPDATE_WINDOWDRAG)
+	{
+		SystemParametersInfo(SPI_SETDRAGFULLWINDOWS, _fDragWindow, 0, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	}
+
+	if (flags & UPDATE_ALT)
+	{
+		SystemParametersInfo(SPI_SETKEYBOARDCUES, 0, (PVOID)_fAltIndicator, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+	}
 	EndDialog(0);
 	return 0;
 }
