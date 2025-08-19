@@ -16,4 +16,6 @@ private:
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
+	HWND _cmbMonitors;
+
 };

@@ -19,6 +19,7 @@
 #include <shellapi.h>
 #include <wrl.h>
 
+
 #ifdef _DEBUG
 #include <wil\result.h>
 #endif
@@ -31,8 +32,14 @@
 #include <atlcrack.h>
 #include <atlframe.h>
 
+
+#include <SetupAPI.h>
+#include <initguid.h>
+#include <Ntddvdeo.h>
+
 #pragma comment(lib, "Comctl32")
 #pragma comment(lib, "Comdlg32")
 #pragma comment(lib, "Gdiplus")
 #pragma comment(lib, "Uxtheme")
 #pragma comment(lib, "Shlwapi")
+#pragma comment(lib, "setupapi.lib")
