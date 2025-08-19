@@ -25,6 +25,7 @@ void FreeBitmap(Gdiplus::Bitmap** bmp);
 HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdiplus::Rect rect);
 HTHEME OpenNcThemeData(LPVOID file, LPCWSTR pszClassList);
 BOOL IsClassicThemeEnabled();
+char* trim(char* s);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {
@@ -32,3 +33,4 @@ inline SIZE GetClientSIZE(HWND _hwnd)
 	GetClientRect(_hwnd, &rect);
 	return { RECTWIDTH(rect), RECTHEIGHT(rect) };
 }
+

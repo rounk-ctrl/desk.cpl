@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SettingsPage.h"
+#include "helper.h"
 
 BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -13,7 +14,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		if (dev.StateFlags & DISPLAY_DEVICE_ACTIVE)
 		{
 			bool found = false;
-			wchar_t monitorName[14] = { 0 };
+			char monitorName[14] = { 0 };
 
 			DISPLAY_DEVICE ddMon;
 			ddMon.cb = sizeof(ddMon);
@@ -38,7 +39,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 					value = (BYTE*)malloc(dwSize);
 					hr = RegGetValue(key, NULL, L"EDID", RRF_RT_REG_BINARY, NULL, value, &dwSize);
 
-					for (int i = 0; i < dwSize - 5; i++)
+					for (DWORD i = 0; i < dwSize - 5; i++)
 					{
 						// https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Monitor_Descriptors
 
@@ -50,19 +51,22 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 							memcpy(monitorName, &value[i + 5], 13);
 							monitorName[13] = '\0';
 
+							trim(monitorName);
 							break;
 						}
 					}
 				}
-
+				WCHAR* wideName = CA2W(monitorName);
 				WCHAR name[256] = {};
-				StringCchPrintf(name, ARRAYSIZE(name), L"%d. ", count);
-				StringCchCat(name, ARRAYSIZE(name), found ? monitorName : ddMon.DeviceString);
-				StringCchCat(name, ARRAYSIZE(name), L" on ");
-				StringCchCat(name, ARRAYSIZE(name), dev.DeviceString);
+				StringCchPrintf(name, ARRAYSIZE(name), L"%d. %s on %s", count, found ? wideName : ddMon.DeviceString, dev.DeviceString);
 
 				ComboBox_AddString(_cmbMonitors, name);
 				count++;
+
+				// cleanup
+				SetupDiDeleteDeviceInterfaceData(hDevInfo, &ifData);
+				SetupDiDestroyDeviceInfoList(hDevInfo);
+				RegCloseKey(key);
 			}
 		}
 	}

@@ -157,3 +157,23 @@ BOOL IsClassicThemeEnabled()
 	CloseHandle(hSection);
 	return bRet;
 }
+
+// https://stackoverflow.com/questions/656542/trim-a-string-in-c
+char* ltrim(char* s)
+{
+	while (isspace(*s)) s++;
+	return s;
+}
+
+char* rtrim(char* s)
+{
+	char* back = s + strlen(s);
+	while (isspace(*--back));
+	*(back + 1) = '\0';
+	return s;
+}
+
+char* trim(char* s)
+{
+	return rtrim(ltrim(s));
+}
