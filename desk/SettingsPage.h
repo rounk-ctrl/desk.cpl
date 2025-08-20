@@ -16,6 +16,13 @@ private:
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
+	void _GetDisplayMonitors();
+	void _SelectCurrentMonitor();
+
 	HWND _cmbMonitors;
+	HWND _textDisplay;
+	HWND _chkPrimary;
+	HWND _chkExtend;
+	HWND _mulMonPreview;
 
 };

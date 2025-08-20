@@ -5,6 +5,18 @@
 BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	_cmbMonitors = GetDlgItem(1800);
+	_mulMonPreview = GetDlgItem(1801);
+	_textDisplay = GetDlgItem(1811);
+	_chkPrimary = GetDlgItem(1806);
+	_chkExtend = GetDlgItem(1805);
+	
+	_GetDisplayMonitors();
+	_SelectCurrentMonitor();
+	return 0;
+}
+
+void CSettingsDlgProc::_GetDisplayMonitors()
+{
 	int count = 1;
 
 	DISPLAY_DEVICE dev;
@@ -33,7 +45,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 				if (key != INVALID_HANDLE_VALUE)
 				{
 					BYTE* value;
-					DWORD dwSize;
+					DWORD dwSize = 0;
 					HRESULT hr = RegGetValue(key, NULL, L"EDID", RRF_RT_REG_BINARY, NULL, NULL, &dwSize);
 
 					value = (BYTE*)malloc(dwSize);
@@ -44,7 +56,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 						// https://en.wikipedia.org/wiki/Extended_Display_Identification_Data#Monitor_Descriptors
 
 						if (value[i] == 0x00 && value[i + 1] == 0x00 &&
-							value[i + 2] == 0x00 && value[i + 3] == 0xFC && 
+							value[i + 2] == 0x00 && value[i + 3] == 0xFC &&
 							value[i + 4] == 0x00)
 						{
 							found = true;
@@ -52,6 +64,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 							monitorName[13] = '\0';
 
 							trim(monitorName);
+							free(value);
 							break;
 						}
 					}
@@ -60,7 +73,8 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 				WCHAR name[256] = {};
 				StringCchPrintf(name, ARRAYSIZE(name), L"%d. %s on %s", count, found ? wideName : ddMon.DeviceString, dev.DeviceString);
 
-				ComboBox_AddString(_cmbMonitors, name);
+				int index = ComboBox_AddString(_cmbMonitors, name);
+				ComboBox_SetItemData(_cmbMonitors, index, StrDup(dev.DeviceName));	// used to find current monitor later 
 				count++;
 
 				// cleanup
@@ -70,6 +84,44 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 			}
 		}
 	}
+}
 
-	return 0;
+void CSettingsDlgProc::_SelectCurrentMonitor()
+{
+	POINT pt;
+	GetCursorPos(&pt);
+	HMONITOR hMon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+	
+	MONITORINFOEX mi = { sizeof(mi) };
+	GetMonitorInfo(hMon, &mi);
+
+	int count = ComboBox_GetCount(_cmbMonitors);
+	if (count == 1)
+	{
+		::ShowWindow(_cmbMonitors, SW_HIDE);
+		::ShowWindow(_chkExtend, SW_HIDE);
+		::ShowWindow(_chkPrimary, SW_HIDE);
+		::ShowWindow(_mulMonPreview, SW_HIDE);
+
+		int leng = ComboBox_GetLBTextLen(_cmbMonitors, 0);
+		WCHAR* name = (WCHAR*)malloc((leng + 1) * sizeof(WCHAR));
+		ComboBox_GetLBText(_cmbMonitors, 0, name);
+
+		WCHAR finalName[64];
+		StringCchPrintf(finalName, ARRAYSIZE(finalName), L"%s", name + 3);
+		::SetWindowText(_textDisplay, finalName);
+	}
+	else
+	{
+		::ShowWindow(_textDisplay, SW_HIDE);
+
+		for (int i = 0; i < count; ++i)
+		{
+			LPCWSTR data = (LPCWSTR)ComboBox_GetItemData(_cmbMonitors, i);
+			if (StrCmpI(data, mi.szDevice) == 0)
+			{
+				ComboBox_SetCurSel(_cmbMonitors, i);
+			}
+		}
+	}
 }
