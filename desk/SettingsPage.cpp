@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "SettingsPage.h"
 #include "helper.h"
+#include <algorithm>
 
 BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -9,9 +10,33 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	_textDisplay = GetDlgItem(1811);
 	_chkPrimary = GetDlgItem(1806);
 	_chkExtend = GetDlgItem(1805);
+	_textCurrentRes = GetDlgItem(1814);
+	_trackResolution = GetDlgItem(1808);
 	
 	_GetDisplayMonitors();
 	_SelectCurrentMonitor();
+	_GetAllModes();
+	return 0;
+}
+
+LRESULT CSettingsDlgProc::OnHScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	HWND wnd = (HWND)lParam;
+	if (wnd == _trackResolution)
+	{
+		int interactionType = LOWORD(wParam);
+		int pos = 0;
+		if (interactionType == TB_THUMBPOSITION || interactionType == TB_THUMBTRACK)
+		{
+			pos = HIWORD(wParam);
+		}
+		else
+		{
+			pos = (int)SendMessage(wnd, TBM_GETPOS, 0, 0);
+		}
+
+		_SetTrackbarModes(pos);
+	}
 	return 0;
 }
 
@@ -103,6 +128,7 @@ void CSettingsDlgProc::_SelectCurrentMonitor()
 		::ShowWindow(_chkPrimary, SW_HIDE);
 		::ShowWindow(_mulMonPreview, SW_HIDE);
 
+		ComboBox_SetCurSel(_cmbMonitors, 0);
 		int leng = ComboBox_GetLBTextLen(_cmbMonitors, 0);
 		WCHAR* name = (WCHAR*)malloc((leng + 1) * sizeof(WCHAR));
 		ComboBox_GetLBText(_cmbMonitors, 0, name);
@@ -124,4 +150,76 @@ void CSettingsDlgProc::_SelectCurrentMonitor()
 			}
 		}
 	}
+}
+
+bool Compare(const RESINFO& a, const RESINFO& b)
+{
+	if (a.width != b.width)
+	{
+		return a.width < b.width;
+	}
+	return a.height < b.height;
+}
+
+void CSettingsDlgProc::_GetAllModes()
+{
+	_arrResInfo.clear();
+
+	int index = ComboBox_GetCurSel(_cmbMonitors);
+	LPCWSTR data = (LPCWSTR)ComboBox_GetItemData(_cmbMonitors, index);
+
+	DEVMODE devMode = {};
+	devMode.dmSize = sizeof(devMode);
+
+	// do current
+	EnumDisplaySettings(data, ENUM_CURRENT_SETTINGS, &devMode);
+	_currentResInfo.width = devMode.dmPelsWidth;
+	_currentResInfo.height = devMode.dmPelsHeight;
+	_currentResInfo.bpp = devMode.dmBitsPerPel;
+	_currentResInfo.freq = devMode.dmDisplayFrequency;
+
+	int trackmode = 0;
+
+	// do all modes of current display
+	for (DWORD i = 0; EnumDisplaySettings(data, i, &devMode); ++i)
+	{
+		BOOL exists = FALSE;
+		for (int j = 0; j < _arrResInfo.size(); j++)
+		{
+			if (_arrResInfo[j].width == devMode.dmPelsWidth &&
+				_arrResInfo[j].height == devMode.dmPelsHeight)
+			{
+				exists = TRUE;
+				break;
+			}
+		}
+
+		if (!exists)
+		{
+			_arrResInfo.push_back({ devMode.dmPelsWidth, devMode.dmPelsHeight });
+		}
+	}
+
+	std::sort(_arrResInfo.begin(), _arrResInfo.end(), Compare);
+
+	// work on the sorted array
+	for (int i = 0; i < _arrResInfo.size(); ++i)
+	{
+		if (_arrResInfo[i].width == _currentResInfo.width
+			&& _arrResInfo[i].height == _currentResInfo.height)
+		{
+			_SetTrackbarModes(i);
+			break;
+		}
+	}
+}
+
+void CSettingsDlgProc::_SetTrackbarModes(int modenum)
+{
+	SendMessage(_trackResolution, TBM_SETRANGE, TRUE, MAKELPARAM(0, _arrResInfo.size() - 1));
+	SendMessage(_trackResolution, TBM_SETPOS, TRUE, (LPARAM)modenum);
+
+	WCHAR str[64];
+	StringCchPrintf(str, ARRAYSIZE(str), L"%d X %d pixels", _arrResInfo[modenum].width, _arrResInfo[modenum].height);
+	::SetWindowText(_textCurrentRes, str);
 }

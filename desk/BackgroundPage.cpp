@@ -139,7 +139,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 
 BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
-	CHOOSECOLOR cc;
+	CHOOSECOLOR cc = {0};
 	if (ColorPicker(hWnd, &cc) == TRUE)
 	{
 		selectedTheme->newColor = cc.rgbResult;
@@ -353,9 +353,13 @@ BOOL CBackgroundDlgProc::ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
 {
 	COLORREF clr = GetDeskopColor();
 
-	CHOOSECOLOR cc;
-	COLORREF acrCustClr[16];
-	ZeroMemory(&cc, sizeof(cc));
+	static COLORREF acrCustClr[16];
+	for (int i = 0; i < ARRAYSIZE(acrCustClr); i++)
+	{
+		acrCustClr[i] = RGB(255, 255, 255);
+	}
+
+	CHOOSECOLOR cc = { 0 };
 	cc.lStructSize = sizeof(cc);
 	cc.hwndOwner = hWnd;
 	cc.lpCustColors = acrCustClr;
