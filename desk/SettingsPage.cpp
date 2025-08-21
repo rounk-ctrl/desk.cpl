@@ -12,10 +12,12 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	_chkExtend = GetDlgItem(1805);
 	_textCurrentRes = GetDlgItem(1814);
 	_trackResolution = GetDlgItem(1808);
+	_cmbColors = GetDlgItem(1807);
 	
 	_GetDisplayMonitors();
 	_SelectCurrentMonitor();
 	_GetAllModes();
+	_BuildColorList();
 	return 0;
 }
 
@@ -178,8 +180,6 @@ void CSettingsDlgProc::_GetAllModes()
 	_currentResInfo.bpp = devMode.dmBitsPerPel;
 	_currentResInfo.freq = devMode.dmDisplayFrequency;
 
-	int trackmode = 0;
-
 	// do all modes of current display
 	for (DWORD i = 0; EnumDisplaySettings(data, i, &devMode); ++i)
 	{
@@ -197,6 +197,11 @@ void CSettingsDlgProc::_GetAllModes()
 		if (!exists)
 		{
 			_arrResInfo.push_back({ devMode.dmPelsWidth, devMode.dmPelsHeight });
+		}
+
+		if (std::find(_arrSupportedBpp.begin(), _arrSupportedBpp.end(), devMode.dmBitsPerPel) == _arrSupportedBpp.end())
+		{
+			_arrSupportedBpp.push_back(devMode.dmBitsPerPel);
 		}
 	}
 
@@ -222,4 +227,46 @@ void CSettingsDlgProc::_SetTrackbarModes(int modenum)
 	WCHAR str[64];
 	StringCchPrintf(str, ARRAYSIZE(str), L"%d X %d pixels", _arrResInfo[modenum].width, _arrResInfo[modenum].height);
 	::SetWindowText(_textCurrentRes, str);
+}
+
+void CSettingsDlgProc::_BuildColorList()
+{
+	COLORMODES modes{};
+	for (int i = 0; i < _arrSupportedBpp.size(); ++i)
+	{
+		if (_arrSupportedBpp[i] == 4)
+		{
+			int index = ComboBox_AddString(_cmbColors, L"Lowest (4 bit)");
+			ComboBox_SetItemData(_cmbColors, index, 4);
+		}
+		if (_arrSupportedBpp[i] == 8)
+		{
+			int index = ComboBox_AddString(_cmbColors, L"Low (8 bit)");
+			ComboBox_SetItemData(_cmbColors, index, 8);
+		}
+		if (_arrSupportedBpp[i] == 16)
+		{
+			int index = ComboBox_AddString(_cmbColors, L"Medium (16 bit)");
+			ComboBox_SetItemData(_cmbColors, index, 16);
+		}
+		if (_arrSupportedBpp[i] == 24)
+		{
+			int index = ComboBox_AddString(_cmbColors, L"High (24 bit)");
+			ComboBox_SetItemData(_cmbColors, index, 24);
+		}
+		if (_arrSupportedBpp[i] == 32)
+		{
+			int index = ComboBox_AddString(_cmbColors, L"Highest (32 bit)");
+			ComboBox_SetItemData(_cmbColors, index, 32);
+		}
+	}
+
+	for (int i = 0; i < ComboBox_GetCount(_cmbColors); ++i)
+	{
+		int bpp = (int)ComboBox_GetItemData(_cmbColors, i);
+		if (bpp == _currentResInfo.bpp)
+		{
+			ComboBox_SetCurSel(_cmbColors, i);
+		}
+	}
 }

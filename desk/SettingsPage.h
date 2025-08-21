@@ -15,6 +15,16 @@ typedef struct
 	DWORD bpp;
 } CURRENT_RESINFO;
 
+enum COLORMODES
+{
+	E4_BIT = 1 << 0,
+	E8_BIT = 1 << 1,
+	E16_BIT = 1 << 2,
+	E24_BIT = 1 << 3,
+	E32_BIT = 1 << 4,
+};
+DEFINE_ENUM_FLAG_OPERATORS(COLORMODES);
+
 class CSettingsDlgProc
 	: public WTL::CPropertyPageImpl<CSettingsDlgProc>
 {
@@ -35,6 +45,7 @@ private:
 	void _SelectCurrentMonitor();
 	void _GetAllModes();
 	void _SetTrackbarModes(int modenum);
+	void _BuildColorList();
 
 	HWND _cmbMonitors;
 	HWND _textDisplay;
@@ -43,6 +54,8 @@ private:
 	HWND _mulMonPreview;
 	HWND _textCurrentRes;
 	HWND _trackResolution;
+	HWND _cmbColors;
 	std::vector<RESINFO> _arrResInfo;
+	std::vector<DWORD> _arrSupportedBpp;
 	CURRENT_RESINFO _currentResInfo;
 };
