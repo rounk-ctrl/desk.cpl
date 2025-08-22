@@ -219,10 +219,10 @@ HBITMAP CScrSaverDlgProc::MonitorAsBmp(int width, int height, WORD id, COLORREF 
 
 	Gdiplus::Graphics graphics(resized);
 	graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
-	Gdiplus::Rect rect(0, 10, monitor->GetWidth(), monitor->GetHeight());
+	Gdiplus::Rect rect(0, 10, width, height);
 
 	// draw bmp
-	graphics.DrawImage(monitor, rect, 0, 0, width, height, Gdiplus::UnitPixel, &imgAttr);
+	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), Gdiplus::UnitPixel, &imgAttr);
 
 	// create hbitmap
 	HBITMAP hBitmap = NULL;

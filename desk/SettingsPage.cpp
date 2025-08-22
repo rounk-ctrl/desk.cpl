@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "SettingsPage.h"
 #include "helper.h"
-#include <algorithm>
+#include "desk.h"
 
 BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -13,6 +13,7 @@ BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	_textCurrentRes = GetDlgItem(1814);
 	_trackResolution = GetDlgItem(1808);
 	_cmbColors = GetDlgItem(1807);
+	_clrPreview = GetDlgItem(1813);
 	
 	_GetDisplayMonitors();
 	_SelectCurrentMonitor();
@@ -231,6 +232,8 @@ void CSettingsDlgProc::_SetTrackbarModes(int modenum)
 
 void CSettingsDlgProc::_BuildColorList()
 {
+	std::sort(_arrSupportedBpp.begin(), _arrSupportedBpp.end());
+
 	COLORMODES modes{};
 	for (int i = 0; i < _arrSupportedBpp.size(); ++i)
 	{
@@ -269,4 +272,35 @@ void CSettingsDlgProc::_BuildColorList()
 			ComboBox_SetCurSel(_cmbColors, i);
 		}
 	}
+	_UpdateColorPreview();
+}
+
+void CSettingsDlgProc::_UpdateColorPreview()
+{
+	int index = ComboBox_GetCurSel(_cmbColors);
+	int bpp = (int)ComboBox_GetItemData(_cmbColors, index);
+	
+	int img = 120;
+	switch (bpp)
+	{
+	case 8:
+		img += 1;
+		break;
+	case 16:
+		img += 3;
+		break;
+	case 24:
+		img += 4;
+		break;
+	case 32:
+		img += 5;
+		break;
+	default:
+		break;
+	}
+	printf("image index: %d\n", img);
+
+	SIZE size = GetClientSIZE(_clrPreview);
+	HBITMAP bmp = (HBITMAP)LoadImage(g_hinst, MAKEINTRESOURCE(img), IMAGE_BITMAP, size.cx, 0, LR_DEFAULTCOLOR);
+	Static_SetBitmap(_clrPreview, bmp);
 }

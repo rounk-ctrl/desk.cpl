@@ -46,6 +46,7 @@ private:
 	void _GetAllModes();
 	void _SetTrackbarModes(int modenum);
 	void _BuildColorList();
+	void _UpdateColorPreview();
 
 	HWND _cmbMonitors;
 	HWND _textDisplay;
@@ -55,6 +56,7 @@ private:
 	HWND _textCurrentRes;
 	HWND _trackResolution;
 	HWND _cmbColors;
+	HWND _clrPreview;
 	std::vector<RESINFO> _arrResInfo;
 	std::vector<DWORD> _arrSupportedBpp;
 	CURRENT_RESINFO _currentResInfo;
