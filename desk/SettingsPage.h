@@ -40,6 +40,8 @@ private:
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnHScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	BOOL OnApply();
+
 
 	void _GetDisplayMonitors();
 	void _SelectCurrentMonitor();

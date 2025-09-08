@@ -39,7 +39,30 @@ LRESULT CSettingsDlgProc::OnHScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		}
 
 		_SetTrackbarModes(pos);
+		SetModified(TRUE);
 	}
+	return 0;
+}
+
+BOOL CSettingsDlgProc::OnApply()
+{
+	int pos = (int)SendMessage(_trackResolution, TBM_GETPOS, 0, 0);
+	RESINFO info = _arrResInfo[pos];
+
+	printf("%d x %d\n", info.width, info.height);
+
+	DEVMODE dm;
+	dm.dmSize = sizeof(dm);
+	dm.dmPelsWidth = info.width;
+	dm.dmPelsHeight = info.height;
+	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
+
+	if (ChangeDisplaySettings(&dm, CDS_TEST) == DISP_CHANGE_SUCCESSFUL)
+	{
+		LONG ret = ChangeDisplaySettings(&dm, 0);
+		printf("%d\n", ret);
+	}
+
 	return 0;
 }
 
@@ -207,6 +230,7 @@ void CSettingsDlgProc::_GetAllModes()
 	}
 
 	std::sort(_arrResInfo.begin(), _arrResInfo.end(), Compare);
+	SendMessage(_trackResolution, TBM_SETRANGE, TRUE, MAKELPARAM(0, _arrResInfo.size() - 1));
 
 	// work on the sorted array
 	for (int i = 0; i < _arrResInfo.size(); ++i)
@@ -222,7 +246,6 @@ void CSettingsDlgProc::_GetAllModes()
 
 void CSettingsDlgProc::_SetTrackbarModes(int modenum)
 {
-	SendMessage(_trackResolution, TBM_SETRANGE, TRUE, MAKELPARAM(0, _arrResInfo.size() - 1));
 	SendMessage(_trackResolution, TBM_SETPOS, TRUE, (LPARAM)modenum);
 
 	WCHAR str[64];
