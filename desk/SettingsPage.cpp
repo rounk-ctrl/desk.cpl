@@ -59,8 +59,7 @@ BOOL CSettingsDlgProc::OnApply()
 
 	if (ChangeDisplaySettings(&dm, CDS_TEST) == DISP_CHANGE_SUCCESSFUL)
 	{
-		LONG ret = ChangeDisplaySettings(&dm, 0);
-		printf("%d\n", ret);
+		ChangeDisplaySettings(&dm, 0);
 	}
 
 	return 0;

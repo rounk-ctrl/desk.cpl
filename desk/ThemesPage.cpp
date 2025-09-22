@@ -15,9 +15,6 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	hPreview = GetDlgItem(1103);
 	size = GetClientSIZE(hPreview);
 
-	// initialize theme manager
-	InitUxtheme();
-
 	WCHAR ws[MAX_PATH] = { 0 };
 	int count{};
 

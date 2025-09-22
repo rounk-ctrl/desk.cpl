@@ -32,6 +32,13 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	hPosCombobox = GetDlgItem(1205);
 	backPreviewSize = GetClientSIZE(hBackPreview);
 
+	if (!currentITheme)
+	{
+		int cur;
+		pThemeManager->GetCurrentTheme(&cur);
+		pThemeManager->GetTheme(cur, &currentITheme);
+	}
+
 	RECT rect;
 	::GetClientRect(hListView, &rect);
 	AddColumn(hListView, rect.right - rect.left - 30);
@@ -295,9 +302,12 @@ BOOL CBackgroundDlgProc::OnSetActive()
 	if (!firstInit && selectedIndex == 0)
 	{
 		HBITMAP bmp; 
-		pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-		Static_SetBitmap(hBackPreview, bmp);
-		DeleteBitmap(bmp);
+		if (pWndPreview)
+		{
+			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
+			Static_SetBitmap(hBackPreview, bmp);
+			DeleteBitmap(bmp);
+		}
 	}
 	_TerminateProcess(pi);
 	return 0;
@@ -322,7 +332,7 @@ int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCWSTR text)
 	lvItem.iSubItem = 0;
 	lvItem.iImage = rowIndex;
 	lvItem.pszText = (LPWSTR)PathFindFileName(text);
-	lvItem.lParam = (LPARAM)text;
+	lvItem.lParam = (LPARAM)StrDup(text);
 
 	return ListView_InsertItem(hListView, &lvItem);
 }
@@ -429,8 +439,18 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
 {
 	int currThe;
-	WCHAR ws[MAX_PATH] = { 0 };
 	pThemeManager->GetCurrentTheme(&currThe);
+
+	if (!selectedTheme->wallpaperPath)
+	{
+		WCHAR ws[MAX_PATH] = { 0 };
+		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+
+		selectedTheme->wallpaperType = WT_PICTURE;
+		StringCpy(selectedTheme->wallpaperPath, ws);
+
+		selectedTheme->useDesktopColor = true;
+	}
 
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{

@@ -16,11 +16,33 @@ using namespace Microsoft::WRL::Details;
 
 BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
+	_fFirstInit = TRUE;
 	hPreviewWnd = GetDlgItem(1110);
 	hThemesCombobox = GetDlgItem(1111);
 	hColorCombobox = GetDlgItem(1114);
 	hSizeCombobox = GetDlgItem(1116);
 	size = GetClientSIZE(hPreviewWnd);
+
+	if (!currentITheme)
+	{
+		LPWSTR path = nullptr;
+		int cur;
+		pThemeManager->GetCurrentTheme(&cur);
+		pThemeManager->GetTheme(cur, &currentITheme);
+
+		if (!IsClassicThemeEnabled())
+		{
+			ITheme* themeClass = new ITheme(currentITheme);
+			LPWSTR path = nullptr;
+			themeClass->get_VisualStyle(&path);
+
+			StringCpy(selectedTheme->szMsstylePath, path);
+		}
+		else
+		{
+			StringCpy(selectedTheme->szMsstylePath, (LPWSTR)L"(classic)");
+		}
+	}
 
 	WCHAR msstyledir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Resources\\Themes", msstyledir, MAX_PATH);
@@ -108,6 +130,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	Static_SetBitmap(hPreviewWnd, ebmp);
 	DeleteBitmap(ebmp);
 
+	_fFirstInit = FALSE;
+
 	return 0;
 }
 
@@ -167,16 +191,19 @@ BOOL CAppearanceDlgProc::OnSetActive()
 			if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
+
+				{
+					HBITMAP ebmp;
+					pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
+					Static_SetBitmap(hPreviewWnd, ebmp);
+					DeleteBitmap(ebmp);
+				}
+
 				break;
 			}
 		}
 		selectedTheme->fMsstyleChanged = false;
 	}
-
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
-	Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteBitmap(ebmp);
 
 	return 0;
 }

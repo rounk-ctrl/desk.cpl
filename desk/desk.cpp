@@ -7,6 +7,7 @@
 #include "SettingsPage.h"
 #include "desk.h"
 #include "helper.h"
+#include "uxtheme.h"
 
 HINSTANCE g_hinst;
 IThemeManager2* pThemeManager = NULL;
@@ -45,6 +46,9 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	sheet.m_psh.dwFlags |= PSH_USEICONID;
 	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
 
+	// initialize theme manager
+	InitUxtheme();
+
 	CThemeDlgProc themedlg;
 	sheet.AddPage(themedlg);
 
@@ -67,7 +71,7 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	Gdiplus::GdiplusShutdown(gdiplusToken);
 	pThemeManager->Release();
 	pDesktopWallpaper->Release();
-	currentITheme->Release();
+	if (currentITheme) currentITheme->Release();
 	free(selectedTheme);
 	_TerminateProcess(pi);
 }
