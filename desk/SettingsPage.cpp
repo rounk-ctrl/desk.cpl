@@ -2,6 +2,7 @@
 #include "SettingsPage.h"
 #include "helper.h"
 #include "desk.h"
+#include "ThemeChngDlg.h"
 
 BOOL CSettingsDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -57,11 +58,27 @@ BOOL CSettingsDlgProc::OnApply()
 	dm.dmPelsHeight = info.height;
 	dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-	if (ChangeDisplaySettings(&dm, CDS_TEST) == DISP_CHANGE_SUCCESSFUL)
+	if (info.width != _currentResInfo.width && info.height != _currentResInfo.height)
 	{
-		ChangeDisplaySettings(&dm, 0);
-	}
+		if (ChangeDisplaySettings(&dm, CDS_TEST) == DISP_CHANGE_SUCCESSFUL)
+		{
+			ChangeDisplaySettings(&dm, 0);
 
+			CThemeChngDlg dlg;
+			if (dlg.DoModal() == 1)
+			{
+				dm.dmPelsWidth = _currentResInfo.width;
+				dm.dmPelsHeight = _currentResInfo.height;
+				ChangeDisplaySettings(&dm, 0);
+				_SelectCurrentResolution();
+			}
+			else
+			{
+				_currentResInfo.height = info.height;
+				_currentResInfo.width = info.width;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -231,16 +248,7 @@ void CSettingsDlgProc::_GetAllModes()
 	std::sort(_arrResInfo.begin(), _arrResInfo.end(), Compare);
 	SendMessage(_trackResolution, TBM_SETRANGE, TRUE, MAKELPARAM(0, _arrResInfo.size() - 1));
 
-	// work on the sorted array
-	for (int i = 0; i < _arrResInfo.size(); ++i)
-	{
-		if (_arrResInfo[i].width == _currentResInfo.width
-			&& _arrResInfo[i].height == _currentResInfo.height)
-		{
-			_SetTrackbarModes(i);
-			break;
-		}
-	}
+	_SelectCurrentResolution();
 }
 
 void CSettingsDlgProc::_SetTrackbarModes(int modenum)
@@ -325,4 +333,17 @@ void CSettingsDlgProc::_UpdateColorPreview()
 	SIZE size = GetClientSIZE(_clrPreview);
 	HBITMAP bmp = (HBITMAP)LoadImage(g_hinst, MAKEINTRESOURCE(img), IMAGE_BITMAP, size.cx, 0, LR_DEFAULTCOLOR);
 	Static_SetBitmap(_clrPreview, bmp);
+}
+
+void CSettingsDlgProc::_SelectCurrentResolution()
+{
+	for (int i = 0; i < _arrResInfo.size(); ++i)
+	{
+		if (_arrResInfo[i].width == _currentResInfo.width
+			&& _arrResInfo[i].height == _currentResInfo.height)
+		{
+			_SetTrackbarModes(i);
+			break;
+		}
+	}
 }

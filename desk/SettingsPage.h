@@ -49,6 +49,7 @@ private:
 	void _SetTrackbarModes(int modenum);
 	void _BuildColorList();
 	void _UpdateColorPreview();
+	void _SelectCurrentResolution();
 
 	HWND _cmbMonitors;
 	HWND _textDisplay;

@@ -9,9 +9,10 @@
 #define IDD_SETTINGSDLG                 109
 #define IDD_APPEARANCEBOX               111
 #define IDD_EFFECTSDLG	                113
-#define IDI_ICON1                       115
-#define IDS_THEMESCPL                   116
-#define IDS_THEMESDESC                  117
+#define IDD_THEMECHNGDLG	            115
+#define IDI_ICON1                       117
+#define IDS_THEMESCPL                   118
+#define IDS_THEMESDESC                  119
 #define IDB_4BIT						120
 #define IDB_8BIT						121
 #define IDB_BITMAP2						122

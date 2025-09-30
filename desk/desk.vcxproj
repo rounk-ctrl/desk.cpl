@@ -195,6 +195,7 @@
     <ClInclude Include="ScreensaverPage.h" />
     <ClInclude Include="SettingsPage.h" />
     <ClInclude Include="theme.h" />
+    <ClInclude Include="ThemeChngDlg.h" />
     <ClInclude Include="ThemesPage.h" />
     <ClInclude Include="todo.h" />
     <ClInclude Include="uxtheme.h" />
@@ -215,6 +216,7 @@
     </ClCompile>
     <ClCompile Include="ScreensaverPage.cpp" />
     <ClCompile Include="SettingsPage.cpp" />
+    <ClCompile Include="ThemeChngDlg.cpp" />
     <ClCompile Include="ThemesPage.cpp" />
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />

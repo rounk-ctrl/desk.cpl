@@ -103,7 +103,7 @@ extern "C" LONG APIENTRY CPlApplet(
 
 	case CPL_DBLCLK:
 		lParam2 = 0L;
-
+		// fall through
 	case CPL_STARTWPARMS:
 		PropertySheetMoment((LPWSTR)lParam2);
 		return (LONG)TRUE;
