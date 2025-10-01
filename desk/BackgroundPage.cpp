@@ -50,10 +50,13 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	DestroyIcon(barrierico);
 
 	WCHAR wallpaperdir[MAX_PATH];
+	WCHAR windowswaldir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
+	ExpandEnvironmentStrings(L"%windir%", windowswaldir, MAX_PATH);
 	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
 	// todo: natural sort
 	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers, TRUE);
+	EnumDir(windowswaldir, extensions, ARRAYSIZE(extensions), wallpapers, FALSE);
 
 	// start with k=1, k=0 is (none)
 	int k = 1;
