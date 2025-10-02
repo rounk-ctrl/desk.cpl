@@ -50,11 +50,32 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	DestroyIcon(barrierico);
 
 	WCHAR wallpaperdir[MAX_PATH];
+	WCHAR windowswaldir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
+	ExpandEnvironmentStrings(L"%windir%", windowswaldir, MAX_PATH);
 	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
-	// todo: natural sort
-	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers, TRUE);
 
+	// this basically combines wallpaperdir and windowswaldir
+	std::vector<std::pair<std::wstring, BOOL>> searchdir;
+	searchdir.emplace_back(wallpaperdir, TRUE);
+	searchdir.emplace_back(windowswaldir, FALSE);
+
+	// todo: natural sort
+	for (const auto& [dir, recurse] : searchdir)
+	{
+		EnumDir(dir.c_str(), extensions, ARRAYSIZE(extensions), wallpapers, recurse);
+	}
+
+	// this basically alphabetically sorts the wallpaper file names, for example if you have
+	// a few files in windir and a few in web it will put windir files at the end and the web files on top
+	// this basically fixes that issue and makes it like how it was in windows xp
+	std::sort(wallpapers.begin(), wallpapers.end(), [](LPWSTR a, LPWSTR b) {
+		LPCWSTR fileA = PathFindFileNameW(a);
+		LPCWSTR fileB = PathFindFileNameW(b);
+		int cmpResult = StrCmpLogicalW(fileA, fileB);
+		return cmpResult < 0;
+	});
+	
 	// start with k=1, k=0 is (none)
 	int k = 1;
 	for (auto path : wallpapers)
