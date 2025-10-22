@@ -139,6 +139,12 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	return _ComposePreview(pbOut);
 }
 
+HRESULT CWindowPreview::GetMonitorMargins(MARGINS* pOut)
+{
+	*pOut = _marMonitor;
+	return S_OK;
+}
+
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 {
 	Bitmap* gdiBmp = new Bitmap(GETSIZE(_sizePreview), PixelFormat32bppARGB);
@@ -157,8 +163,8 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	{
 		rect.X += _marMonitor.cxLeftWidth;
 		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width -= _marMonitor.cxRightWidth;
-		rect.Height -= _marMonitor.cyBottomHeight;
+		rect.Width = 152;
+		rect.Height = 112;
 	}
 	hr = DrawBitmapIfNotNull(_bmpSolidColor, &graphics, rect);
 	hr = DrawBitmapIfNotNull(_bmpWallpaper, &graphics, rect);
@@ -237,8 +243,8 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	{
 		rect.X += _marMonitor.cxLeftWidth;
 		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width -= _marMonitor.cxRightWidth;
-		rect.Height -= _marMonitor.cyBottomHeight;
+		rect.Width = 152;
+		rect.Height = 112;
 	}
 
 	HDC hScreenDC = ::GetDC(NULL);
@@ -275,12 +281,16 @@ HRESULT CWindowPreview::_DrawMonitor()
 	Graphics graphics(_bmpMonitor);
 
 	// draw monitor
-	Rect rect(0, 0, GETSIZE(_sizePreview));
+	int xOff = (_sizePreview.cx / 2) - (monitor->GetWidth() / 2);
+	int yOff = (_sizePreview.cy / 2) - (monitor->GetHeight() / 2);
+	Rect rect(xOff, yOff,
+		monitor->GetWidth(), monitor->GetHeight());
 	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor = { MulDiv(15, _dpiWindow, 96), MulDiv(30, _dpiWindow, 96), MulDiv(17, _dpiWindow, 96), MulDiv(53, _dpiWindow, 96) };
+	_marMonitor = {xOff + 16, 0, yOff + 17, 0};
 
+	delete monitor;
 	return hr;
 }
 

@@ -41,9 +41,16 @@ IWindowPreview : IUnknown
 	STDMETHOD(GetUpdatedPreviewImage)(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags) = 0;
 };
 
+MIDL_INTERFACE("E8EABE39-532B-442B-BE2C-E3FBEAD7AECE")
+IWindowConfig : IUnknown
+{
+	STDMETHOD(GetMonitorMargins)(MARGINS* pOut) = 0;
+};
+
 class CWindowPreview final: 
 	public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>
 		, IWindowPreview
+		, IWindowConfig
 	>
 {
 public:
@@ -54,6 +61,10 @@ public:
 	STDMETHODIMP GetPreviewImage(HBITMAP* pbOut);
 	STDMETHODIMP GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags);
 	//~ End IWindowPreview interface
+
+	//~ Begin IWindowConfig interface
+	STDMETHODIMP GetMonitorMargins(MARGINS* pOut);
+	//~ End IWindowConfig interface
 
 private:
 	HRESULT _CleanupUxThemeFile(void** hFile);

@@ -2,6 +2,7 @@
 #include "ScreensaverPage.h"
 #include "desk.h"
 #include "helper.h"
+#include "wndprvw.h"
 
 using namespace Microsoft::WRL::Details;
 LRESULT CALLBACK StaticProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -261,10 +262,14 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 	if (!hWndStatic)
 	{
 		int dpi = GetDpiForWindow(preview);
-		MARGINS _marMonitor = { MulDiv(15, dpi, 96), MulDiv(30, dpi, 96), MulDiv(17, dpi, 96), MulDiv(53, dpi, 96) };
+		Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
+		pWndPreview.As(&pConfig);
+		
+		MARGINS marMonitor;
+		pConfig->GetMonitorMargins(&marMonitor);
 
 		hWndStatic = CreateWindow(WC_STATIC, 0,
-			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, _marMonitor.cxLeftWidth, _marMonitor.cyTopHeight, scrSize.cx - _marMonitor.cxRightWidth, scrSize.cy - _marMonitor.cyBottomHeight,
+			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, marMonitor.cxLeftWidth, marMonitor.cyTopHeight, 152, 112,
 			preview, NULL, g_hinst, NULL);
 		::SetWindowLongPtr(hWndStatic, GWLP_WNDPROC, (LONG_PTR)StaticProc);
 	}
