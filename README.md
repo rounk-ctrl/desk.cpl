@@ -1,4 +1,4 @@
 # desk.cpl
 cool shit
 
-![image](https://github.com/user-attachments/assets/1ee23c5c-c05a-41a8-9444-06b5c94cb501)
+<img alt="{558B2C79-3331-4AFA-9D1F-405FED942047}" src="https://github.com/user-attachments/assets/305da55c-9694-41e6-abf0-9ed10bba871b" />
