@@ -1,5 +1,6 @@
 #pragma once
 #include "pch.h"
+#include "wndprvw.h"
 
 class CAppearanceDlgBox :
 	public CDialogImpl<CAppearanceDlgBox>
@@ -22,5 +23,24 @@ private:
 
 
 	HWND hThemesCombobox;
+	HWND hPreview;
+	SIZE size;
+	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 
+	// -ve sizes are fixed with preview size in wndprvw
+	MYWINDOWINFO wnd[3] =
+	{
+		{
+			WT_INACTIVE,
+			{10, 10, -37, 10 + 134}
+		},
+		{
+			WT_ACTIVE,
+			{20, 35, -30, 35 + 134}
+		},
+		{
+			WT_MESSAGEBOX,
+			{-75, 64, 75, 64 + 98}
+		}
+	};
 };

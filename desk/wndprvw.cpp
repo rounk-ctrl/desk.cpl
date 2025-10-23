@@ -145,6 +145,12 @@ HRESULT CWindowPreview::GetMonitorMargins(MARGINS* pOut)
 	return S_OK;
 }
 
+HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
+{
+	_fIsThemed = !fEnable;
+	return S_OK;
+}
+
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 {
 	Bitmap* gdiBmp = new Bitmap(GETSIZE(_sizePreview), PixelFormat32bppARGB);
@@ -341,6 +347,9 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderScrollbar(graphics, hTheme, wndInfo);
+	RETURN_IF_FAILED(hr);
+
+	hr = _RenderMenuBar(graphics, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	CloseThemeData(hTheme);
@@ -595,7 +604,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	else
 	{
 		rc.top += ((_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2) + GetSystemMetrics(SM_CXFRAME);
-		rc.left += GetSystemMetrics(SM_CXBORDER);
+		rc.left += GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
@@ -916,4 +925,89 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
+}
+
+HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo)
+{
+	if (wndInfo.wndType != WT_ACTIVE || _fIsThemed) return S_OK;
+
+	RECT crc = wndInfo.wndPos;
+	crc.left += _marFrame.cxLeftWidth - GetSystemMetrics(SM_CXEDGE);
+	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYEDGE);
+	crc.bottom = crc.top + _szMenuBar.cy;
+	crc.right -= GetSystemMetrics(SM_CXFRAME);
+
+	HDC dc = pGraphics->GetHDC();
+	FillRect(dc, &crc, GetSysColorBrush(COLOR_MENU));
+
+	crc.top += GetSystemMetrics(SM_CYBORDER);
+	crc.bottom -= GetSystemMetrics(SM_CYBORDER);
+	crc.left += GetSystemMetrics(SM_CXBORDER);
+	_RenderMenuItem(dc, &crc, 1);
+	_RenderMenuItem(dc, &crc, 2);
+	_RenderMenuItem(dc, &crc, 3);
+	pGraphics->ReleaseHDC(dc);
+
+	return S_OK;
+}
+
+HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
+{
+
+	LPCWSTR text = L"";
+	switch (type)
+	{
+	case 1:
+		text = L"Normal";
+		break;
+	case 2:
+		text = L"Disabled";
+		break;
+	case 3:
+		text = L"Selected";
+		break;
+	}
+
+	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+	HFONT fon = CreateFontIndirect(&ncm.lfMenuFont);
+	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
+
+	// get height
+	RECT rcheight = { 0,0,0,0 };
+	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
+
+	// 7 padding on either side of the text
+	rc->right = rc->left + RECTWIDTH(rcheight) + (7 * 2);
+	if (type == 3) DrawEdge(hdc, rc, BDR_SUNKENOUTER, BF_RECT);
+
+	if (type == 2 || type == 3)
+	{
+		rc->left += 1;
+		rc->right += 1;
+		rc->top += 1;
+		rc->bottom += 1;
+	}
+	COLORREF clr = type == 2 ? RGB(255,255,255) : GetSysColor(COLOR_MENUTEXT);
+	SetTextColor(hdc, clr);
+	DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+	if (type == 2)
+	{
+		rc->left -= 1;
+		rc->right -= 1;
+		rc->top -= 1;
+		rc->bottom -= 1;
+
+		clr = GetSysColor(COLOR_GRAYTEXT);
+		SetTextColor(hdc, clr);
+		DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+
+	}
+
+	SelectObject(hdc, hOldFont);
+	DeleteObject(fon);
+
+	// update the rectangle
+	rc->left += RECTWIDTH(rcheight) + (7 * 2) + GetSystemMetrics(SM_CXBORDER);
+	return S_OK;
 }

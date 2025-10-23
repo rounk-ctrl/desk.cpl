@@ -45,6 +45,7 @@ MIDL_INTERFACE("E8EABE39-532B-442B-BE2C-E3FBEAD7AECE")
 IWindowConfig : IUnknown
 {
 	STDMETHOD(GetMonitorMargins)(MARGINS* pOut) = 0;
+	STDMETHOD(SetClassicPrev)(BOOL fEnable) = 0;
 };
 
 class CWindowPreview final: 
@@ -64,6 +65,7 @@ public:
 
 	//~ Begin IWindowConfig interface
 	STDMETHODIMP GetMonitorMargins(MARGINS* pOut);
+	STDMETHODIMP SetClassicPrev(BOOL fEnable);
 	//~ End IWindowConfig interface
 
 private:
@@ -80,6 +82,8 @@ private:
 	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+	HRESULT _RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo);
+	HRESULT _RenderMenuItem(HDC hdc, RECT* rc, int type);
 	HRESULT _ComposePreview(HBITMAP* pbOut);
 
 	// variables

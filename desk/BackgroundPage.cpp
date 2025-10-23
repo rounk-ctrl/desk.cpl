@@ -43,7 +43,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	::GetClientRect(hListView, &rect);
 	AddColumn(hListView, rect.right - rect.left - 30);
 
-	AddItem(hListView, 0, L"(none)");
+	AddItem(hListView, 0, L"(None)");
 	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
@@ -60,7 +60,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	searchdir.emplace_back(wallpaperdir, TRUE);
 	searchdir.emplace_back(windowswaldir, FALSE);
 
-	// todo: natural sort
 	for (const auto& [dir, recurse] : searchdir)
 	{
 		EnumDir(dir.c_str(), extensions, ARRAYSIZE(extensions), wallpapers, recurse);
