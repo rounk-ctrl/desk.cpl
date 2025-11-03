@@ -193,7 +193,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		selectedIndex = pnmv->iItem;
 		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
 
-		if (lstrcmp(path, L"(none)") == 0)
+		if (lstrcmpi(path, L"(None)") == 0)
 		{
 			::EnableWindow(hPosCombobox, false);
 

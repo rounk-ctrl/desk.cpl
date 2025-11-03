@@ -983,21 +983,15 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 
 	if (type == 2 || type == 3)
 	{
-		rc->left += 1;
-		rc->right += 1;
-		rc->top += 1;
-		rc->bottom += 1;
+		OffsetRect(rc, 1, 1);
 	}
 	COLORREF clr = type == 2 ? RGB(255,255,255) : GetSysColor(COLOR_MENUTEXT);
 	SetTextColor(hdc, clr);
 	DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	if (type == 2)
 	{
-		rc->left -= 1;
-		rc->right -= 1;
-		rc->top -= 1;
-		rc->bottom -= 1;
-
+		OffsetRect(rc, -1, -1);
+		
 		clr = GetSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);
 		DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);

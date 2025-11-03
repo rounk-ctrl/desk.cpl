@@ -31,7 +31,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	Static_SetBitmap(hEnergy, bmp);
 	DeleteObject(bmp);
 
-	ComboBox_AddString(hScrCombo, L"(none)");
+	ComboBox_AddString(hScrCombo, L"(None)");
 	AddScreenSavers(hScrCombo);
 
 	WCHAR path[MAX_PATH];
