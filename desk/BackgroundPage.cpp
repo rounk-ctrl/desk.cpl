@@ -415,7 +415,7 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 
 	if (isEn == 1)
 	{
-		ISlideshowSettings* st;
+		ISlideshowSettings* st = NULL;
 		themeClass->get_SlideshowSettings(&st);
 
 		IWallpaperCollection* wlp;

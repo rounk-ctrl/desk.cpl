@@ -231,7 +231,8 @@ HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
 
 	// called in CUxThemeFile::CloseFile
 	ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
-	free(ltf);
+
+	free(*hFile);
 	*hFile = NULL;
 
 	return S_OK;
@@ -264,7 +265,6 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 
 	SelectObject(hMemoryDC, oldBmp);
 	DeleteBitmap(_hbDesktop);
-	DeleteBitmap(oldBmp);
 	ReleaseDC(0, hScreenDC);
 	DeleteDC(hMemoryDC);
 	delete bm;
@@ -352,6 +352,7 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	hr = _RenderMenuBar(graphics, wndInfo);
 	RETURN_IF_FAILED(hr);
 
+	delete graphics;
 	CloseThemeData(hTheme);
 	return hr;
 }
@@ -391,9 +392,10 @@ HRESULT CWindowPreview::_RenderBin()
 		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, size, size, 0, NULL, DI_NORMAL);
 		bRet = AlphaBlend(hdcgraphic, 0, 0, size, size,
 			memdc, 0, 0, size, size, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
+
+		DestroyIcon(sii.hIcon);
 	}
 	SelectObject(memdc, oldBmp);
-	DeleteBitmap(oldBmp);
 	DeleteBitmap(hbitmap);
 	DeleteDC(memdc);
 
@@ -833,7 +835,12 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
 	// QUIRK: same behaviour as old desk.cpl
-	if (_fIsThemed || (wndInfo.wndType != WT_INACTIVE && !_fIsThemed)) FillRect(hdc, &crc, CreateSolidBrush(clr));
+	if (_fIsThemed || (wndInfo.wndType != WT_INACTIVE && !_fIsThemed))
+	{
+		HBRUSH hbr = CreateSolidBrush(clr);
+		FillRect(hdc, &crc, hbr);
+		DeleteObject(hbr);
+	}
 
 	LOGFONT font{};
 	if (_fIsThemed)

@@ -107,7 +107,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	else
 	{
 		ITheme* themeClass = new ITheme(currentITheme);
-		LPWSTR style;
+		LPWSTR style = NULL;
 		themeClass->get_VisualStyle(&style);
 		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 		{
@@ -127,8 +127,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
 	pWndPreview->GetPreviewImage(&ebmp);
-	Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteBitmap(ebmp);
+	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+	if (hPrev) DeleteBitmap(hPrev);
 
 	_fFirstInit = FALSE;
 
@@ -163,8 +163,8 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
-	Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteBitmap(ebmp);
+	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+	if (hPrev) DeleteObject(hPrev);
 
 	SetModified(TRUE);
 	return 0;
@@ -191,19 +191,18 @@ BOOL CAppearanceDlgProc::OnSetActive()
 			if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
-
 				{
 					HBITMAP ebmp;
 					pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
-					Static_SetBitmap(hPreviewWnd, ebmp);
-					DeleteBitmap(ebmp);
+					HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+					if (hPrev) DeleteObject(hPrev);
 				}
-
 				break;
 			}
 		}
 		selectedTheme->fMsstyleChanged = false;
 	}
+	
 
 	return 0;
 }

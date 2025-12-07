@@ -73,7 +73,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	currentITheme->Release();
 	pThemeManager->GetTheme(index, &currentITheme);
 
-	LPWSTR ws;
+	LPWSTR ws = NULL;
 	ITheme* themeClass = new ITheme(currentITheme);
 	themeClass->get_background(&ws);
 
