@@ -181,7 +181,12 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 BOOL CAppearanceDlgProc::OnSetActive()
 {
 	_TerminateProcess(pi);
-	UINT flags = UPDATE_SOLIDCLR;
+
+	UINT flags = UPDATE_NONE;
+	if (selectedTheme->newColor)
+	{
+		flags |= UPDATE_SOLIDCLR;
+	}
 	if (selectedTheme->fMsstyleChanged)
 	{
 		flags |= UPDATE_WINDOW;
@@ -191,18 +196,18 @@ BOOL CAppearanceDlgProc::OnSetActive()
 			if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
-				{
-					HBITMAP ebmp;
-					pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
-					HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-					if (hPrev) DeleteObject(hPrev);
-				}
 				break;
 			}
 		}
 		selectedTheme->fMsstyleChanged = false;
 	}
-	
+	if (flags != UPDATE_NONE)
+	{
+		HBITMAP ebmp;
+		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
+		HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+		if (hPrev) DeleteObject(hPrev);
+	}
 
 	return 0;
 }
