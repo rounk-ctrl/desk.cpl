@@ -453,9 +453,9 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		BOOL fGradients = FALSE;
 		SystemParametersInfo(SPI_GETGRADIENTCAPTIONS, 0, &fGradients, 0);
 
-		COLORREF clrCaption = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
 		if (fGradients)
 		{
+			COLORREF clrCaption = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
 			COLORREF clrGradient = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
 			TRIVERTEX tex[2]{};
@@ -473,19 +473,24 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 			GRADIENT_RECT rect = { 0,1 };
 			hr = GradientFill(hdc, tex, ARRAYSIZE(tex), &rect, 1, GRADIENT_FILL_RECT_H) == TRUE ? S_OK : E_FAIL;
-
-			// 1px border below caption
-			HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
-			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
-
-			POINT pt[2]{};
-			pt[0] = { crc.left + _marFrame.cxLeftWidth, crc.top + _marFrame.cyTopHeight };
-			pt[1] = { crc.right - _marFrame.cxRightWidth, crc.top + _marFrame.cyTopHeight };
-			Polyline(hdc, pt, ARRAYSIZE(pt));
-
-			SelectObject(hdc, oldPen);
-			DeletePen(pen);
 		}
+		else
+		{
+			RECT rc = { crc.left + _marFrame.cxLeftWidth, crc.top, crc.right - _marFrame.cxRightWidth, crc.bottom };
+			FillRect(hdc, &rc, GetSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION));
+		}
+
+		// 1px border below caption
+		HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
+
+		POINT pt[2]{};
+		pt[0] = { crc.left + _marFrame.cxLeftWidth, crc.top + _marFrame.cyTopHeight };
+		pt[1] = { crc.right - _marFrame.cxRightWidth, crc.top + _marFrame.cyTopHeight };
+		Polyline(hdc, pt, ARRAYSIZE(pt));
+
+		SelectObject(hdc, oldPen);
+		DeletePen(pen);
 	}
 	RETURN_IF_FAILED(hr);
 
