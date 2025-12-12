@@ -228,7 +228,18 @@
     <None Include="exports.def" />
     <None Include="packages.config" />
   </ItemGroup>
+  <Import Project="$(SolutionDir)MUIBuild\MUIBuild.targets" />
+  <PropertyGroup Label="MUI">
+    <_PrimaryLanguage>en-US</_PrimaryLanguage>
+    <_PrimaryLanguageID>0x0409</_PrimaryLanguageID>
+    <_RCConfig>Resource.rcconfig</_RCConfig>
+  </PropertyGroup>
+  <Target Name="MUI" AfterTargets="Link">
+  </Target>
   <ItemGroup>
+    <ResourceCompile Include="Resource.en-US.rc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ResourceCompile>
     <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <ItemGroup>
