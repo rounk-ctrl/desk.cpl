@@ -7,6 +7,7 @@
 #define Static_SetBitmap(hwndCtl, hBmp)  \
 	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
 
+
 // 29 colors
 #define MAX_COLORS (COLOR_GRADIENTINACTIVECAPTION + 1)
 

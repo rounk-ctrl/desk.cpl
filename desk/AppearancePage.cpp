@@ -162,7 +162,7 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	selectedTheme->fMsstyleChanged = true;
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
 	if (hPrev) DeleteObject(hPrev);
 
@@ -177,7 +177,7 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	_UpdateFontBox(data);
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
 	if (hPrev) DeleteObject(hPrev);
 
@@ -189,7 +189,7 @@ BOOL CAppearanceDlgProc::OnSetActive()
 	_TerminateProcess(pi);
 
 	UINT flags = UPDATE_NONE;
-	if (selectedTheme->newColor)
+	if (selectedTheme->newColor != 0xB0000000)
 	{
 		flags |= UPDATE_SOLIDCLR;
 	}
@@ -278,6 +278,8 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 		int index = ComboBox_GetCurSel(hColorCombobox);
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
 		selectedTheme->selectedScheme = data;
+		selectedTheme->newColor = data->rgb[COLOR_BACKGROUND];
+
 		if (data->variant & HAS_NORMAL) ComboBox_AddString(hSizeCombobox, L"Normal");
 		if (data->variant & HAS_EXTRA_LARGE) ComboBox_AddString(hSizeCombobox, L"Extra Large");
 		if (data->variant & HAS_LARGE) ComboBox_AddString(hSizeCombobox, L"Large");

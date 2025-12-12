@@ -271,10 +271,10 @@ BOOL CBackgroundDlgProc::OnApply()
 		pDesktopWallpaper->SetPosition((DESKTOP_WALLPAPER_POSITION)index);
 		selectedTheme->posChanged = -1;
 	}
-	if (selectedTheme->newColor)
+	if (selectedTheme->newColor != 0xB0000000)
 	{
 		pDesktopWallpaper->SetBackgroundColor(selectedTheme->newColor);
-		selectedTheme->newColor = NULL;
+		selectedTheme->newColor = 0xB0000000;
 	}
 	if (selectedTheme->customWallpaperSelection)
 	{

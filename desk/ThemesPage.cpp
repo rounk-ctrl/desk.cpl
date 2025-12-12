@@ -113,7 +113,7 @@ BOOL CThemeDlgProc::OnApply()
 	if (selectedTheme->customWallpaperSelection)
 		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_BACKGROUND;
 
-	if (selectedTheme->newColor)
+	if (selectedTheme->newColor != 0xB0000000)
 		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
 	// apply the selected theme
@@ -126,7 +126,7 @@ BOOL CThemeDlgProc::OnApply()
 BOOL CThemeDlgProc::OnSetActive()
 {
 	selectionPicker = true;
-	if (selectedTheme->customWallpaperSelection || selectedTheme->newColor || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
+	if (selectedTheme->customWallpaperSelection || selectedTheme->newColor != 0xB0000000 || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
 	{
 		int index = ComboBox_GetCurSel(hCombobox);
 		pThemeManager->GetTheme(index, &currentITheme);
@@ -188,7 +188,7 @@ void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 	}
 
 	// common properties
-	selectedTheme->newColor = NULL;
+	selectedTheme->newColor = 0xB0000000;
 	selectedTheme->customWallpaperSelection = false;
 	selectedTheme->posChanged = -1;
 	selectedTheme->useDesktopColor = false;

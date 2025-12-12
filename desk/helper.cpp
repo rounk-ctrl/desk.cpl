@@ -22,7 +22,8 @@ VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 COLORREF GetDeskopColor()
 {
 	COLORREF clr;
-	if (selectedTheme->newColor)
+	// colorref never has any alpha value, so a bogus value
+	if (selectedTheme->newColor != 0xB0000000)
 	{
 		clr = selectedTheme->newColor;
 	}
