@@ -175,6 +175,12 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	int i = ComboBox_GetCurSel(hThemesCombobox);
 	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
 	_UpdateFontBox(data);
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
+	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+	if (hPrev) DeleteObject(hPrev);
+
 	return 0;
 }
 
@@ -260,6 +266,8 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 
 	// todo: detect classic scheme
 	ComboBox_SetCurSel(hColorCombobox, 0);
+	selectedTheme->selectedScheme = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, 0);
+
 }
 
 void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
@@ -269,6 +277,7 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 	{
 		int index = ComboBox_GetCurSel(hColorCombobox);
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
+		selectedTheme->selectedScheme = data;
 		if (data->variant & HAS_NORMAL) ComboBox_AddString(hSizeCombobox, L"Normal");
 		if (data->variant & HAS_EXTRA_LARGE) ComboBox_AddString(hSizeCombobox, L"Extra Large");
 		if (data->variant & HAS_LARGE) ComboBox_AddString(hSizeCombobox, L"Large");

@@ -7,6 +7,42 @@
 #define Static_SetBitmap(hwndCtl, hBmp)  \
 	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
 
+// 29 colors
+#define MAX_COLORS (COLOR_GRADIENTINACTIVECAPTION + 1)
+
+typedef struct tagNONCLIENTMETRICSW_2k
+{
+	UINT    cbSize;
+	int     iBorderWidth;
+	int     iScrollWidth;
+	int     iScrollHeight;
+	int     iCaptionWidth;
+	int     iCaptionHeight;
+	LOGFONTW lfCaptionFont;
+	int     iSmCaptionWidth;
+	int     iSmCaptionHeight;
+	LOGFONTW lfSmCaptionFont;
+	int     iMenuWidth;
+	int     iMenuHeight;
+	LOGFONTW lfMenuFont;
+	LOGFONTW lfStatusFont;
+	LOGFONTW lfMessageFont;
+}  NONCLIENTMETRICSW_2k;
+
+typedef struct tagSCHEMEDATA {
+	// registry structure
+	DWORD version;
+	NONCLIENTMETRICSW_2k ncm;
+	LOGFONT lfIconTitle;
+	COLORREF rgb[MAX_COLORS];
+
+	// custom fields
+	WCHAR name[40];
+	DWORD variant;
+	int schemeMapIndex;
+
+} SCHEMEDATA;
+
 enum WALLPAPER_TYPE {
 	WT_NOWALL = 1,
 	WT_PICTURE,
@@ -23,6 +59,8 @@ struct THEMEINFO {
 	int posChanged = -1;
 	bool useDesktopColor = false;
 	bool updateWallThemesPg = false;
+	SCHEMEDATA* selectedScheme = NULL;		// address to the selected scheme data
+											// NULL- use current colors
 
 	// reduce overhead every time u load appearancepage
 	LPWSTR szMsstylePath;

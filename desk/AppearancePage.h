@@ -5,42 +5,6 @@
 #define READ_AT(TYPE, BIN, OFFSET) (*reinterpret_cast<TYPE*>((BIN) + (OFFSET)))
 #define READ_STRING(TYPE, BIN, OFFSET) (reinterpret_cast<TYPE*>((BIN)+ (OFFSET)))
 
-// 29 colors
-#define MAX_COLORS (COLOR_GRADIENTINACTIVECAPTION + 1)
-
-typedef struct tagNONCLIENTMETRICSW_2k
-{
-	UINT    cbSize;
-	int     iBorderWidth;
-	int     iScrollWidth;
-	int     iScrollHeight;
-	int     iCaptionWidth;
-	int     iCaptionHeight;
-	LOGFONTW lfCaptionFont;
-	int     iSmCaptionWidth;
-	int     iSmCaptionHeight;
-	LOGFONTW lfSmCaptionFont;
-	int     iMenuWidth;
-	int     iMenuHeight;
-	LOGFONTW lfMenuFont;
-	LOGFONTW lfStatusFont;
-	LOGFONTW lfMessageFont;
-}  NONCLIENTMETRICSW_2k;
-
-typedef struct tagSCHEMEDATA{
-	// registry structure
-	DWORD version;
-	NONCLIENTMETRICSW_2k ncm;
-	LOGFONT lfIconTitle;
-	COLORREF rgb[MAX_COLORS];
-
-	// custom fields
-	WCHAR name[40];
-	DWORD variant;
-	int schemeMapIndex;
-
-} SCHEMEDATA;
-
 class CAppearanceDlgProc
 	: public WTL::CPropertyPageImpl<CAppearanceDlgProc>
 {

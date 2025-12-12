@@ -204,6 +204,7 @@
     <ClCompile Include="AppearanceDlgBox.cpp" />
     <ClCompile Include="AppearancePage.cpp" />
     <ClCompile Include="BackgroundPage.cpp" />
+    <ClCompile Include="cscheme.cpp" />
     <ClCompile Include="EffectsDlg.cpp" />
     <ClCompile Include="desk.cpp" />
     <ClCompile Include="dllmain.cpp" />
@@ -225,6 +226,7 @@
     <ClCompile Include="wndprvw.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cscheme.h" />
     <None Include="exports.def" />
     <None Include="packages.config" />
   </ItemGroup>

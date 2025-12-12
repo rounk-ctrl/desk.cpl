@@ -2,6 +2,7 @@
 #include "wndprvw.h"
 #include "helper.h"
 #include "uxtheme.h"
+#include "cscheme.h"
 
 #ifndef _DEBUG
 #undef RETURN_IF_FAILED
@@ -455,8 +456,8 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		if (fGradients)
 		{
-			COLORREF clrCaption = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
-			COLORREF clrGradient = GetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
+			COLORREF clrCaption = GetNcSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
+			COLORREF clrGradient = GetNcSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
 			TRIVERTEX tex[2]{};
 			tex[0].x = crc.left + _marFrame.cxLeftWidth;
@@ -477,11 +478,13 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			RECT rc = { crc.left + _marFrame.cxLeftWidth, crc.top, crc.right - _marFrame.cxRightWidth, crc.bottom };
-			FillRect(hdc, &rc, GetSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION));
+			HBRUSH br = GetNcSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
+			FillRect(hdc, &rc, br);
+			if (selectedTheme->selectedScheme) DeleteBrush(br);
 		}
 
 		// 1px border below caption
-		HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+		HPEN pen = CreatePen(PS_SOLID, 1, GetNcSysColor(COLOR_3DFACE));
 		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 		POINT pt[2]{};
@@ -628,7 +631,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
-		: GetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
+		: GetNcSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
 	{
@@ -681,7 +684,9 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	}
 	else
 	{
-		FillRect(hdc, &crc, GetSysColorBrush(COLOR_SCROLLBAR));
+		HBRUSH br = GetNcSysColorBrush(COLOR_SCROLLBAR);
+		FillRect(hdc, &crc, br);
+		if (selectedTheme->selectedScheme) DeleteBrush(br);
 	}
 
 	crc.bottom = crc.top + height;
@@ -755,8 +760,11 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 				bool fInactiveWnd = wndInfo.wndType == WT_INACTIVE;
 				// framerect draws a 1px border
 				// so do (frame - edge - border) times
-				FrameRect(hdc, &crc, GetSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER));
+				HBRUSH br = GetNcSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER);
+				FrameRect(hdc, &crc, br);
 				InflateRect(&crc, -1, -1);
+
+				if (selectedTheme->selectedScheme) DeleteBrush(br);
 			}
 		}
 		else
@@ -764,8 +772,11 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 			int offset = GetSystemMetrics(SM_CXEDGE);
 			InflateRect(&crc, -offset, -offset);
 		}
-		FrameRect(hdc, &crc, GetSysColorBrush(COLOR_3DFACE));
+		HBRUSH br = GetNcSysColorBrush(COLOR_3DFACE);
+		FrameRect(hdc, &crc, br);
 		InflateRect(&crc, -1, -1);
+
+		if (selectedTheme->selectedScheme) DeleteBrush(br);
 	}
 
 	crc = wndInfo.wndPos;
@@ -806,7 +817,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
-		: GetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+		: GetNcSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
@@ -827,7 +838,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		if (wndInfo.wndType == WT_ACTIVE)
 		{
 			// 1px border above edge
-			HPEN pen = CreatePen(PS_SOLID, 1, GetSysColor(COLOR_3DFACE));
+			HPEN pen = CreatePen(PS_SOLID, 1, GetNcSysColor(COLOR_3DFACE));
 			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 			POINT pt[2]{};
@@ -888,7 +899,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 		crc.left += _marFrame.cxLeftWidth;
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : GetSysColor(COLOR_WINDOWTEXT);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : GetNcSysColor(COLOR_WINDOWTEXT);
 
 		if (_fIsThemed)
 		{
@@ -916,7 +927,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : GetSysColor(COLOR_BTNTEXT);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : GetNcSysColor(COLOR_BTNTEXT);
 		SetTextColor(hdc, clr);
 
 		// load button theme
@@ -961,7 +972,9 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 	crc.right -= GetSystemMetrics(SM_CXFRAME);
 
 	HDC dc = pGraphics->GetHDC();
-	FillRect(dc, &crc, GetSysColorBrush(COLOR_MENU));
+	HBRUSH br = GetNcSysColorBrush(COLOR_MENU);
+	FillRect(dc, &crc, br);
+	if (selectedTheme->selectedScheme) DeleteBrush(br);
 
 	crc.top += GetSystemMetrics(SM_CYBORDER);
 	crc.bottom -= GetSystemMetrics(SM_CYBORDER);
@@ -976,7 +989,6 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 
 HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 {
-
 	LPCWSTR text = L"";
 	switch (type)
 	{
@@ -1008,14 +1020,14 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	{
 		OffsetRect(rc, 1, 1);
 	}
-	COLORREF clr = type == 2 ? RGB(255,255,255) : GetSysColor(COLOR_MENUTEXT);
+	COLORREF clr = type == 2 ? RGB(255,255,255) : GetNcSysColor(COLOR_MENUTEXT);
 	SetTextColor(hdc, clr);
 	DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	if (type == 2)
 	{
 		OffsetRect(rc, -1, -1);
 		
-		clr = GetSysColor(COLOR_GRAYTEXT);
+		clr = GetNcSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);
 		DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
