@@ -534,7 +534,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
-		: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONCLOSE) == TRUE ? S_OK : E_FAIL;
+		: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 1) == TRUE ? S_OK : E_FAIL;
 
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
@@ -543,7 +543,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 		crc.left -= width;
 		crc.right -= width;
 		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL)
-			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMAX) == TRUE ? S_OK : E_FAIL;
+			: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 2) == TRUE ? S_OK : E_FAIL;
 
 		// min button
 		if (!_fIsThemed)
@@ -553,7 +553,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 		crc.left -= width;
 		crc.right -= width;
 		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL)
-			: DrawFrameControl(hdc, &crc, DFC_CAPTION, DFCS_CAPTIONMIN) == TRUE ? S_OK : E_FAIL;
+			: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 3) == TRUE ? S_OK : E_FAIL;
 	}
 
 	return hr;
@@ -691,7 +691,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	crc.bottom = crc.top + height;
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
-		: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLUP) == TRUE ? S_OK : E_FAIL;
+		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 1) == TRUE ? S_OK : E_FAIL;
 
 	crc.top += height;
 	crc.bottom = crc.top + height;
@@ -703,7 +703,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.top -= _marFrame.cyBottomHeight + 2;
 
 	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
-		: DrawFrameControl(hdc, &crc, DFC_SCROLL, DFCS_SCROLLDOWN) == TRUE ? S_OK : E_FAIL;
+		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 2) == TRUE ? S_OK : E_FAIL;
 
 	CloseThemeData(hThemeScrl);
 	pGraphics->ReleaseHDC(hdc);
@@ -945,11 +945,11 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			crc.right -= GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
 			DrawText(hdc, L"Message Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
-			crc.top += 17;
-			crc.bottom -= 2;
-			crc.left += 62;
-			crc.right -= 62;
-			DrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
+			crc.top += MulDiv(17, _dpiWindow, 96);
+			crc.bottom -= MulDiv(2, _dpiWindow, 96);
+			crc.left += MulDiv(62, _dpiWindow, 96);
+			crc.right -= MulDiv(62, _dpiWindow, 96);
+			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
