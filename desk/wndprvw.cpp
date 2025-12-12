@@ -1027,6 +1027,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	{
 		OffsetRect(rc, -1, -1);
 		
+		// todo: fix green text in high contrast
 		clr = GetNcSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);
 		DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
