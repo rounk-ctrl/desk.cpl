@@ -379,27 +379,38 @@ HRESULT CWindowPreview::_RenderBin()
 	FreeBitmap(&_bmpBin);
 	_bmpBin = new Bitmap(size, size);
 	Graphics graphics(_bmpBin);
+	graphics.Clear(Color(0, 0, 0, 0));
 
-	// todo: try DIB
-	HDC hdcgraphic = graphics.GetHDC();
-	HDC memdc = CreateCompatibleDC(hdcgraphic);
-
-
-	HBITMAP hbitmap = CreateDiscardableBitmap(hdcgraphic, size, size);
-	HBITMAP oldBmp = (HBITMAP)SelectObject(memdc, hbitmap);
 	if (sii.hIcon)
 	{
-		bRet = DrawIconEx(memdc, 0, 0, sii.hIcon, size, size, 0, NULL, DI_NORMAL);
-		bRet = AlphaBlend(hdcgraphic, 0, 0, size, size,
-			memdc, 0, 0, size, size, BLENDFUNCTION(AC_SRC_OVER, 0, 255, AC_SRC_ALPHA));
+		BITMAPINFO bi = {};
+		bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		bi.bmiHeader.biWidth = size;
+		bi.bmiHeader.biHeight = -size;
+		bi.bmiHeader.biPlanes = 1;
+		bi.bmiHeader.biBitCount = 32;
+		bi.bmiHeader.biCompression = BI_RGB;
 
+		void* pBits = NULL;
+		HBITMAP hDIB = CreateDIBSection(NULL, &bi, DIB_RGB_COLORS, &pBits, NULL, 0);
+
+		if (hDIB && pBits)
+		{
+			HDC hdcMem = CreateCompatibleDC(NULL);
+			HBITMAP hOldBmp = (HBITMAP)SelectObject(hdcMem, hDIB);
+
+			DrawIconEx(hdcMem, 0, 0, sii.hIcon, size, size, 0, NULL, DI_NORMAL);
+			Bitmap tempBmp(size, size, size * 4, PixelFormat32bppPARGB, (BYTE*)pBits); 
+			graphics.DrawImage(&tempBmp, 0, 0);
+
+			// cleanup
+			SelectObject(hdcMem, hOldBmp);
+			DeleteDC(hdcMem);
+			DeleteObject(hDIB);
+		}
 		DestroyIcon(sii.hIcon);
 	}
-	SelectObject(memdc, oldBmp);
-	DeleteBitmap(hbitmap);
-	DeleteDC(memdc);
 
-	graphics.ReleaseHDC(hdcgraphic);
 	return bRet ? S_OK : E_FAIL;
 }
 
