@@ -181,6 +181,7 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
 	if (hPrev) DeleteObject(hPrev);
 
+	SetModified(TRUE);
 	return 0;
 }
 

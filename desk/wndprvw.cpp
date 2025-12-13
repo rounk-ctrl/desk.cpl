@@ -588,24 +588,23 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 	SetBkMode(hdc, TRANSPARENT);
 
-	LPCWSTR text = L"";
+	int id = 1450;
 	switch (wndInfo.wndType)
 	{
-	case WT_ACTIVE:
-		text = L"Active Window";
-		break;
 	case WT_INACTIVE:
-		text = L"Inactive Window";
+		id += 1;
 		break;
 	case WT_MESSAGEBOX:
-		text = L"Message Box";
+		id += 7;
 		break;
 	}
+	WCHAR szText[20];
+	LoadString(g_hinst, id, szText, ARRAYSIZE(szText));
 
 	RECT rc = wndInfo.wndPos;
 	if (_fIsThemed)
 	{
-		hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
+		hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
 		RETURN_IF_FAILED(hr);
 	}
 
@@ -616,7 +615,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
-	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
+	DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
 	if (_fIsThemed)
 	{
@@ -638,12 +637,12 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 		DTTOPTS dt = { sizeof(dt) };
 		dt.dwFlags = DTT_TEXTCOLOR;
 		dt.crText = clr;
-		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, text, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
+		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
 	}
 	else
 	{
 		SetTextColor(hdc, clr);
-		hr = DrawText(hdc, text, -1, &rc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		hr = DrawText(hdc, szText, -1, &rc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	}
 	RETURN_IF_FAILED(hr);
 
@@ -892,9 +891,12 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		if (!_fIsThemed) crc.top += _szMenuBar.cy;
 
 
+		WCHAR szText[20];
+		LoadString(g_hinst, 1460, szText, ARRAYSIZE(szText));
+
 		// get height
 		RECT rcheight = { 0,0,0,0 };
-		DrawText(hdc, L"Window Text", -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
+		DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
 		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 		crc.left += _marFrame.cxLeftWidth;
@@ -907,14 +909,14 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			DTTOPTS dt = { sizeof(dt) };
 			dt.dwFlags = DTT_TEXTCOLOR;
 			dt.crText = clr;
-			hr = DrawThemeTextEx(hTheme, hdc, 0, 0, L"Window Text", -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
+			hr = DrawThemeTextEx(hTheme, hdc, 0, 0, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
 		}
 		else
 		{
 			SetTextColor(hdc, clr);
 			crc.left += GetSystemMetrics(SM_CXBORDER);
 
-			hr = DrawText(hdc, L"Window Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+			hr = DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 		}
 		RETURN_IF_FAILED(hr);
 
@@ -941,9 +943,12 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		}
 		else
 		{
+			WCHAR szText[20];
+			LoadString(g_hinst, 1461, szText, ARRAYSIZE(szText));
+
 			crc.left += GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
 			crc.right -= GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
-			DrawText(hdc, L"Message Text", -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
+			DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 			crc.top += MulDiv(17, _dpiWindow, 96);
 			crc.bottom -= MulDiv(2, _dpiWindow, 96);
@@ -951,7 +956,10 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			crc.right -= MulDiv(62, _dpiWindow, 96);
 			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
-		DrawText(hdc, L"OK", -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		WCHAR szText[5];
+		LoadString(g_hinst, 1458, szText, ARRAYSIZE(szText));
+
+		DrawText(hdc, szText, -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
 		SelectObject(hdc, hOldFont);
 		DeleteObject(fon);
@@ -989,19 +997,10 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 
 HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 {
-	LPCWSTR text = L"";
-	switch (type)
-	{
-	case 1:
-		text = L"Normal";
-		break;
-	case 2:
-		text = L"Disabled";
-		break;
-	case 3:
-		text = L"Selected";
-		break;
-	}
+	int id = 1454 + (type - 1);
+	
+	WCHAR szText[20];
+	LoadString(g_hinst, id, szText, ARRAYSIZE(szText));
 
 	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
 	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
@@ -1010,7 +1009,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
-	DrawText(hdc, text, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
+	DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
 	// 7 padding on either side of the text
 	rc->right = rc->left + RECTWIDTH(rcheight) + (7 * 2);
@@ -1022,7 +1021,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	}
 	COLORREF clr = type == 2 ? RGB(255,255,255) : GetNcSysColor(COLOR_MENUTEXT);
 	SetTextColor(hdc, clr);
-	DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+	DrawText(hdc, szText, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	if (type == 2)
 	{
 		OffsetRect(rc, -1, -1);
@@ -1030,7 +1029,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 		// todo: fix green text in high contrast
 		clr = GetNcSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);
-		DrawText(hdc, text, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		DrawText(hdc, szText, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
 	}
 

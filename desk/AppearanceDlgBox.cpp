@@ -6,20 +6,30 @@ using namespace Microsoft::WRL::Details;
 
 BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	hThemesCombobox = GetDlgItem(1400);
+	hThemesCombobox = GetDlgItem(1126);
 	hPreview = GetDlgItem(1470);
 	size = GetClientSIZE(hPreview);
 
-	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
 
 	Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
 	pWndPreview.As(&pConfig);
 	pConfig->SetClassicPrev(TRUE);
 
+	HBITMAP ebmp;
 	pWndPreview->GetPreviewImage(&ebmp);
+	HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
+	if (hOld) DeleteBitmap(hOld);
 
-	Static_SetBitmap(hPreview, ebmp);
+	for (int i = 1401; i < 1424; ++i)
+	{
+		if (i == 1412 || i == 1414 || i == 1416 || i == 1418 || i == 1419) continue;
+		WCHAR szBuffer[40];
+		LoadString(g_hinst, i, szBuffer, ARRAYSIZE(szBuffer));
+
+		int index = ComboBox_AddString(hThemesCombobox, szBuffer);
+		ComboBox_SetItemData(hThemesCombobox, index, i);
+	}
 	return TRUE;
 }
 
