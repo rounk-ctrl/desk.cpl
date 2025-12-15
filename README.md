@@ -17,7 +17,7 @@ The classic themes applet from Windows XP.
 - [ ] Settings page
     - [ ] Implement preview
 
-# Images
+## Images
 
 <img width="465" height="545" alt="image1" src="https://github.com/user-attachments/assets/c65c533d-2b3f-4853-8760-10ded05f53d3" />
 
