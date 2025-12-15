@@ -29,7 +29,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
-	_szMenuBar = { 0, GetSystemMetrics(SM_CYMENU) };
+	_szMenuBar = { 0, NcGetSystemMetrics(SM_CYMENU) };
 	_bmpBin = nullptr;
 	_bmpSolidColor = nullptr;
 	_bmpWallpaper = nullptr;
@@ -40,6 +40,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 		_bmpWindows[i] = nullptr;
 	}
 
+	cs_dpi = dpi;
 }
 
 CWindowPreview::~CWindowPreview()
@@ -184,7 +185,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	int xOff = MulDiv(48, _dpiWindow, 96);
 	int yOff = MulDiv(40, _dpiWindow, 96);
 
-	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)};
+	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, NcGetSystemMetrics(SM_CXICON), NcGetSystemMetrics(SM_CYICON)};
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
 
 	for (int i = 0; i < _wndInfoCount; ++i)
@@ -243,8 +244,8 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 {
 	HRESULT hr = S_OK;
 
-	int cx = GetSystemMetrics(SM_CXSCREEN);
-	int cy = GetSystemMetrics(SM_CYSCREEN);
+	int cx = NcGetSystemMetrics(SM_CXSCREEN);
+	int cy = NcGetSystemMetrics(SM_CYSCREEN);
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
 	if (_marMonitor.cxLeftWidth > 0)
@@ -374,7 +375,7 @@ HRESULT CWindowPreview::_RenderBin()
 	SHSTOCKICONINFO sii = { sizeof(sii) };
 	SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 
-	int size = GetSystemMetrics(SM_CXICON);
+	int size = NcGetSystemMetrics(SM_CXICON);
 
 	// cache it to improve performance
 	FreeBitmap(&_bmpBin);
@@ -441,7 +442,7 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	// caption frame
 	RECT crc = wndInfo.wndPos;
-	if (!_fIsThemed) crc.top += GetSystemMetrics(SM_CYFRAME);
+	if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYFRAME);
 	crc.bottom = crc.top + _marFrame.cyTopHeight;
 
 	if (_fIsThemed)
@@ -456,8 +457,8 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		if (fGradients)
 		{
-			COLORREF clrCaption = GetNcSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
-			COLORREF clrGradient = GetNcSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
+			COLORREF clrCaption = NcGetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
+			COLORREF clrGradient = NcGetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
 			TRIVERTEX tex[2]{};
 			tex[0].x = crc.left + _marFrame.cxLeftWidth;
@@ -478,13 +479,13 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			RECT rc = { crc.left + _marFrame.cxLeftWidth, crc.top, crc.right - _marFrame.cxRightWidth, crc.bottom };
-			HBRUSH br = GetNcSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
+			HBRUSH br = NcGetSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
 			FillRect(hdc, &rc, br);
 			if (selectedTheme->selectedScheme) DeleteBrush(br);
 		}
 
 		// 1px border below caption
-		HPEN pen = CreatePen(PS_SOLID, 1, GetNcSysColor(COLOR_3DFACE));
+		HPEN pen = CreatePen(PS_SOLID, 1, NcGetSysColor(COLOR_3DFACE));
 		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 		POINT pt[2]{};
@@ -515,12 +516,12 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	SIZE size = { 0 };
 	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
 
-	// uxtheme.dll _GetNcBtnMetrics 
-	int cxEdge = GetSystemMetrics(SM_CXEDGE);
-	int cyEdge = GetSystemMetrics(SM_CYEDGE);
+	// uxtheme.dll _NcGetBtnMetrics 
+	int cxEdge = NcGetSystemMetrics(SM_CXEDGE);
+	int cyEdge = NcGetSystemMetrics(SM_CYEDGE);
 
-	int cyBtn = _fIsThemed ? GetThemeSysSize(hTheme, SM_CYSIZE) : GetSystemMetrics(SM_CYSIZE);
-	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : GetSystemMetrics(SM_CYSIZE);
+	int cyBtn = _fIsThemed ? GetThemeSysSize(hTheme, SM_CYSIZE) : NcGetSystemMetrics(SM_CYSIZE);
+	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : NcGetSystemMetrics(SM_CYSIZE);
 
 	// remove padding
 	cyBtn -= (cyEdge * 2);
@@ -529,8 +530,8 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	RECT crc = wndInfo.wndPos;
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
 	crc.left = crc.right - cxBtn;
-	crc.top += _fIsThemed ? _marFrame.cyTopHeight - GetSystemMetrics(SM_CYFRAME) - cyBtn
-		: ((_marFrame.cyTopHeight - cyBtn) / 2) + GetSystemMetrics(SM_CYFRAME);
+	crc.top += _fIsThemed ? _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYFRAME) - cyBtn
+		: ((_marFrame.cyTopHeight - cyBtn) / 2) + NcGetSystemMetrics(SM_CYFRAME);
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
@@ -619,18 +620,18 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 
 	if (_fIsThemed)
 	{
-		rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - GetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
+		rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - NcGetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
 	}
 	else
 	{
-		rc.top += ((_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2) + GetSystemMetrics(SM_CXFRAME);
-		rc.left += GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE);
+		rc.top += ((_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME);
+		rc.left += NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
 
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
-		: GetNcSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
+		: NcGetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
 	{
@@ -666,8 +667,8 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	SIZE size = { 0 };
 	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 
-	int width = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx) : GetSystemMetrics(SM_CXVSCROLL);
-	int height = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cy) : GetSystemMetrics(SM_CXVSCROLL);
+	int width = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
+	int height = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CYVSCROLL), size.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
@@ -683,7 +684,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	}
 	else
 	{
-		HBRUSH br = GetNcSysColorBrush(COLOR_SCROLLBAR);
+		HBRUSH br = NcGetSysColorBrush(COLOR_SCROLLBAR);
 		FillRect(hdc, &crc, br);
 		if (selectedTheme->selectedScheme) DeleteBrush(br);
 	}
@@ -721,17 +722,17 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	{
 		int cxPaddedBorder = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
 		int cyCaptionHeight = GetThemeSysSize(hTheme, SM_CYSIZE) + cxPaddedBorder + 2; // i think
-		_marFrame.cxLeftWidth = cxPaddedBorder + GetSystemMetrics(SM_CXFRAME);
+		_marFrame.cxLeftWidth = cxPaddedBorder + NcGetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = cyCaptionHeight + GetSystemMetrics(SM_CYFRAME);
-		_marFrame.cyBottomHeight = GetSystemMetrics(SM_CYFRAME) + cxPaddedBorder - 2;
+		_marFrame.cyTopHeight = cyCaptionHeight + NcGetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyBottomHeight = NcGetSystemMetrics(SM_CYFRAME) + cxPaddedBorder - 2;
 	}
 	else
 	{
 		// todo: account for padded borders
-		_marFrame.cxLeftWidth = GetSystemMetrics(SM_CXFRAME);
+		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = GetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
+		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
 		_marFrame.cyBottomHeight = 0;
 	}
 
@@ -745,21 +746,21 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 		if (fIsMessageBox)
 		{
-			int offset = GetSystemMetrics(SM_CXBORDER);
+			int offset = NcGetSystemMetrics(SM_CXBORDER);
 			InflateRect(&crc, -offset, -offset);
 		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
 
 		if (!fIsMessageBox)
 		{
-			int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE) - GetSystemMetrics(SM_CXBORDER);
-			InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CXEDGE));
+			int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
+			InflateRect(&crc, -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CXEDGE));
 			for (int i = 0; i < count; i++)
 			{
 				bool fInactiveWnd = wndInfo.wndType == WT_INACTIVE;
 				// framerect draws a 1px border
 				// so do (frame - edge - border) times
-				HBRUSH br = GetNcSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER);
+				HBRUSH br = NcGetSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER);
 				FrameRect(hdc, &crc, br);
 				InflateRect(&crc, -1, -1);
 
@@ -768,10 +769,10 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		}
 		else
 		{
-			int offset = GetSystemMetrics(SM_CXEDGE);
+			int offset = NcGetSystemMetrics(SM_CXEDGE);
 			InflateRect(&crc, -offset, -offset);
 		}
-		HBRUSH br = GetNcSysColorBrush(COLOR_3DFACE);
+		HBRUSH br = NcGetSysColorBrush(COLOR_3DFACE);
 		FrameRect(hdc, &crc, br);
 		InflateRect(&crc, -1, -1);
 
@@ -816,17 +817,17 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
-		: GetNcSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+		: NcGetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth;
 	crc.top += _marFrame.cyTopHeight;
-	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += GetSystemMetrics(SM_CYFRAME);
-	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy + GetSystemMetrics(SM_CYFRAME);
+	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += NcGetSystemMetrics(SM_CYFRAME);
+	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy + NcGetSystemMetrics(SM_CYFRAME);
 
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	int count = GetSystemMetrics(SM_CXFRAME) - GetSystemMetrics(SM_CXEDGE) - GetSystemMetrics(SM_CXBORDER);
-	if (!_fIsThemed) crc.bottom -= GetSystemMetrics(SM_CYBORDER) + count;
+	int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
+	if (!_fIsThemed) crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) + count;
 	crc.right -= _marFrame.cxRightWidth;
 
 	if (!_fIsThemed && !fIsMessageBox)
@@ -837,7 +838,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		if (wndInfo.wndType == WT_ACTIVE)
 		{
 			// 1px border above edge
-			HPEN pen = CreatePen(PS_SOLID, 1, GetNcSysColor(COLOR_3DFACE));
+			HPEN pen = CreatePen(PS_SOLID, 1, NcGetSysColor(COLOR_3DFACE));
 			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 			POINT pt[2]{};
@@ -850,13 +851,13 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		}
 
 		// offset the rect by edge to actually show the inner border
-		InflateRect(&crc, -GetSystemMetrics(SM_CXEDGE), -GetSystemMetrics(SM_CYEDGE));
+		InflateRect(&crc, -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
 
 		// update margins
-		_marFrame.cxLeftWidth += GetSystemMetrics(SM_CXEDGE);
+		_marFrame.cxLeftWidth += NcGetSystemMetrics(SM_CXEDGE);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight += GetSystemMetrics(SM_CYEDGE) + GetSystemMetrics(SM_CYFRAME);
-		_marFrame.cyBottomHeight += GetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyBottomHeight += NcGetSystemMetrics(SM_CYFRAME);
 	}
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
@@ -901,7 +902,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 		crc.left += _marFrame.cxLeftWidth;
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : GetNcSysColor(COLOR_WINDOWTEXT);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : NcGetSysColor(COLOR_WINDOWTEXT);
 
 		if (_fIsThemed)
 		{
@@ -914,7 +915,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			SetTextColor(hdc, clr);
-			crc.left += GetSystemMetrics(SM_CXBORDER);
+			crc.left += NcGetSystemMetrics(SM_CXBORDER);
 
 			hr = DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 		}
@@ -929,7 +930,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : GetNcSysColor(COLOR_BTNTEXT);
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : NcGetSysColor(COLOR_BTNTEXT);
 		SetTextColor(hdc, clr);
 
 		// load button theme
@@ -946,8 +947,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			WCHAR szText[20];
 			LoadString(g_hinst, 1461, szText, ARRAYSIZE(szText));
 
-			crc.left += GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
-			crc.right -= GetSystemMetrics(SM_CXEDGE) + GetSystemMetrics(SM_CXBORDER);
+			crc.left += NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
+			crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
 			DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
 			crc.top += MulDiv(17, _dpiWindow, 96);
@@ -974,19 +975,19 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 	if (wndInfo.wndType != WT_ACTIVE || _fIsThemed) return S_OK;
 
 	RECT crc = wndInfo.wndPos;
-	crc.left += _marFrame.cxLeftWidth - GetSystemMetrics(SM_CXEDGE);
-	crc.top += _marFrame.cyTopHeight - GetSystemMetrics(SM_CYEDGE);
+	crc.left += _marFrame.cxLeftWidth - NcGetSystemMetrics(SM_CXEDGE);
+	crc.top += _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYEDGE);
 	crc.bottom = crc.top + _szMenuBar.cy;
-	crc.right -= GetSystemMetrics(SM_CXFRAME);
+	crc.right -= NcGetSystemMetrics(SM_CXFRAME);
 
 	HDC dc = pGraphics->GetHDC();
-	HBRUSH br = GetNcSysColorBrush(COLOR_MENU);
+	HBRUSH br = NcGetSysColorBrush(COLOR_MENU);
 	FillRect(dc, &crc, br);
 	if (selectedTheme->selectedScheme) DeleteBrush(br);
 
-	crc.top += GetSystemMetrics(SM_CYBORDER);
-	crc.bottom -= GetSystemMetrics(SM_CYBORDER);
-	crc.left += GetSystemMetrics(SM_CXBORDER);
+	crc.top += NcGetSystemMetrics(SM_CYBORDER);
+	crc.bottom -= NcGetSystemMetrics(SM_CYBORDER);
+	crc.left += NcGetSystemMetrics(SM_CXBORDER);
 	_RenderMenuItem(dc, &crc, 1);
 	_RenderMenuItem(dc, &crc, 2);
 	_RenderMenuItem(dc, &crc, 3);
@@ -1019,7 +1020,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	{
 		OffsetRect(rc, 1, 1);
 	}
-	COLORREF clr = type == 2 ? RGB(255,255,255) : GetNcSysColor(COLOR_MENUTEXT);
+	COLORREF clr = type == 2 ? RGB(255,255,255) : NcGetSysColor(COLOR_MENUTEXT);
 	SetTextColor(hdc, clr);
 	DrawText(hdc, szText, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	if (type == 2)
@@ -1027,7 +1028,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 		OffsetRect(rc, -1, -1);
 		
 		// todo: fix green text in high contrast
-		clr = GetNcSysColor(COLOR_GRAYTEXT);
+		clr = NcGetSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);
 		DrawText(hdc, szText, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
@@ -1037,6 +1038,6 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	DeleteObject(fon);
 
 	// update the rectangle
-	rc->left += RECTWIDTH(rcheight) + (7 * 2) + GetSystemMetrics(SM_CXBORDER);
+	rc->left += RECTWIDTH(rcheight) + (7 * 2) + NcGetSystemMetrics(SM_CXBORDER);
 	return S_OK;
 }

@@ -11,6 +11,8 @@ using namespace Gdiplus;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
+void DumpNonClientMetrics(NONCLIENTMETRICS ncm);
+
 #define HAS_NORMAL 0x1
 #define HAS_LARGE 0x2
 #define HAS_EXTRA_LARGE 0x4
@@ -131,8 +133,14 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
 	if (hPrev) DeleteBitmap(hPrev);
 
-	_fFirstInit = FALSE;
+	/*
+	NONCLIENTMETRICS ncm = {};
+	ncm.cbSize = sizeof(ncm);
+	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
+	DumpNonClientMetrics(ncm);
+	*/
 
+	_fFirstInit = FALSE;
 	return 0;
 }
 
@@ -324,7 +332,7 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 		int index = ComboBox_GetCurSel(hColorCombobox);
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
 		selectedTheme->selectedScheme = data;
-		selectedTheme->newColor = GetNcSysColor(COLOR_BACKGROUND);
+		selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
 		if (data)
 		{
@@ -448,6 +456,7 @@ VOID CAppearanceDlgProc::FillSchemeDataMap(LPCWSTR theme, int index)
 
 #ifdef _DEBUG
 
+
 VOID DumpLogFont(LOGFONT font)
 {
 	printf("lfHeight: %d\n", font.lfHeight);
@@ -464,6 +473,33 @@ VOID DumpLogFont(LOGFONT font)
 	printf("lfQuality: %d\n", font.lfQuality);
 	printf("lfPitchAndFamily: %d\n", font.lfPitchAndFamily);
 	wprintf(L"lfFaceName: %s\n", font.lfFaceName); // size: 64
+}
+
+
+void DumpNonClientMetrics(NONCLIENTMETRICS ncm)
+{
+	printf("iBorderWidth: %d\n", ncm.iBorderWidth);
+	printf("iScrollWidth: %d\n", ncm.iScrollWidth);
+	printf("iScrollHeight: %d\n", ncm.iScrollHeight);
+	printf("iCaptionWidth: %d\n", ncm.iCaptionWidth);
+	printf("iCaptionHeight: %d\n", ncm.iCaptionHeight);
+	printf("\nlfCaptionFont: \n");
+	DumpLogFont(ncm.lfCaptionFont);
+	printf("\niSmCaptionWidth: %d\n", ncm.iSmCaptionWidth);
+	printf("iSmCaptionHeight: %d\n", ncm.iSmCaptionHeight);
+	printf("\nlfSmCaptionFont: \n");
+	DumpLogFont(ncm.lfSmCaptionFont);
+	printf("\niMenuWidth: %d\n", ncm.iMenuWidth);
+	printf("iMenuHeight: %d\n", ncm.iMenuHeight);
+	printf("\nlfMenuFont: \n");
+	DumpLogFont(ncm.lfMenuFont);
+	printf("\nlfStatusFont: \n");
+	DumpLogFont(ncm.lfStatusFont);
+	printf("\nlfMessageFont: \n");
+	DumpLogFont(ncm.lfMessageFont);
+
+	// vista
+	printf("\niPaddedBorderWidth: % d\n", ncm.iPaddedBorderWidth);
 }
 
 VOID DumpData(LPCWSTR theme)

@@ -2,7 +2,9 @@
 #include "cscheme.h"
 #include "helper.h"
 
-DWORD GetNcSysColor(int nIndex)
+int cs_dpi;
+
+DWORD NcGetSysColor(int nIndex)
 {
 	if (selectedTheme->selectedScheme)
 	{
@@ -11,7 +13,8 @@ DWORD GetNcSysColor(int nIndex)
 	return GetSysColor(nIndex);
 }
 
-HBRUSH GetNcSysColorBrush(int nIndex)
+// callee must free the brush, if selectedScheme isnt NULL
+HBRUSH NcGetSysColorBrush(int nIndex)
 {
 	if (selectedTheme->selectedScheme)
 	{
@@ -22,7 +25,7 @@ HBRUSH GetNcSysColorBrush(int nIndex)
 
 BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
 {
-	HBRUSH br = GetNcSysColorBrush(COLOR_BTNFACE);
+	HBRUSH br = NcGetSysColorBrush(COLOR_BTNFACE);
 	FillRect(hdc, lprc, br);
 	if (selectedTheme->selectedScheme) DeleteBrush(br);
 
@@ -36,7 +39,7 @@ BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
 		if (hFont)
 		{
 			HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
-			COLORREF oldTextColor = SetTextColor(hdc, GetNcSysColor(COLOR_BTNTEXT));
+			COLORREF oldTextColor = SetTextColor(hdc, NcGetSysColor(COLOR_BTNTEXT));
 
 			const wchar_t* text = L"\0";
 			if (uType == DFC_CAPTION)
@@ -58,4 +61,35 @@ BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
 		}
 	}
 	return TRUE;
+}
+
+int NcGetSystemMetrics(int nIndex)
+{
+	if (selectedTheme->selectedScheme)
+	{
+		int iValue;
+		NONCLIENTMETRICSW_2k ncm = selectedTheme->selectedScheme->ncm;
+		switch (nIndex)
+        {
+            case SM_CXHSCROLL:  // fall through
+            case SM_CXVSCROLL:  iValue = ncm.iScrollWidth;  break;
+            case SM_CYHSCROLL:  // fall through
+            case SM_CYVSCROLL:  iValue = ncm.iScrollHeight;  break;
+
+            case SM_CXSIZE:     iValue = ncm.iCaptionWidth;  break;
+            case SM_CYSIZE:     iValue = ncm.iCaptionHeight;  break;
+            case SM_CYCAPTION:  iValue = ncm.iCaptionHeight + 1;  break;
+            case SM_CXSMSIZE:   iValue = ncm.iSmCaptionWidth;  break;
+            case SM_CYSMSIZE:   iValue = ncm.iSmCaptionHeight;  break;
+            case SM_CXMENUSIZE: iValue = ncm.iMenuWidth;  break;
+            case SM_CYMENUSIZE: iValue = ncm.iMenuHeight;  break;
+            
+            default:            iValue = GetSystemMetrics(nIndex); break;
+        }
+
+		// dpi scale the value, looks ugly otherwise
+		iValue = MulDiv(iValue, cs_dpi, 96);
+        return iValue;
+	}
+	return GetSystemMetrics(nIndex);
 }

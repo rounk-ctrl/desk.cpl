@@ -2,7 +2,9 @@
 #include "pch.h"
 #include "desk.h"
 
+extern int cs_dpi;
 
-DWORD GetNcSysColor(int nIndex);
-HBRUSH GetNcSysColorBrush(int nIndex);
+DWORD NcGetSysColor(int nIndex);
+HBRUSH NcGetSysColorBrush(int nIndex);
 BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type);
+int NcGetSystemMetrics(int nIndex);
