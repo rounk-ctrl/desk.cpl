@@ -12,8 +12,6 @@ using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
 void DumpNonClientMetrics(NONCLIENTMETRICSW ncm);
-void ScaleLogFont(LOGFONT& lf, int dpi);
-void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi);
 
 #define HAS_NORMAL 0x1
 #define HAS_LARGE 0x2
@@ -468,36 +466,9 @@ VOID CAppearanceDlgProc::FillSchemeDataMap(LPCWSTR theme, int index)
 	free(value);
 }
 
-void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
-{
-	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, dpi, 96);
-	ncm.iScrollWidth = MulDiv(ncm.iScrollWidth, dpi, 96);
-	ncm.iCaptionHeight = MulDiv(ncm.iCaptionHeight, dpi, 96);
-	ncm.iCaptionWidth = MulDiv(ncm.iCaptionWidth, dpi, 96);
-
-	ScaleLogFont(ncm.lfCaptionFont, dpi);
-	ncm.iSmCaptionHeight = MulDiv(ncm.iSmCaptionHeight, dpi, 96);
-	ncm.iSmCaptionWidth = MulDiv(ncm.iSmCaptionWidth, dpi, 96);
-
-	ScaleLogFont(ncm.lfSmCaptionFont, dpi);
-	ncm.iMenuHeight = MulDiv(ncm.iMenuHeight, dpi, 96);
-	ncm.iMenuWidth = MulDiv(ncm.iMenuWidth, dpi, 96);
-
-	ScaleLogFont(ncm.lfMenuFont, dpi);
-	ScaleLogFont(ncm.lfStatusFont, dpi);
-	ScaleLogFont(ncm.lfMessageFont, dpi);
-}
-
-void ScaleLogFont(LOGFONT& lf, int dpi)
-{
-	lf.lfHeight = MulDiv(lf.lfHeight, dpi, 96);
-}
-
 
 
 #ifdef _DEBUG
-
-
 VOID DumpLogFont(LOGFONT font)
 {
 	printf("lfHeight: %d\n", font.lfHeight);
@@ -515,7 +486,6 @@ VOID DumpLogFont(LOGFONT font)
 	printf("lfPitchAndFamily: %d\n", font.lfPitchAndFamily);
 	wprintf(L"lfFaceName: %s\n", font.lfFaceName); // size: 64
 }
-
 
 void DumpNonClientMetrics(NONCLIENTMETRICSW ncm)
 {

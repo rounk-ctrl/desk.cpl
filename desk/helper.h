@@ -27,6 +27,8 @@ HTHEME OpenNcThemeData(LPVOID file, LPCWSTR pszClassList);
 BOOL IsClassicThemeEnabled();
 char* trim(char* s);
 wchar_t* strCut(wchar_t* s, const wchar_t* pattern);
+void ScaleLogFont(LOGFONT& lf, int dpi);
+void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

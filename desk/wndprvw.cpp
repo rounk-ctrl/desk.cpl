@@ -580,9 +580,17 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 	else
 	{
-		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
-		font = ncm.lfCaptionFont;
+		if (selectedTheme->selectedScheme)
+		{
+			font = selectedTheme->selectedScheme->ncm.lfCaptionFont;
+			ScaleLogFont(font, _dpiWindow);
+		}
+		else
+		{
+			NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+			SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+			font = ncm.lfCaptionFont;
+		}
 	}
 
 	HFONT fon = CreateFontIndirect(&font);
@@ -876,9 +884,17 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	}
 	else
 	{
-		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
-		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
-		font = ncm.lfMessageFont;
+		if (selectedTheme->selectedScheme)
+		{
+			font = selectedTheme->selectedScheme->ncm.lfMessageFont;
+			ScaleLogFont(font, _dpiWindow);
+		}
+		else
+		{
+			NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+			SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+			font = ncm.lfMessageFont;
+		}
 	}
 
 	if (wndInfo.wndType == WT_ACTIVE)
@@ -1003,9 +1019,20 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	WCHAR szText[20];
 	LoadString(g_hinst, id, szText, ARRAYSIZE(szText));
 
-	NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
-	HFONT fon = CreateFontIndirect(&ncm.lfMenuFont);
+	LOGFONT lf;
+	if (selectedTheme->selectedScheme)
+	{
+		lf = selectedTheme->selectedScheme->ncm.lfMenuFont;
+		ScaleLogFont(lf, _dpiWindow);
+	}
+	else
+	{
+		NONCLIENTMETRICS ncm = { sizeof(NONCLIENTMETRICS) };
+		SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0);
+		lf = ncm.lfMenuFont;
+	}
+
+	HFONT fon = CreateFontIndirect(&lf);
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
 	// get height

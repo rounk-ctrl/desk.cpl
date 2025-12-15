@@ -189,3 +189,29 @@ wchar_t* strCut(wchar_t* s, const wchar_t* pattern)
 	}
 	return s;
 }
+
+
+void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
+{
+	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, dpi, 96);
+	ncm.iScrollWidth = MulDiv(ncm.iScrollWidth, dpi, 96);
+	ncm.iCaptionHeight = MulDiv(ncm.iCaptionHeight, dpi, 96);
+	ncm.iCaptionWidth = MulDiv(ncm.iCaptionWidth, dpi, 96);
+
+	ScaleLogFont(ncm.lfCaptionFont, dpi);
+	ncm.iSmCaptionHeight = MulDiv(ncm.iSmCaptionHeight, dpi, 96);
+	ncm.iSmCaptionWidth = MulDiv(ncm.iSmCaptionWidth, dpi, 96);
+
+	ScaleLogFont(ncm.lfSmCaptionFont, dpi);
+	ncm.iMenuHeight = MulDiv(ncm.iMenuHeight, dpi, 96);
+	ncm.iMenuWidth = MulDiv(ncm.iMenuWidth, dpi, 96);
+
+	ScaleLogFont(ncm.lfMenuFont, dpi);
+	ScaleLogFont(ncm.lfStatusFont, dpi);
+	ScaleLogFont(ncm.lfMessageFont, dpi);
+}
+
+void ScaleLogFont(LOGFONT& lf, int dpi)
+{
+	lf.lfHeight = MulDiv(lf.lfHeight, dpi, 96);
+}
