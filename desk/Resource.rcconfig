@@ -6,6 +6,7 @@
                   <localizedResources>
 					    <!-- RT_STRING -->
                         <resourceType typeNameId="#6"/>
+                        <resourceType typeNameId="#5"/>
                   </localizedResources>
             </win32Resources>
       </resources>

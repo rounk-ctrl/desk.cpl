@@ -134,6 +134,7 @@
     <None Include="cscheme.h">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="Resource.rcconfig" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">

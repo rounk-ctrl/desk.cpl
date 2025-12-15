@@ -229,6 +229,7 @@
     <None Include="cscheme.h" />
     <None Include="exports.def" />
     <None Include="packages.config" />
+    <None Include="Resource.rcconfig" />
   </ItemGroup>
   <Import Project="$(SolutionDir)MUIBuild\MUIBuild.targets" />
   <PropertyGroup Label="MUI">
