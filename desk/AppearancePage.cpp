@@ -5,6 +5,7 @@
 #include "desk.h"
 #include "helper.h"
 #include "uxtheme.h"
+#include "cscheme.h"
 
 using namespace Gdiplus;
 using namespace Microsoft::WRL;
@@ -46,7 +47,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	WCHAR msstyledir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Resources\\Themes", msstyledir, MAX_PATH);
-	LPCWSTR extensions[] = {L".msstyles"};
+	LPCWSTR extensions[] = { L".msstyles" };
 	EnumDir(msstyledir, extensions, ARRAYSIZE(extensions), msstyle, TRUE);
 
 	// add classic style
@@ -248,7 +249,6 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 
 			ComboBox_SetItemData(hColorCombobox, index, &schemeMap[j]);
 		}
-
 		_FixColorBox();
 	}
 	else
@@ -267,9 +267,53 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 	}
 
 	// todo: detect classic scheme
-	ComboBox_SetCurSel(hColorCombobox, 0);
-	selectedTheme->selectedScheme = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, 0);
+	int index = -1;
+	if (lstrcmp(data, L"(classic)") == 0)
+	{
+		for (ULONG i = 0; i < mapSize; ++i)
+		{
+			BOOL isSame = 1;
+			//wprintf(L"scheme %d----%s\n", i, schemeMap[i].name);
+			for (ULONG j = 0; j < MAX_COLORS; j++)
+			{
+				if (!isSame) break;
+				if (GetRValue(GetSysColor(j)) != GetRValue(schemeMap[i].rgb[j])
+					|| GetGValue(GetSysColor(j)) != GetGValue(schemeMap[i].rgb[j])
+					|| GetBValue(GetSysColor(j)) != GetBValue(schemeMap[i].rgb[j]))
+				{
+					isSame = 0;
+				}
+			}
+			WCHAR* szSearch = schemeMap[i].name;
 
+			if (wcsstr(szSearch, L"(large)"))
+			{
+				if (index != -1) isSame = 0;
+				else szSearch = strCut(szSearch, L" (large)");
+			}
+			if (wcsstr(szSearch, L"(extra large)"))
+			{
+				if (index != -1) isSame = 0;
+				else szSearch = strCut(szSearch, L" (extra large)");
+			}
+
+			if (isSame)
+			{
+				index = ComboBox_FindString(hColorCombobox, -1, szSearch);
+				//printf("\n\n\nSAME index: %d\n\n\n", index);
+			}
+		}
+		if (index == -1)
+		{
+			int ij = ComboBox_InsertString(hColorCombobox, 0, L"(current)");
+			ComboBox_SetItemData(hColorCombobox, ij, NULL);
+			index += 1;
+		}
+		ComboBox_SetCurSel(hColorCombobox, index);
+		selectedTheme->selectedScheme = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
+	}
+	else index = 0;
+	ComboBox_SetCurSel(hColorCombobox, index);
 }
 
 void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
@@ -280,11 +324,18 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 		int index = ComboBox_GetCurSel(hColorCombobox);
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
 		selectedTheme->selectedScheme = data;
-		selectedTheme->newColor = data->rgb[COLOR_BACKGROUND];
+		selectedTheme->newColor = GetNcSysColor(COLOR_BACKGROUND);
 
-		if (data->variant & HAS_NORMAL) ComboBox_AddString(hSizeCombobox, L"Normal");
-		if (data->variant & HAS_EXTRA_LARGE) ComboBox_AddString(hSizeCombobox, L"Extra Large");
-		if (data->variant & HAS_LARGE) ComboBox_AddString(hSizeCombobox, L"Large");
+		if (data)
+		{
+			if (data->variant & HAS_NORMAL) ComboBox_AddString(hSizeCombobox, L"Normal");
+			if (data->variant & HAS_EXTRA_LARGE) ComboBox_AddString(hSizeCombobox, L"Extra Large");
+			if (data->variant & HAS_LARGE) ComboBox_AddString(hSizeCombobox, L"Large");
+		}
+		else
+		{
+			ComboBox_AddString(hSizeCombobox, L"Normal");
+		}
 	}
 	else
 	{
@@ -314,7 +365,7 @@ void CAppearanceDlgProc::_FixColorBox()
 		int size = ComboBox_GetLBTextLen(hColorCombobox, i);
 		WCHAR* value = new WCHAR[size + 1];
 		ComboBox_GetLBText(hColorCombobox, i, value);
-		
+
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, i);
 
 		// check variants

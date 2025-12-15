@@ -370,7 +370,7 @@ HRESULT CWindowPreview::_RenderWallpaper()
 
 HRESULT CWindowPreview::_RenderBin()
 {
-	BOOL bRet = FALSE;
+	BOOL bRet = 1;
 	SHSTOCKICONINFO sii = { sizeof(sii) };
 	SHGetStockIconInfo(SIID_RECYCLERFULL, SHGSI_ICON | SHGSI_SHELLICONSIZE, &sii);
 

@@ -178,3 +178,14 @@ char* trim(char* s)
 {
 	return rtrim(ltrim(s));
 }
+
+
+wchar_t* strCut(wchar_t* s, const wchar_t* pattern)
+{
+	if (wchar_t* p = wcsstr(s, pattern))
+	{
+		wchar_t* q = p + lstrlen(pattern);
+		while (*p++ = *q++);
+	}
+	return s;
+}
