@@ -194,6 +194,22 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	return 0;
 }
 
+BOOL CAppearanceDlgProc::OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	int i = ComboBox_GetCurSel(hSizeCombobox);
+	SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hSizeCombobox, i);
+	selectedTheme->selectedScheme = data;
+	selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+	if (hPrev) DeleteObject(hPrev);
+
+	SetModified(TRUE);
+	return 0;
+}
+
 BOOL CAppearanceDlgProc::OnSetActive()
 {
 	_TerminateProcess(pi);
@@ -349,9 +365,21 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 
 		if (data)
 		{
-			if (data->variant & HAS_NORMAL) ComboBox_AddString(hSizeCombobox, L"Normal");
-			if (data->variant & HAS_EXTRA_LARGE) ComboBox_AddString(hSizeCombobox, L"Extra Large");
-			if (data->variant & HAS_LARGE) ComboBox_AddString(hSizeCombobox, L"Large");
+			if (data->variant & HAS_NORMAL)
+			{
+				int i = ComboBox_AddString(hSizeCombobox, L"Normal");
+				ComboBox_SetItemData(hSizeCombobox, i, &schemeMap[data->schemeMapIndex]);
+			}
+			if (data->variant & HAS_EXTRA_LARGE)
+			{
+				int i = ComboBox_AddString(hSizeCombobox, L"Extra Large");
+				ComboBox_SetItemData(hSizeCombobox, i, &schemeMap[data->schemeMapIndex + 1]);
+			}
+			if (data->variant & HAS_LARGE)
+			{
+				int i = ComboBox_AddString(hSizeCombobox, L"Large");
+				ComboBox_SetItemData(hSizeCombobox, i, &schemeMap[data->schemeMapIndex + 2]);
+			}
 		}
 		else
 		{

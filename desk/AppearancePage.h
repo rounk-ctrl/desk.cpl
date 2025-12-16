@@ -16,6 +16,7 @@ private:
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_HANDLER(1111, CBN_SELCHANGE, OnComboboxChange)
 		COMMAND_HANDLER(1114, CBN_SELCHANGE, OnClrComboboxChange)
+		COMMAND_HANDLER(1116, CBN_SELCHANGE, OnFontComboboxChange)
 		COMMAND_HANDLER(1117, BN_CLICKED, OnAdvanced)
 		COMMAND_HANDLER(1118, BN_CLICKED, OnEffects)
 		CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CAppearanceDlgProc>)
@@ -26,6 +27,7 @@ private:
 	BOOL OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSetActive();
 	BOOL OnApply();
 
