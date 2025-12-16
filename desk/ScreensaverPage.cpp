@@ -60,6 +60,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), FALSE);
 		::EnableWindow(secureCheck, FALSE);
 		::EnableWindow(GetDlgItem(1316), FALSE);
+		::EnableWindow(GetDlgItem(1322), FALSE);
 	}
 	ScreenPreview(hScrPreview);
 	int timeout;
@@ -89,6 +90,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), FALSE);
 		::EnableWindow(secureCheck, FALSE);
 		::EnableWindow(GetDlgItem(1316), FALSE);
+		::EnableWindow(GetDlgItem(1322), FALSE);
 	}
 	else
 	{
@@ -99,6 +101,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), TRUE);
 		::EnableWindow(secureCheck, TRUE);
 		::EnableWindow(GetDlgItem(1316), TRUE);
+		::EnableWindow(GetDlgItem(1322), TRUE);
 	}
 
 	ScreenPreview(hScrPreview);
