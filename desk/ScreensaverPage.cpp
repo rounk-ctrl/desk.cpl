@@ -56,6 +56,10 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		ComboBox_SetCurSel(hScrCombo, 0);
 		::EnableWindow(hBtnPreview, FALSE);
 		::EnableWindow(hBtnSettings, FALSE);
+		::EnableWindow(updown, FALSE);
+		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), FALSE);
+		::EnableWindow(secureCheck, FALSE);
+		::EnableWindow(GetDlgItem(1316), FALSE);
 	}
 	ScreenPreview(hScrPreview);
 	int timeout;
@@ -81,12 +85,20 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 		selectedScrSaver = nullptr;
 		::EnableWindow(hBtnPreview, FALSE);
 		::EnableWindow(hBtnSettings, FALSE);
+		::EnableWindow(updown, FALSE);
+		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), FALSE);
+		::EnableWindow(secureCheck, FALSE);
+		::EnableWindow(GetDlgItem(1316), FALSE);
 	}
 	else
 	{
 		selectedScrSaver = (LPCWSTR)ComboBox_GetItemData(hScrCombo, index);
 		::EnableWindow(hBtnPreview, TRUE);
 		::EnableWindow(hBtnSettings, TRUE);
+		::EnableWindow(updown, TRUE);
+		::EnableWindow((HWND)SendMessage(updown, UDM_GETBUDDY, 0, 0), TRUE);
+		::EnableWindow(secureCheck, TRUE);
+		::EnableWindow(GetDlgItem(1316), TRUE);
 	}
 
 	ScreenPreview(hScrPreview);
