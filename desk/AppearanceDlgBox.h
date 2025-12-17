@@ -21,8 +21,10 @@ private:
 	LRESULT OnOK(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
 	LRESULT OnCancel(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
 
+	void _SetComboboxData();
 
-	HWND hThemesCombobox;
+
+	HWND hElementCombobox;
 	HWND hPreview;
 	SIZE size;
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;

@@ -72,6 +72,9 @@ struct THEMEINFO {
 // global HINSTANCE for the current app
 extern HINSTANCE g_hinst;
 
+// themeui instance
+extern HINSTANCE g_hThemeUI;
+
 // ThemeManager2 interface
 extern IThemeManager2* pThemeManager;
 

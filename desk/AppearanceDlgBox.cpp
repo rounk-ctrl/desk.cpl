@@ -6,7 +6,7 @@ using namespace Microsoft::WRL::Details;
 
 BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	hThemesCombobox = GetDlgItem(1126);
+	hElementCombobox = GetDlgItem(1126);
 	hPreview = GetDlgItem(1470);
 	size = GetClientSIZE(hPreview);
 
@@ -21,15 +21,16 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
 	if (hOld) DeleteBitmap(hOld);
 
-	for (int i = 1401; i < 1424; ++i)
+	for (int i = 1401; i < 1428; ++i)
 	{
-		if (i == 1412 || i == 1414 || i == 1416 || i == 1418 || i == 1419) continue;
 		WCHAR szBuffer[40];
-		LoadString(g_hinst, i, szBuffer, ARRAYSIZE(szBuffer));
-
-		int index = ComboBox_AddString(hThemesCombobox, szBuffer);
-		ComboBox_SetItemData(hThemesCombobox, index, i);
+		if (LoadString(g_hThemeUI, i, szBuffer, ARRAYSIZE(szBuffer)))
+		{
+			int index = ComboBox_AddString(hElementCombobox, szBuffer);
+			ComboBox_SetItemData(hElementCombobox, index, i);
+		}
 	}
+	ComboBox_SetCurSel(hElementCombobox, 6);
 	return TRUE;
 }
 
@@ -43,6 +44,11 @@ LRESULT CAppearanceDlgBox::OnCancel(UINT uNotifyCode, int nID, HWND hWnd, BOOL& 
 {
 	EndDialog(1);
 	return 0;
+}
+
+void CAppearanceDlgBox::_SetComboboxData()
+{
+
 }
 
 void CAppearanceDlgBox::OnClose()

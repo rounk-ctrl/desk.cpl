@@ -487,8 +487,25 @@ VOID CAppearanceDlgProc::FillSchemeDataMap(LPCWSTR theme, int index)
 		data.rgb[i] = READ_AT(COLORREF, value, start + (4 * i));
 	}
 
-	size_t len = wcslen(theme) + 1;
-	wcscpy_s(data.name, len, theme);
+	if (wcsstr(theme, L"@"))
+	{
+		WCHAR buffer[256];
+		HRESULT hr = SHLoadIndirectString(theme, buffer, ARRAYSIZE(buffer), NULL);
+		if (SUCCEEDED(hr))
+		{
+			wcscpy_s(data.name, 40, buffer);
+		}
+		else
+		{
+			size_t len = wcslen(theme) + 1;
+			wcscpy_s(data.name, len, theme);
+		}
+	}
+	else
+	{
+		size_t len = wcslen(theme) + 1;
+		wcscpy_s(data.name, len, theme);
+	}
 	schemeMap[index] = data;
 
 	free(value);

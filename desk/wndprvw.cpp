@@ -608,7 +608,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 		break;
 	}
 	WCHAR szText[20];
-	LoadString(g_hinst, id, szText, ARRAYSIZE(szText));
+	LoadString(g_hThemeUI, id, szText, ARRAYSIZE(szText));
 
 	RECT rc = wndInfo.wndPos;
 	if (_fIsThemed)
@@ -909,7 +909,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 
 		WCHAR szText[20];
-		LoadString(g_hinst, 1460, szText, ARRAYSIZE(szText));
+		LoadString(g_hThemeUI, 1460, szText, ARRAYSIZE(szText));
 
 		// get height
 		RECT rcheight = { 0,0,0,0 };
@@ -961,7 +961,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			WCHAR szText[20];
-			LoadString(g_hinst, 1461, szText, ARRAYSIZE(szText));
+			LoadString(g_hThemeUI, 1461, szText, ARRAYSIZE(szText));
 
 			crc.left += NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
 			crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
@@ -974,7 +974,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		WCHAR szText[5];
-		LoadString(g_hinst, 1458, szText, ARRAYSIZE(szText));
+		LoadString(g_hThemeUI, 1458, szText, ARRAYSIZE(szText));
 
 		DrawText(hdc, szText, -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
@@ -1017,7 +1017,7 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	int id = 1454 + (type - 1);
 	
 	WCHAR szText[20];
-	LoadString(g_hinst, id, szText, ARRAYSIZE(szText));
+	LoadString(g_hThemeUI, id, szText, ARRAYSIZE(szText));
 
 	LOGFONT lf;
 	if (selectedTheme->selectedScheme)

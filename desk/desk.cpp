@@ -10,6 +10,7 @@
 #include "uxtheme.h"
 
 HINSTANCE g_hinst;
+HINSTANCE g_hThemeUI;
 IThemeManager2* pThemeManager = NULL;
 IDesktopWallpaper* pDesktopWallpaper = NULL;
 ULONG_PTR gdiplusToken;
@@ -40,6 +41,7 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 #endif
 
 	printf("Hello world!\n");
+	g_hThemeUI = LoadLibraryEx(L"themeui.dll", NULL, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
 	WTL::CPropertySheet sheet(L"Display Properties");
 
