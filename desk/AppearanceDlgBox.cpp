@@ -106,5 +106,8 @@ void CAppearanceDlgBox::_UpdateColorButton(HWND hButton, bool isActive, COLORREF
 
 void CAppearanceDlgBox::OnClose()
 {
+	HBITMAP hOld = Static_SetBitmap(hPreview, NULL);
+	if (hOld) DeleteBitmap(hOld);
+
 	EndDialog(0);
 }
