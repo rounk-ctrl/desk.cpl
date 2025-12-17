@@ -2,11 +2,12 @@
 #include "pch.h"
 #include "theme.h"
 
-// why dont winapi have this bruh
 // set a static to display a bitmap
 #define Static_SetBitmap(hwndCtl, hBmp)  \
 	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), STM_SETIMAGE, (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
 
+#define Button_SetBitmap(hwndCtl, hBmp)  \
+	((HBITMAP)(UINT_PTR)SNDMSG((hwndCtl), BM_SETIMAGE , (WPARAM)IMAGE_BITMAP, (LPARAM)(HBITMAP)(hBmp)))
 
 // 29 colors
 #define MAX_COLORS (COLOR_GRADIENTINACTIVECAPTION + 1)

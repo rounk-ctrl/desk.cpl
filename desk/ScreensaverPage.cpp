@@ -73,6 +73,12 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	return 0;
 }
 
+BOOL CScrSaverDlgProc::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	pWndPreview = nullptr;
+	return 0;
+}
+
 BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	_TerminateProcess(pi);

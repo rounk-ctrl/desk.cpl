@@ -49,6 +49,8 @@ private:
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
 	void _UpdateControls(SCHEMEINFO* info);
+	void _UpdateBitmaps(SCHEMEINFO* info);
+	void _UpdateColorButton(HWND hButton, bool isActive, COLORREF color);
 
 	HWND hElementCombobox;
 	HWND hSizeUpdown;

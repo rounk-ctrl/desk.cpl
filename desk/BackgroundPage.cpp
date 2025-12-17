@@ -13,16 +13,6 @@ const COMDLG_FILTERSPEC file_types[] = {
 	L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
 
-HRESULT CBackgroundDlgProc::GetSolidBtnBmp(SIZE size, HBITMAP* pbOut)
-{
-	int i = MulDiv(10, GetDpiForWindow(m_hWnd), 96);
-	Gdiplus::Bitmap bmp(size.cx - i, size.cy - i);
-	Gdiplus::Graphics g(&bmp);
-	Gdiplus::SolidBrush brush(Gdiplus::Color(SPLIT_COLORREF(GetDeskopColor())));
-	g.FillRectangle(&brush, 0, 0, bmp.GetWidth(), bmp.GetHeight());
-
-	return bmp.GetHBITMAP(Gdiplus::Color(0, 0, 0), pbOut) == Gdiplus::Ok ? S_OK : E_FAIL;
-}
 
 BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -106,11 +96,17 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	SelectCurrentWallpaper(currentITheme);
 
 	HBITMAP hBmp;
-	GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
-	::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
-	DeleteBitmap(hBmp);
+	GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
+	HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
+	if (hOld) DeleteBitmap(hOld);
 
 	firstInit = FALSE;
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	pWndPreview = nullptr;
 	return 0;
 }
 
@@ -171,14 +167,13 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 	{
 		selectedTheme->newColor = cc.rgbResult;
 		HBITMAP hBmp;
-		GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
-		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
-		DeleteBitmap(hBmp);
+		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
+		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
+		if (hOld) DeleteBitmap(hOld);
 
-		HBITMAP bmp;
-		pWndPreview->GetPreviewImage(&bmp);
-		Static_SetBitmap(hBackPreview, bmp);
-		DeleteBitmap(bmp);
+		pWndPreview->GetPreviewImage(&hBmp);
+		hOld = Static_SetBitmap(hBackPreview, hBmp);
+		if (hOld) DeleteBitmap(hOld);
 
 		SetModified(TRUE);
 	}
@@ -247,10 +242,10 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		{
 			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		}
-		Static_SetBitmap(hBackPreview, bmp);
+		HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
 
 		SetModified(TRUE);
-		DeleteObject(bmp);
+		if (hOld) DeleteObject(hOld);
 	}
 	return 0;
 }
@@ -304,9 +299,9 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		SelectCurrentWallpaper(currentITheme);
 
 		HBITMAP hBmp;
-		GetSolidBtnBmp(GetClientSIZE(GetDlgItem(1207)), &hBmp);
-		::SendMessage(GetDlgItem(1207), BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBmp);
-		DeleteBitmap(hBmp);
+		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
+		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
+		if (hOld) DeleteBitmap(hOld);
 
 		if (selectedTheme->posChanged == -1)
 		{

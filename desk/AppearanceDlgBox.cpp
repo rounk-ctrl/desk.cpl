@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "AppearanceDlgBox.h"
 #include "helper.h"
+#include "cscheme.h"
 
 using namespace Microsoft::WRL::Details;
 
@@ -41,6 +42,7 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 			{
 				ComboBox_SetCurSel(hElementCombobox, index);
 				_UpdateControls(&info[i-1]);
+				_UpdateBitmaps(&info[i-1]);
 			}
 		}
 	}
@@ -65,6 +67,8 @@ BOOL CAppearanceDlgBox::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, index);
 
 	_UpdateControls(tinfo);
+	_UpdateBitmaps(tinfo);
+	
 	return 0;
 }
 
@@ -79,6 +83,25 @@ void CAppearanceDlgBox::_UpdateControls(SCHEMEINFO* info)
 	::EnableWindow(hFontColor, info->activeButton & ACTIVE_FONTCOLOR);
 	::EnableWindow(hBold, info->activeButton & ACTIVE_FONT);
 	::EnableWindow(hItalic, info->activeButton & ACTIVE_FONT);
+}
+
+void CAppearanceDlgBox::_UpdateBitmaps(SCHEMEINFO* info)
+{
+	_UpdateColorButton(hColor1, info->activeButton & ACTIVE_COLOR1, NcGetSysColor(info->color1Target));
+	_UpdateColorButton(hColor2, info->activeButton & ACTIVE_COLOR2, NcGetSysColor(info->color2Target));
+	_UpdateColorButton(hFontColor, info->activeButton & ACTIVE_FONTCOLOR, NcGetSysColor(info->fontColorTarget));
+}
+
+void CAppearanceDlgBox::_UpdateColorButton(HWND hButton, bool isActive, COLORREF color)
+{
+	HBITMAP bmp = NULL;
+	if (isActive)
+	{
+		GetSolidBtnBmp(color, GetDpiForWindow(m_hWnd), GetClientSIZE(hButton), &bmp);
+	}
+
+	HBITMAP hOld = Button_SetBitmap(hButton, bmp);
+	if (hOld) DeleteBitmap(hOld);
 }
 
 void CAppearanceDlgBox::OnClose()

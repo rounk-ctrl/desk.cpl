@@ -11,6 +11,7 @@ public:
 private:
     BEGIN_MSG_MAP(CScrSaverDlgProc)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         COMMAND_HANDLER(1300, CBN_SELCHANGE, OnScreenSaverComboboxChange)
         COMMAND_HANDLER(1303, BN_CLICKED, OnScreenSaverSettings)
         COMMAND_HANDLER(1304, BN_CLICKED, OnScreenSaverPreview)
@@ -22,6 +23,7 @@ private:
     END_MSG_MAP()
 
     BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    BOOL OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     BOOL OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnScreenSaverSettings(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL& bHandled);

@@ -45,6 +45,20 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 
 CWindowPreview::~CWindowPreview()
 {
+	if (_bmpMonitor) delete _bmpMonitor;
+	if (_bmpSolidColor) delete _bmpSolidColor;
+	if (_bmpWallpaper) delete _bmpWallpaper;
+	if (_bmpBin) delete _bmpBin;
+
+	if (_bmpWindows)
+	{
+		for (int i = 0; i < _wndInfoCount; ++i)
+		{
+			if (_bmpWindows[i]) delete _bmpWindows[i];
+		}
+		free(_bmpWindows);
+	}
+
 	if (_hTheme)
 	{
 		_CleanupUxThemeFile(&_hTheme);

@@ -14,6 +14,7 @@ public:
 private:
 	BEGIN_MSG_MAP(CAppearanceDlgProc)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
 		COMMAND_HANDLER(1111, CBN_SELCHANGE, OnComboboxChange)
 		COMMAND_HANDLER(1114, CBN_SELCHANGE, OnClrComboboxChange)
 		COMMAND_HANDLER(1116, CBN_SELCHANGE, OnFontComboboxChange)
@@ -23,6 +24,7 @@ private:
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	BOOL OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	BOOL OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);

@@ -215,3 +215,15 @@ void ScaleLogFont(LOGFONT& lf, int dpi)
 {
 	lf.lfHeight = MulDiv(lf.lfHeight, dpi, 96);
 }
+
+
+HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut)
+{
+	int i = MulDiv(10, dpi, 96);
+	Gdiplus::Bitmap bmp(size.cx - i, size.cy - i);
+	Gdiplus::Graphics g(&bmp);
+	Gdiplus::SolidBrush brush(Gdiplus::Color(SPLIT_COLORREF(clr)));
+	g.FillRectangle(&brush, 0, 0, bmp.GetWidth(), bmp.GetHeight());
+
+	return bmp.GetHBITMAP(Gdiplus::Color(0, 0, 0), pbOut) == Gdiplus::Ok ? S_OK : E_FAIL;
+}

@@ -11,6 +11,7 @@ public:
 private:
     BEGIN_MSG_MAP(CBackgroundDlgProc)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
         COMMAND_HANDLER(1205, CBN_SELCHANGE, OnBgSizeChange)
         COMMAND_HANDLER(1203, BN_CLICKED, OnBrowse)
         COMMAND_HANDLER(1207, BN_CLICKED, OnColorPick)
@@ -21,6 +22,7 @@ private:
 
 
     BOOL OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    BOOL OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     BOOL OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
@@ -36,7 +38,6 @@ private:
     BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut);
     void AddMissingWallpapers(IUnknown* th);
     void SelectCurrentWallpaper(IUnknown* th);
-    HRESULT GetSolidBtnBmp(SIZE size, HBITMAP* pbOut);
 
     /// custom variables
     HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
