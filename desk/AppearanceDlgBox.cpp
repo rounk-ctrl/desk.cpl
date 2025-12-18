@@ -30,20 +30,25 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
 	if (hOld) DeleteBitmap(hOld);
 
-	for (int i = 1; i < 10; ++i) // 28
+	int in = 0;
+	for (int i = 1; i < 28; ++i) // 28
 	{
 		WCHAR szBuffer[40];
 		if (LoadString(g_hThemeUI, 1400 + i, szBuffer, ARRAYSIZE(szBuffer)))
 		{
+			if (i == 24) continue;
+
 			int index = ComboBox_AddString(hElementCombobox, szBuffer);
-			ComboBox_SetItemData(hElementCombobox, index, &info[i-1]);
+			ComboBox_SetItemData(hElementCombobox, index, &info[in]);
 			
 			if (i == 1)
 			{
 				ComboBox_SetCurSel(hElementCombobox, index);
-				_UpdateControls(&info[i-1]);
-				_UpdateBitmaps(&info[i-1]);
+				_UpdateControls(&info[in]);
+				_UpdateBitmaps(&info[in]);
+				_UpdateSizeItem(&info[in]);
 			}
+			in++;
 		}
 	}
 	return TRUE;
@@ -68,7 +73,8 @@ BOOL CAppearanceDlgBox::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 
 	_UpdateControls(tinfo);
 	_UpdateBitmaps(tinfo);
-	
+	_UpdateSizeItem(tinfo);
+
 	return 0;
 }
 
@@ -102,6 +108,20 @@ void CAppearanceDlgBox::_UpdateColorButton(HWND hButton, bool isActive, COLORREF
 
 	HBITMAP hOld = Button_SetBitmap(hButton, bmp);
 	if (hOld) DeleteBitmap(hOld);
+}
+
+void CAppearanceDlgBox::_UpdateSizeItem(SCHEMEINFO* info)
+{
+	if (info->activeButton & ACTIVE_SIZEITEM)
+	{
+		WCHAR szText[5];
+		StringCchPrintf(szText, ARRAYSIZE(szText), L"%d", NcGetSystemMetrics(info->sizeTarget));
+		::SetWindowText((HWND)SendMessage(hSizeUpdown, UDM_GETBUDDY, 0, 0), szText);
+	}
+	else
+	{
+		::SetWindowText((HWND)SendMessage(hSizeUpdown, UDM_GETBUDDY, 0, 0), L"");
+	}
 }
 
 void CAppearanceDlgBox::OnClose()

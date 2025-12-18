@@ -24,7 +24,8 @@ typedef struct tagSCHEMEINFO
 	WORD color2Target;
 	WORD fontColorTarget;
 
-	// todo: size
+	WORD sizeTarget;
+	// todo: 
 } SCHEMEINFO;
 
 class CAppearanceDlgBox :
@@ -51,6 +52,7 @@ private:
 	void _UpdateControls(SCHEMEINFO* info);
 	void _UpdateBitmaps(SCHEMEINFO* info);
 	void _UpdateColorButton(HWND hButton, bool isActive, COLORREF color);
+	void _UpdateSizeItem(SCHEMEINFO* info);
 
 	HWND hElementCombobox;
 	HWND hSizeUpdown;
@@ -93,30 +95,36 @@ private:
 			.color1Target = COLOR_INACTIVECAPTION,
 			.color2Target = COLOR_GRADIENTINACTIVECAPTION,
 			.fontColorTarget = COLOR_INACTIVECAPTIONTEXT,
+			.sizeTarget = SM_CYSIZE,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_INACTIVEBORDER,
+			.sizeTarget = SM_CYBORDER,
 		},
 		{
 			.activeButton = ACTIVE_ALL,
 			.color1Target = COLOR_ACTIVECAPTION,
 			.color2Target = COLOR_GRADIENTACTIVECAPTION,
 			.fontColorTarget = COLOR_CAPTIONTEXT,
+			.sizeTarget = SM_CYSIZE,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_ACTIVEBORDER,
+			.sizeTarget = SM_CYBORDER,
 		},
 		{
 			.activeButton = ACTIVE_ALL & ~ACTIVE_COLOR2,
 			.color1Target = COLOR_MENU,
 			.fontColorTarget = COLOR_MENUTEXT,
+			.sizeTarget = SM_CYMENUSIZE,
 		},
 		{
 			.activeButton = ACTIVE_ALL & ~ACTIVE_COLOR2,
 			.color1Target = COLOR_HIGHLIGHT,
 			.fontColorTarget = COLOR_HIGHLIGHTTEXT,
+			.sizeTarget = SM_CYMENUSIZE,
 		},
 		{
 			// window (8)
@@ -127,11 +135,57 @@ private:
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_SCROLLBAR,		// MOD
+			.sizeTarget = SM_CYVSCROLL,				// change both
 		},
 		{
 			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONTCOLOR,
 			.color1Target = COLOR_BTNFACE,
 			.fontColorTarget = COLOR_BTNTEXT,
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
+			.sizeTarget = SM_CYSMSIZE,				// change both
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM,
+			.sizeTarget = SM_CYSIZE,				// change both
+		},
+		{
+			.activeButton = ACTIVE_FONT | ACTIVE_FONTCOLOR,
+			.fontColorTarget = COLOR_WINDOWTEXT,
+		},
+		{
+			.activeButton = ACTIVE_COLOR1,
+			.color1Target = COLOR_APPWORKSPACE,
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM,		// TODO: fix
+			.sizeTarget = SM_CXICONSPACING,			
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM,		// TODO: fix
+			.sizeTarget = SM_CYICONSPACING,
+		},
+		{
+			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONT | ACTIVE_FONTCOLOR,
+			.color1Target = COLOR_INFOBK,
+			.fontColorTarget = COLOR_INFOTEXT,
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
+			.sizeTarget = SM_CXICON,
+		}, // skip 24- small icon
+		{
+			.activeButton = ACTIVE_FONTCOLOR,
+			.fontColorTarget = COLOR_GRAYTEXT,
+		},
+		{
+			.activeButton = ACTIVE_FONTCOLOR,
+			.fontColorTarget = COLOR_HOTLIGHT,
+		},
+		{
+			.activeButton = ACTIVE_SIZEITEM,
+			.sizeTarget = SM_CXPADDEDBORDER,
 		}
 	};
 };

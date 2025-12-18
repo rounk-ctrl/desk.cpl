@@ -83,6 +83,9 @@ int NcGetSystemMetrics(int nIndex)
             case SM_CYSMSIZE:   iValue = ncm.iSmCaptionHeight;  break;
             case SM_CXMENUSIZE: iValue = ncm.iMenuWidth;  break;
             case SM_CYMENUSIZE: iValue = ncm.iMenuHeight;  break;
+
+			case SM_CXBORDER:
+			case SM_CYBORDER:	iValue = ncm.iBorderWidth; break;
             
             default:            iValue = GetSystemMetrics(nIndex); break;
         }
