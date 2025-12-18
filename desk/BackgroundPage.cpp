@@ -163,9 +163,11 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	CHOOSECOLOR cc = {0};
-	if (ColorPicker(hWnd, &cc) == TRUE)
+	if (ColorPicker(GetDeskopColor(), hWnd, &cc) == TRUE)
 	{
+		selectedTheme->useDesktopColor = true;
 		selectedTheme->newColor = cc.rgbResult;
+
 		HBITMAP hBmp;
 		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
 		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
@@ -373,29 +375,6 @@ LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 	return (LPWSTR)item.lParam;
 }
 #pragma endregion
-
-BOOL CBackgroundDlgProc::ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut)
-{
-	COLORREF clr = GetDeskopColor();
-
-	static COLORREF acrCustClr[16];
-	for (int i = 0; i < ARRAYSIZE(acrCustClr); i++)
-	{
-		acrCustClr[i] = RGB(255, 255, 255);
-	}
-
-	CHOOSECOLOR cc = { 0 };
-	cc.lStructSize = sizeof(cc);
-	cc.hwndOwner = hWnd;
-	cc.lpCustColors = acrCustClr;
-	cc.rgbResult = clr;
-	cc.Flags = CC_RGBINIT | CC_FULLOPEN;
-
-	BOOL out = ChooseColor(&cc);
-	*clrOut = cc;
-	selectedTheme->useDesktopColor = true;
-	return out;
-}
 
 void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 {

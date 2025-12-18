@@ -51,6 +51,9 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 			in++;
 		}
 	}
+
+	// create a dummy scheme
+	CreateBlankScheme();
 	return TRUE;
 }
 
@@ -75,6 +78,36 @@ BOOL CAppearanceDlgBox::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 	_UpdateBitmaps(tinfo);
 	_UpdateSizeItem(tinfo);
 
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	int index = ComboBox_GetCurSel(hElementCombobox);
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, index);
+
+	COLORREF clr;
+	if (id == 1135) clr = NcGetSysColor(tinfo->color1Target);
+	if (id == 1136) clr = NcGetSysColor(tinfo->fontColorTarget);
+	if (id == 1141) clr = NcGetSysColor(tinfo->color2Target);
+
+	CHOOSECOLOR cc = { 0 };
+	if (ColorPicker(clr, hWnd, &cc) == TRUE)
+	{
+		_UpdateColorButton(hWnd, true, cc.rgbResult);
+		
+		WORD target;
+		if (id == 1135) target = tinfo->color1Target;
+		if (id == 1136) target = tinfo->fontColorTarget;
+		if (id == 1141) target = tinfo->color2Target;
+		selectedTheme->selectedScheme->rgb[target] = cc.rgbResult;
+		if (id == 1135 && tinfo->color1Target == COLOR_DESKTOP) selectedTheme->newColor = cc.rgbResult;
+
+		HBITMAP ebmp;
+		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
+		if (hPrev) DeleteObject(hPrev);
+	}
 	return 0;
 }
 

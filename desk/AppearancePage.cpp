@@ -16,6 +16,7 @@ void DumpNonClientMetrics(NONCLIENTMETRICSW ncm);
 #define HAS_NORMAL 0x1
 #define HAS_LARGE 0x2
 #define HAS_EXTRA_LARGE 0x4
+#define CUSTOM_SCHEME 0x8
 
 BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -154,6 +155,11 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 {
 	CAppearanceDlgBox dlg;
 	dlg.DoModal();
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
+	if (hPrev) DeleteObject(hPrev);
 	return 0;
 }
 
@@ -204,6 +210,15 @@ BOOL CAppearanceDlgProc::OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOO
 {
 	int i = ComboBox_GetCurSel(hSizeCombobox);
 	SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hSizeCombobox, i);
+
+	if (selectedTheme->selectedScheme)
+	{
+		if (selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
+		{
+			free(selectedTheme->selectedScheme);
+			selectedTheme->selectedScheme = NULL;
+		}
+	}
 	selectedTheme->selectedScheme = data;
 	selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
@@ -271,6 +286,8 @@ BOOL CAppearanceDlgProc::OnApply()
 		ScaleLogFont(lfIcon, GetDpiForWindow(m_hWnd));
 		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+
+		// delete temp scheme on combobox change
 	}
 	else
 	{
@@ -353,6 +370,15 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 			index += 1;
 		}
 		ComboBox_SetCurSel(hColorCombobox, index);
+
+		if (selectedTheme->selectedScheme)
+		{
+			if (selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
+			{
+				free(selectedTheme->selectedScheme);
+				selectedTheme->selectedScheme = NULL;
+			}
+		}
 		selectedTheme->selectedScheme = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
 	}
 	else index = 0;

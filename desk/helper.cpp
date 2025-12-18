@@ -227,3 +227,66 @@ HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut)
 
 	return bmp.GetHBITMAP(Gdiplus::Color(0, 0, 0), pbOut) == Gdiplus::Ok ? S_OK : E_FAIL;
 }
+
+BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut)
+{
+	static COLORREF acrCustClr[16];
+
+	CHOOSECOLOR cc = { 0 };
+	cc.lStructSize = sizeof(cc);
+	cc.hwndOwner = hWnd;
+	cc.lpCustColors = acrCustClr;
+	cc.rgbResult = clr;
+	cc.Flags = CC_RGBINIT | CC_FULLOPEN;
+
+	BOOL out = ChooseColor(&cc);
+	*clrOut = cc;
+	return out;
+}
+
+// callee must free allocated SCHEMEDATA when done
+void CreateBlankScheme()
+{
+	if (!selectedTheme->selectedScheme)
+	{
+		COLORREF rgb[MAX_COLORS];
+		for (int i = 0; i < MAX_COLORS; ++i)
+		{
+			rgb[i] = GetSysColor(i);
+		}
+
+		NONCLIENTMETRICSW ncm = { sizeof(ncm) };
+		SystemParametersInfoForDpi(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, NULL, 96);
+
+		NONCLIENTMETRICSW_2k ncm2k;
+		memcpy(&ncm2k, &ncm, sizeof(ncm2k));
+
+		LOGFONT lfIcon;
+		SystemParametersInfoForDpi(SPI_GETICONTITLELOGFONT, sizeof(lfIcon), &lfIcon, NULL, 96);
+
+		SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
+		if (currentData)
+		{
+			currentData->lfIconTitle = lfIcon;
+			currentData->ncm = ncm2k;
+			memcpy(currentData->rgb, rgb, sizeof(rgb));
+			currentData->variant = 0x8;			// indicates custom theme
+
+			selectedTheme->selectedScheme = currentData;
+		}
+	}
+	else
+	{
+		SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
+		*currentData = *selectedTheme->selectedScheme;
+		currentData->variant |= 0x8;		// indicates custom theme
+
+		if (selectedTheme->selectedScheme->variant == 0x8)
+		{
+			free(selectedTheme->selectedScheme);
+			selectedTheme->selectedScheme = NULL;
+		}
+
+		selectedTheme->selectedScheme = currentData;
+	}
+}

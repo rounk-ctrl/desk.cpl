@@ -35,7 +35,6 @@ private:
     int AddItem(HWND hListView, int rowIndex, LPCWSTR text);
     int AddColumn(HWND hListView, int width);
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
-    BOOL ColorPicker(HWND hWnd, CHOOSECOLOR* clrOut);
     void AddMissingWallpapers(IUnknown* th);
     void SelectCurrentWallpaper(IUnknown* th);
 

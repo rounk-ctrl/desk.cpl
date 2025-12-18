@@ -38,6 +38,9 @@ private:
 	BEGIN_MSG_MAP(CAppearanceDlgBox)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_HANDLER(1126, CBN_SELCHANGE, OnComboboxChange)
+		COMMAND_HANDLER(1135, BN_CLICKED, OnColorPick)
+		COMMAND_HANDLER(1136, BN_CLICKED, OnColorPick)
+		COMMAND_HANDLER(1141, BN_CLICKED, OnColorPick)
 		MSG_WM_CLOSE(OnClose)
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
@@ -48,6 +51,7 @@ private:
 	LRESULT OnOK(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
 	LRESULT OnCancel(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled);
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
 	void _UpdateControls(SCHEMEINFO* info);
 	void _UpdateBitmaps(SCHEMEINFO* info);

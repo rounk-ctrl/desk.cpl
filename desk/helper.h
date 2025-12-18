@@ -30,6 +30,8 @@ wchar_t* strCut(wchar_t* s, const wchar_t* pattern);
 void ScaleLogFont(LOGFONT& lf, int dpi);
 void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi);
 HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut);
+BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
+void CreateBlankScheme();
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {
