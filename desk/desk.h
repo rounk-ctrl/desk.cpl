@@ -42,6 +42,7 @@ typedef struct tagSCHEMEDATA {
 	WCHAR name[40];
 	DWORD variant;
 	int schemeMapIndex;
+	BOOL dpiScaled;
 
 } SCHEMEDATA;
 

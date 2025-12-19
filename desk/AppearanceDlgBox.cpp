@@ -111,6 +111,24 @@ BOOL CAppearanceDlgBox::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	return 0;
 }
 
+BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	int index = ComboBox_GetCurSel(hElementCombobox);
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, index);
+
+	if (tinfo && tinfo->activeButton & ACTIVE_SIZEITEM)
+	{
+		int value = GetDlgItemInt(id);
+		NcUpdateSystemMetrics(tinfo->sizeTarget, value);
+
+		HBITMAP ebmp;
+		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
+		if (hPrev) DeleteObject(hPrev);
+	}
+	return 0;
+}
+
 void CAppearanceDlgBox::_UpdateControls(SCHEMEINFO* info)
 {
 	::EnableWindow(hSizeUpdown, info->activeButton & ACTIVE_SIZEITEM);
@@ -162,5 +180,5 @@ void CAppearanceDlgBox::OnClose()
 	HBITMAP hOld = Static_SetBitmap(hPreview, NULL);
 	if (hOld) DeleteBitmap(hOld);
 
-	EndDialog(0);
+	EndDialog(1);
 }

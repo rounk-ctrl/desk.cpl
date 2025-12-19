@@ -1,5 +1,6 @@
 #pragma once
 #include "framework.h"
+#include "desk.h"
 
 #define RECTWIDTH(rc)   ((rc).right-(rc).left)
 #define RECTHEIGHT(rc)  ((rc).bottom-(rc).top)
@@ -29,6 +30,7 @@ char* trim(char* s);
 wchar_t* strCut(wchar_t* s, const wchar_t* pattern);
 void ScaleLogFont(LOGFONT& lf, int dpi);
 void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi);
+void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi);
 HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut);
 BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
 void CreateBlankScheme();

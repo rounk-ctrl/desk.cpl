@@ -67,6 +67,12 @@ int NcGetSystemMetrics(int nIndex)
 {
 	if (selectedTheme->selectedScheme)
 	{
+		if (!selectedTheme->selectedScheme->dpiScaled)
+		{
+			ScaleNonClientMetrics(selectedTheme->selectedScheme->ncm, cs_dpi);
+			selectedTheme->selectedScheme->dpiScaled = true;
+		}
+
 		int iValue;
 		NONCLIENTMETRICSW_2k ncm = selectedTheme->selectedScheme->ncm;
 		switch (nIndex)
@@ -90,9 +96,39 @@ int NcGetSystemMetrics(int nIndex)
             default:            iValue = GetSystemMetrics(nIndex); break;
         }
 
-		// dpi scale the value, looks ugly otherwise
-		iValue = MulDiv(iValue, cs_dpi, 96);
+		// dpi scale the value
+		//iValue = MulDiv(iValue, cs_dpi, 96);
         return iValue;
 	}
 	return GetSystemMetrics(nIndex);
+}
+
+
+void NcUpdateSystemMetrics(int nIndex, int value)
+{
+	if (selectedTheme->selectedScheme)
+	{
+		NONCLIENTMETRICSW_2k ncm = selectedTheme->selectedScheme->ncm;
+		switch (nIndex)
+		{
+		case SM_CXHSCROLL:  // fall through
+		case SM_CXVSCROLL:  ncm.iScrollWidth = value;  break;
+		case SM_CYHSCROLL:  // fall through
+		case SM_CYVSCROLL:  ncm.iScrollHeight = value;  break;
+
+		case SM_CXSIZE:     ncm.iCaptionWidth = value;  break;
+		case SM_CYSIZE:     ncm.iCaptionHeight = value;  break;
+		case SM_CYCAPTION:  ncm.iCaptionHeight = value + 1;  break;
+		case SM_CXSMSIZE:   ncm.iSmCaptionWidth = value;  break;
+		case SM_CYSMSIZE:   ncm.iSmCaptionHeight = value;  break;
+		case SM_CXMENUSIZE: ncm.iMenuWidth = value;  break;
+		case SM_CYMENUSIZE: ncm.iMenuHeight = value;  break;
+
+		case SM_CXBORDER:
+		case SM_CYBORDER:	ncm.iBorderWidth = value; break;
+		default: break;
+		}
+
+		selectedTheme->selectedScheme->ncm = ncm;
+	}
 }

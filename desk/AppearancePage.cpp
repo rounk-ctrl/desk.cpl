@@ -154,7 +154,23 @@ BOOL CAppearanceDlgProc::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	CAppearanceDlgBox dlg;
-	dlg.DoModal();
+	int ret = dlg.DoModal();
+
+	if (ret == 1)
+	{
+		if (selectedTheme->selectedScheme)
+		{
+			if (selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
+			{
+				free(selectedTheme->selectedScheme);
+				selectedTheme->selectedScheme = NULL;
+			}
+		}
+	}
+	else
+	{
+		SetModified(TRUE);
+	}
 
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
@@ -282,7 +298,19 @@ BOOL CAppearanceDlgProc::OnApply()
 		LOGFONT lfIcon = selectedTheme->selectedScheme->lfIconTitle;
 
 		// bruhhh
-		ScaleNonClientMetrics(ncm, GetDpiForWindow(m_hWnd));
+		if (!selectedTheme->selectedScheme->dpiScaled)
+		{
+			ScaleNonClientMetrics(ncm, GetDpiForWindow(m_hWnd));
+		}
+		else
+		{
+			// scale the fonts
+			ScaleLogFont(ncm.lfCaptionFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfSmCaptionFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfMenuFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfStatusFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfMessageFont, GetDpiForWindow(m_hWnd));
+		}
 		ScaleLogFont(lfIcon, GetDpiForWindow(m_hWnd));
 		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);

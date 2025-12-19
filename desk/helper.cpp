@@ -211,6 +211,21 @@ void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
 	ScaleLogFont(ncm.lfMessageFont, dpi);
 }
 
+void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi)
+{
+	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, dpi, 96);
+	ncm.iScrollWidth = MulDiv(ncm.iScrollWidth, dpi, 96);
+	ncm.iCaptionHeight = MulDiv(ncm.iCaptionHeight, dpi, 96);
+	ncm.iCaptionWidth = MulDiv(ncm.iCaptionWidth, dpi, 96);
+
+	ncm.iSmCaptionHeight = MulDiv(ncm.iSmCaptionHeight, dpi, 96);
+	ncm.iSmCaptionWidth = MulDiv(ncm.iSmCaptionWidth, dpi, 96);
+
+	ncm.iMenuHeight = MulDiv(ncm.iMenuHeight, dpi, 96);
+	ncm.iMenuWidth = MulDiv(ncm.iMenuWidth, dpi, 96);
+
+}
+
 void ScaleLogFont(LOGFONT& lf, int dpi)
 {
 	lf.lfHeight = MulDiv(lf.lfHeight, dpi, 96);
@@ -271,6 +286,7 @@ void CreateBlankScheme()
 			currentData->ncm = ncm2k;
 			memcpy(currentData->rgb, rgb, sizeof(rgb));
 			currentData->variant = 0x8;			// indicates custom theme
+			currentData->dpiScaled = false;
 
 			selectedTheme->selectedScheme = currentData;
 		}
