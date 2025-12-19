@@ -169,14 +169,21 @@ HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
 
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 {
+	if (pbOut && *pbOut)
+	{
+		DeleteObject(*pbOut);
+		*pbOut = nullptr;
+	}
+
 	Bitmap* gdiBmp = new Bitmap(GETSIZE(_sizePreview), PixelFormat32bppARGB);
 	RETURN_IF_NULL_ALLOC(gdiBmp);
+
+	HRESULT hr = S_OK;
 
 	Graphics graphics(gdiBmp);
 	RETURN_IF_NULL_ALLOC(&graphics);
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
-	HRESULT hr = S_OK;
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
 	hr = DrawBitmapIfNotNull(_bmpMonitor, &graphics, rect);
@@ -199,7 +206,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	int xOff = MulDiv(48, _dpiWindow, 96);
 	int yOff = MulDiv(40, _dpiWindow, 96);
 
-	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, NcGetSystemMetrics(SM_CXICON), NcGetSystemMetrics(SM_CYICON)};
+	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, NcGetSystemMetrics(SM_CXICON), NcGetSystemMetrics(SM_CYICON) };
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
 
 	for (int i = 0; i < _wndInfoCount; ++i)
@@ -230,6 +237,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		}
 		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
 	}
+
 
 	// create hbitmap
 	hr = gdiBmp->GetHBITMAP(Color(0, 0, 0), pbOut) == Ok ? S_OK : E_FAIL;
@@ -310,7 +318,7 @@ HRESULT CWindowPreview::_DrawMonitor()
 	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
 
 	// set monitor margins
-	_marMonitor = {xOff + 16, 0, yOff + 17, 0};
+	_marMonitor = { xOff + 16, 0, yOff + 17, 0 };
 
 	delete monitor;
 	return hr;
@@ -416,7 +424,7 @@ HRESULT CWindowPreview::_RenderBin()
 			HBITMAP hOldBmp = (HBITMAP)SelectObject(hdcMem, hDIB);
 
 			DrawIconEx(hdcMem, 0, 0, sii.hIcon, size, size, 0, NULL, DI_NORMAL);
-			Bitmap tempBmp(size, size, size * 4, PixelFormat32bppPARGB, (BYTE*)pBits); 
+			Bitmap tempBmp(size, size, size * 4, PixelFormat32bppPARGB, (BYTE*)pBits);
 			graphics.DrawImage(&tempBmp, 0, 0);
 
 			// cleanup
@@ -1029,7 +1037,7 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 {
 	int id = 1454 + (type - 1);
-	
+
 	WCHAR szText[20];
 	LoadString(g_hThemeUI, id, szText, ARRAYSIZE(szText));
 
@@ -1061,13 +1069,13 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	{
 		OffsetRect(rc, 1, 1);
 	}
-	COLORREF clr = type == 2 ? RGB(255,255,255) : NcGetSysColor(COLOR_MENUTEXT);
+	COLORREF clr = type == 2 ? RGB(255, 255, 255) : NcGetSysColor(COLOR_MENUTEXT);
 	SetTextColor(hdc, clr);
 	DrawText(hdc, szText, -1, rc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	if (type == 2)
 	{
 		OffsetRect(rc, -1, -1);
-		
+
 		// todo: fix green text in high contrast
 		clr = NcGetSysColor(COLOR_GRAYTEXT);
 		SetTextColor(hdc, clr);

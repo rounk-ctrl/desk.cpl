@@ -136,6 +136,7 @@ NTSTATUS _OpenThemeSection(ACCESS_MASK mask, HANDLE* hSection)
 // ugh
 BOOL IsClassicThemeEnabled()
 {
+	if (GetThemeAppProperties() == 0)return TRUE;
 	HANDLE hSection;
 	_OpenThemeSection(READ_CONTROL, &hSection);
 

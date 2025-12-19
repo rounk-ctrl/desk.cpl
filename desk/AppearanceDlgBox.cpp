@@ -106,7 +106,8 @@ BOOL CAppearanceDlgBox::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
-		if (hPrev) DeleteObject(hPrev);
+		DeleteObject(hPrev);
+		DeleteObject(ebmp);
 	}
 	return 0;
 }
@@ -124,7 +125,10 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
-		if (hPrev) DeleteObject(hPrev);
+
+		// FUCKKKKK
+		DeleteObject(hPrev);
+		DeleteObject(ebmp);
 	}
 	return 0;
 }

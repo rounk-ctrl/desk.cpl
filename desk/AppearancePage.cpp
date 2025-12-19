@@ -175,7 +175,8 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	if (hPrev) DeleteObject(hPrev);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
 	return 0;
 }
 
@@ -201,7 +202,8 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	if (hPrev) DeleteObject(hPrev);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -216,7 +218,8 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	if (hPrev) DeleteObject(hPrev);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -241,7 +244,8 @@ BOOL CAppearanceDlgProc::OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOO
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	if (hPrev) DeleteObject(hPrev);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -275,7 +279,8 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
 		HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-		if (hPrev) DeleteObject(hPrev);
+		DeleteObject(hPrev);
+		DeleteObject(ebmp);
 	}
 
 	return 0;

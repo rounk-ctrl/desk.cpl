@@ -247,7 +247,8 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
 
 		SetModified(TRUE);
-		if (hOld) DeleteObject(hOld);
+		DeleteObject(hOld);
+		DeleteObject(bmp);
 	}
 	return 0;
 }
@@ -322,8 +323,9 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		if (pWndPreview)
 		{
 			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-			Static_SetBitmap(hBackPreview, bmp);
-			DeleteBitmap(bmp);
+			HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
+			DeleteObject(hOld);
+			DeleteObject(bmp);
 		}
 	}
 	_TerminateProcess(pi);
