@@ -95,7 +95,6 @@ private:
 	PAGETYPE _pageType;
 	void* _hTheme;
 	BOOL _fIsThemed;
-	SIZE _szMenuBar;
 	int _dpiWindow;
 
 	// layer bitmaps, compose all for the final preview

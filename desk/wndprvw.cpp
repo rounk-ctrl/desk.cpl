@@ -29,7 +29,6 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	// always initialize variables
 	_marFrame = {};
 	_marMonitor = {};
-	_szMenuBar = { 0, NcGetSystemMetrics(SM_CYMENU) };
 	_bmpBin = nullptr;
 	_bmpSolidColor = nullptr;
 	_bmpWallpaper = nullptr;
@@ -705,7 +704,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
 	if (!_fIsThemed)
 	{
-		if (wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy;
+		if (wndInfo.wndType == WT_ACTIVE) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE);
 	}
 
 	if (_fIsThemed)
@@ -853,7 +852,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	crc.left += _marFrame.cxLeftWidth;
 	crc.top += _marFrame.cyTopHeight;
 	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += NcGetSystemMetrics(SM_CYFRAME);
-	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += _szMenuBar.cy + NcGetSystemMetrics(SM_CYFRAME);
+	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE) + NcGetSystemMetrics(SM_CYFRAME);
 
 	crc.bottom -= _marFrame.cyBottomHeight + 2;
 	int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
@@ -927,7 +926,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		RECT crc = wndInfo.wndPos;
 		crc.top += _marFrame.cyTopHeight;
-		if (!_fIsThemed) crc.top += _szMenuBar.cy;
+		if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE);
 
 
 		WCHAR szText[20];
@@ -1015,7 +1014,7 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 	RECT crc = wndInfo.wndPos;
 	crc.left += _marFrame.cxLeftWidth - NcGetSystemMetrics(SM_CXEDGE);
 	crc.top += _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYEDGE);
-	crc.bottom = crc.top + _szMenuBar.cy;
+	crc.bottom = crc.top + NcGetSystemMetrics(SM_CYMENUSIZE);
 	crc.right -= NcGetSystemMetrics(SM_CXFRAME);
 
 	HDC dc = pGraphics->GetHDC();
