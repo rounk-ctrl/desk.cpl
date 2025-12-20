@@ -34,7 +34,8 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	AddColumn(hListView, rect.right - rect.left - 30);
 
 	AddItem(hListView, 0, L"(None)");
-	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
+	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_AS_DATAFILE)
+		, MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
 	DestroyIcon(barrierico);
@@ -98,7 +99,8 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	HBITMAP hBmp;
 	GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
 	HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
-	if (hOld) DeleteBitmap(hOld);
+	DeleteBitmap(hOld);
+	DeleteBitmap(hBmp);
 
 	firstInit = FALSE;
 	return 0;
@@ -116,8 +118,9 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hBackPreview, bmp);
+	HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
 	DeleteBitmap(bmp);
+	DeleteBitmap(hOld);
 
 	SetModified(TRUE);
 	return 0;
@@ -127,36 +130,61 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	IFileDialog* pfd;
 	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
+	if (SUCCEEDED(hr))
+	{
+		// get options
+		DWORD dwFlags;
+		hr = pfd->GetOptions(&dwFlags);
 
-	// get options
-	DWORD dwFlags;
-	hr = pfd->GetOptions(&dwFlags);
+		// set the file types
+		hr = pfd->SetFileTypes(ARRAYSIZE(file_types), file_types);
 
-	// set the file types
-	hr = pfd->SetFileTypes(ARRAYSIZE(file_types), file_types);
+		// the first element from the array
+		hr = pfd->SetFileTypeIndex(1);
 
-	// the first element from the array
-	hr = pfd->SetFileTypeIndex(1);
+		pfd->SetTitle(L"Browse");
 
-	pfd->SetTitle(L"Browse");
+		// Show the dialog
+		hr = pfd->Show(hWnd);
 
-	// Show the dialog
-	hr = pfd->Show(hWnd);
-
-	IShellItem* psiResult;
-	hr = pfd->GetResult(&psiResult);
-	if (SUCCEEDED(hr)) {
-		PWSTR pszFilePath = NULL;
-		hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+		IShellItem* psiResult;
+		hr = pfd->GetResult(&psiResult);
 		if (SUCCEEDED(hr)) {
-			int inde = AddItem(hListView, ListView_GetItemCount(hListView), pszFilePath);
+			PWSTR pszFilePath = NULL;
+			hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+			if (SUCCEEDED(hr)) {
+				int inde = AddItem(hListView, ListView_GetItemCount(hListView), pszFilePath);
+
+				ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+				ListView_EnsureVisible(hListView, inde, FALSE);
+				CoTaskMemFree(pszFilePath);
+			}
+		}
+		pfd->Release();
+	}
+	else
+	{
+		wchar_t szFile[MAX_PATH];
+		OPENFILENAME ofn = { sizeof(ofn) };
+		ofn.hwndOwner = m_hWnd;
+		ofn.lpstrFile = szFile;
+		ofn.lpstrFile[0] = '\0';
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)\0*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png\0";
+		ofn.nFilterIndex = 1;
+		ofn.lpstrFileTitle = NULL;
+		ofn.nMaxFileTitle = 0;
+		ofn.lpstrInitialDir = NULL;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+		if (GetOpenFileName(&ofn) == TRUE)
+		{
+			int inde = AddItem(hListView, ListView_GetItemCount(hListView), ofn.lpstrFile);
 
 			ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			ListView_EnsureVisible(hListView, inde, FALSE);
-			CoTaskMemFree(pszFilePath);
 		}
 	}
-	pfd->Release();
 	return 0;
 }
 
@@ -171,11 +199,13 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 		HBITMAP hBmp;
 		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
 		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
-		if (hOld) DeleteBitmap(hOld);
+		DeleteBitmap(hOld);
+		DeleteBitmap(hBmp);
 
 		pWndPreview->GetPreviewImage(&hBmp);
 		hOld = Static_SetBitmap(hBackPreview, hBmp);
-		if (hOld) DeleteBitmap(hOld);
+		DeleteBitmap(hOld);
+		DeleteBitmap(hBmp);
 
 		SetModified(TRUE);
 	}
@@ -340,7 +370,7 @@ int CBackgroundDlgProc::AddItem(HWND hListView, int rowIndex, LPCWSTR text)
 	{
 		// gimmick
 		SHFILEINFO sh{};
-		SHGetFileInfo(text, FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON | SHGFI_SMALLICON);
+		SHGetFileInfo(text, FILE_ATTRIBUTE_NORMAL, &sh, sizeof(SHFILEINFO), SHGFI_ICON);
 		ImageList_AddIcon(hml, sh.hIcon);
 	}
 
