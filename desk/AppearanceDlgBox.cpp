@@ -121,6 +121,10 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 	{
 		int value = GetDlgItemInt(id);
 		NcUpdateSystemMetrics(tinfo->sizeTarget, value);
+		if (tinfo->sizeTarget == SM_CYVSCROLL)
+		{
+			NcUpdateSystemMetrics(SM_CXVSCROLL, value);
+		}
 
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);

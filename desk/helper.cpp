@@ -296,7 +296,7 @@ void CreateBlankScheme()
 	{
 		SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
 		*currentData = *selectedTheme->selectedScheme;
-		currentData->variant |= 0x8;		// indicates custom theme
+		currentData->variant = 0x8;		// indicates custom theme
 
 		if (selectedTheme->selectedScheme->variant == 0x8)
 		{
