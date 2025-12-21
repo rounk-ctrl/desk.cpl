@@ -463,8 +463,8 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	// caption frame
 	RECT crc = wndInfo.wndPos;
-	if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYFRAME);
-	crc.bottom = crc.top + _marFrame.cyTopHeight;
+	if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYBORDER) + 1;
+	crc.bottom = crc.top + _marFrame.cyTopHeight + 1;
 
 	if (_fIsThemed)
 	{
@@ -509,6 +509,7 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HPEN pen = CreatePen(PS_SOLID, 1, NcGetSysColor(COLOR_3DFACE));
 		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
+		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CXBORDER);
 		POINT pt[2]{};
 		pt[0] = { crc.left + _marFrame.cxLeftWidth, crc.top + _marFrame.cyTopHeight };
 		pt[1] = { crc.right - _marFrame.cxRightWidth, crc.top + _marFrame.cyTopHeight };
@@ -552,7 +553,7 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 	crc.right -= _marFrame.cxRightWidth + cxEdge;
 	crc.left = crc.right - cxBtn;
 	crc.top += _fIsThemed ? _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYFRAME) - cyBtn
-		: ((_marFrame.cyTopHeight - cyBtn) / 2) + NcGetSystemMetrics(SM_CYFRAME);
+		: ((NcGetSystemMetrics(SM_CYSIZE) - cyBtn) / 2) + NcGetSystemMetrics(SM_CYFRAME) + NcGetSystemMetrics(SM_CXBORDER);
 	crc.bottom = crc.top + cyBtn;
 
 	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
@@ -653,7 +654,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 	else
 	{
-		rc.top += ((_marFrame.cyTopHeight - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME);
+		rc.top += ((NcGetSystemMetrics(SM_CYSIZE) - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME) + NcGetSystemMetrics(SM_CXBORDER);
 		rc.left += NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
@@ -759,9 +760,9 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	else
 	{
 		// todo: account for padded borders
-		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXFRAME);
+		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYCAPTION) - 1; // why is it +1
+		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE); 
 		_marFrame.cyBottomHeight = 0;
 	}
 
@@ -782,13 +783,12 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 		if (!fIsMessageBox)
 		{
-			int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
+			int count = NcGetSystemMetrics(SM_CXBORDER);
 			InflateRect(&crc, -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CXEDGE));
 			for (int i = 0; i < count; i++)
 			{
 				bool fInactiveWnd = wndInfo.wndType == WT_INACTIVE;
 				// framerect draws a 1px border
-				// so do (frame - edge - border) times
 				HBRUSH br = NcGetSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER);
 				FrameRect(hdc, &crc, br);
 				InflateRect(&crc, -1, -1);
@@ -952,7 +952,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		else
 		{
 			SetTextColor(hdc, clr);
-			crc.left += NcGetSystemMetrics(SM_CXBORDER);
+			crc.left += 1;
 
 			hr = DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 		}
@@ -1015,16 +1015,16 @@ HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINF
 	crc.left += _marFrame.cxLeftWidth - NcGetSystemMetrics(SM_CXEDGE);
 	crc.top += _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYEDGE);
 	crc.bottom = crc.top + NcGetSystemMetrics(SM_CYMENUSIZE);
-	crc.right -= NcGetSystemMetrics(SM_CXFRAME);
+	crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
 
 	HDC dc = pGraphics->GetHDC();
 	HBRUSH br = NcGetSysColorBrush(COLOR_MENU);
 	FillRect(dc, &crc, br);
 	if (selectedTheme->selectedScheme) DeleteBrush(br);
 
-	crc.top += NcGetSystemMetrics(SM_CYBORDER);
-	crc.bottom -= NcGetSystemMetrics(SM_CYBORDER);
-	crc.left += NcGetSystemMetrics(SM_CXBORDER);
+	crc.top += 1;
+	crc.bottom -= 1;
+	crc.left += 1;
 	_RenderMenuItem(dc, &crc, 1);
 	_RenderMenuItem(dc, &crc, 2);
 	_RenderMenuItem(dc, &crc, 3);
@@ -1086,6 +1086,6 @@ HRESULT CWindowPreview::_RenderMenuItem(HDC hdc, RECT* rc, int type)
 	DeleteObject(fon);
 
 	// update the rectangle
-	rc->left += RECTWIDTH(rcheight) + (7 * 2) + NcGetSystemMetrics(SM_CXBORDER);
+	rc->left += RECTWIDTH(rcheight) + (7 * 2) + 1;
 	return S_OK;
 }
