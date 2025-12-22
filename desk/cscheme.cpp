@@ -92,6 +92,8 @@ int NcGetSystemMetrics(int nIndex)
 
 			case SM_CXBORDER:
 			case SM_CYBORDER:	iValue = ncm.iBorderWidth; break;
+
+			//case SM_CXFRAME:	iValue = GetSystemMetrics(SM_CXEDGE) + ncm.iBorderWidth + 1; break;
             
             default:            iValue = GetSystemMetrics(nIndex); break;
         }
