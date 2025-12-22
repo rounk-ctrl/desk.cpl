@@ -1006,10 +1006,10 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 			//crc.top += MulDiv(17, _dpiWindow, 96);
 			int center = (RECTWIDTH(crc) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
-			crc.bottom -= MulDiv(2, _dpiWindow, 96);
-			crc.left = center - 45 ;
-			crc.right = center + 45;
-			crc.top = crc.bottom - 30;
+			crc.bottom -= MulDiv(3, _dpiWindow, 96);
+			crc.left = center - MulDiv(35, _dpiWindow, 96) ;
+			crc.right = center + MulDiv(35, _dpiWindow, 96);
+			crc.top = crc.bottom - MulDiv(24, _dpiWindow, 96);
 			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 		WCHAR szText[5];
