@@ -27,7 +27,7 @@ void InitUxtheme()
 		DrawTextWithGlow = (DrawTextWithGlow_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(126));
 
 		SetSystemVisualStyle = (SetSystemVisualStyle_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(65));
-		FreeLibrary(hUxtheme);
+		//FreeLibrary(hUxtheme);
 	}
 }
 

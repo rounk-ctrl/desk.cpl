@@ -188,6 +188,7 @@
     <ClInclude Include="BackgroundPage.h" />
     <ClInclude Include="EffectsDlg.h" />
     <ClInclude Include="desk.h" />
+    <ClInclude Include="fms.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
@@ -208,6 +209,7 @@
     <ClCompile Include="EffectsDlg.cpp" />
     <ClCompile Include="desk.cpp" />
     <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="fms.cpp" />
     <ClCompile Include="helper.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

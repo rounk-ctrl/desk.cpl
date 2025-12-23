@@ -2,6 +2,7 @@
 #include "AppearanceDlgBox.h"
 #include "helper.h"
 #include "cscheme.h"
+#include "fms.h"
 
 using namespace Microsoft::WRL::Details;
 
@@ -50,6 +51,14 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 			}
 			in++;
 		}
+	}
+
+	wchar_t** ppFontList;
+	int cFontList;
+	GetFilteredFontFamilies(&cFontList, &ppFontList);
+	for (UINT i = 0; i < cFontList; ++i)
+	{
+		ComboBox_AddString(hFontCmb, ppFontList[i]);
 	}
 
 	// create a dummy scheme

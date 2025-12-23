@@ -69,6 +69,9 @@
     <ClInclude Include="ThemeChngDlg.h">
       <Filter>Dialogs</Filter>
     </ClInclude>
+    <ClInclude Include="fms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -123,6 +126,9 @@
       <Filter>Dialogs</Filter>
     </ClCompile>
     <ClCompile Include="cscheme.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

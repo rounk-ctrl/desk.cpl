@@ -8,6 +8,7 @@
 #include "desk.h"
 #include "helper.h"
 #include "uxtheme.h"
+#include "fms.h"
 
 HINSTANCE g_hinst;
 HINSTANCE g_hThemeUI;
@@ -45,13 +46,16 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	printf("Hello world!\n");
 	g_hThemeUI = LoadLibraryEx(L"themeui.dll", NULL, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32);
 
-	WTL::CPropertySheet sheet(L"Display Properties");
-
-	sheet.m_psh.dwFlags |= PSH_USEICONID;
-	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
-
 	// initialize theme manager
 	InitUxtheme();
+
+	// init fms
+	InitFms();
+
+	// init property sheet
+	WTL::CPropertySheet sheet(L"Display Properties");
+	sheet.m_psh.dwFlags |= PSH_USEICONID;
+	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
 
 	CThemeDlgProc themedlg;
 	sheet.AddPage(themedlg);
