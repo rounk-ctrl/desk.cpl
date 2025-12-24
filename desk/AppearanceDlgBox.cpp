@@ -96,7 +96,7 @@ BOOL CAppearanceDlgBox::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	int index = ComboBox_GetCurSel(hElementCombobox);
 	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, index);
 
-	COLORREF clr;
+	COLORREF clr{};
 	if (id == 1135) clr = NcGetSysColor(tinfo->color1Target);
 	if (id == 1136) clr = NcGetSysColor(tinfo->fontColorTarget);
 	if (id == 1141) clr = NcGetSysColor(tinfo->color2Target);
@@ -139,19 +139,8 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 BOOL CAppearanceDlgBox::OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
+	LOGFONT* lf = _GetLogFontPtr(tinfo);
 
-	LOGFONT* lf = NULL;
-	switch (tinfo->fontTarget)
-	{
-		case 0: lf = &selectedTheme->selectedScheme->ncm.lfCaptionFont; break;
-		case 1: lf = &selectedTheme->selectedScheme->ncm.lfSmCaptionFont; break;
-		case 2: lf = &selectedTheme->selectedScheme->ncm.lfMenuFont; break;
-		case 3: lf = &selectedTheme->selectedScheme->ncm.lfStatusFont; break;
-		case 4: lf = &selectedTheme->selectedScheme->ncm.lfMessageFont; break;
-		case 5: lf = &selectedTheme->selectedScheme->lfIconTitle; break;
-		default: break;
-	}
-	
 	int index = ComboBox_GetCurSel(hFontCmb);
 	int len = ComboBox_GetLBTextLen(hFontCmb, index) + 1;
 	wchar_t* szDest = (wchar_t*)malloc(len * sizeof(wchar_t));
@@ -183,7 +172,6 @@ BOOL CAppearanceDlgBox::OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 BOOL CAppearanceDlgBox::OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
-
 	LOGFONT* lf = _GetLogFontPtr(tinfo);
 
 	int len = ::ComboBox_GetTextLength(hFontSize) + 1;
@@ -202,7 +190,6 @@ BOOL CAppearanceDlgBox::OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL
 	}
 
 	_UpdatePreview(FALSE);
-
 	return 0;
 }
 
