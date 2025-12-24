@@ -40,6 +40,8 @@ private:
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_HANDLER(1126, CBN_SELCHANGE, OnComboboxChange)
 		COMMAND_HANDLER(1129, CBN_SELCHANGE, OnFontChange)
+		COMMAND_HANDLER(1130, CBN_SELCHANGE, OnFontSizeChange)
+		COMMAND_HANDLER(1130, CBN_EDITCHANGE, OnFontSizeEditChange)
 		COMMAND_HANDLER(1135, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1136, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1141, BN_CLICKED, OnColorPick)
@@ -57,12 +59,18 @@ private:
 	BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
 	void _UpdateControls(SCHEMEINFO* info);
 	void _UpdateBitmaps(SCHEMEINFO* info);
 	void _UpdateColorButton(HWND hButton, bool isActive, COLORREF color);
 	void _UpdateSizeItem(SCHEMEINFO* info);
 	void _UpdateFont(SCHEMEINFO* info);
+
+	// helpers
+	void _UpdatePreview(BOOL fClr);
+	LOGFONT* _GetLogFontPtr(SCHEMEINFO* info);
 
 	HWND hElementCombobox;
 	HWND hSizeUpdown;

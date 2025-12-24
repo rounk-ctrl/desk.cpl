@@ -113,11 +113,7 @@ BOOL CAppearanceDlgBox::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 		selectedTheme->selectedScheme->rgb[target] = cc.rgbResult;
 		if (id == 1135 && tinfo->color1Target == COLOR_DESKTOP) selectedTheme->newColor = cc.rgbResult;
 
-		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
-		DeleteObject(hPrev);
-		DeleteObject(ebmp);
+		_UpdatePreview(TRUE);
 	}
 	return 0;
 }
@@ -131,18 +127,11 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 	{
 		int value = GetDlgItemInt(id);
 		NcUpdateSystemMetrics(tinfo->sizeTarget, value);
-		if (tinfo->sizeTarget == SM_CYVSCROLL)
-		{
-			NcUpdateSystemMetrics(SM_CXVSCROLL, value);
-		}
 
-		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
-		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
+		if (tinfo->sizeTarget == SM_CYVSCROLL) NcUpdateSystemMetrics(SM_CXVSCROLL, value);
+		if (tinfo->sizeTarget == SM_CYSIZE) NcUpdateSystemMetrics(SM_CXSIZE, value);
 
-		// FUCKKKKK
-		DeleteObject(hPrev);
-		DeleteObject(ebmp);
+		_UpdatePreview(FALSE);
 	}
 	return 0;
 }
@@ -170,11 +159,50 @@ BOOL CAppearanceDlgBox::OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 	ComboBox_GetLBText(hFontCmb, index, szDest);
 	StringCchCopy(lf->lfFaceName, ARRAYSIZE(lf->lfFaceName), szDest);
 
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
-	HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	_UpdatePreview(FALSE);
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
+	LOGFONT* lf = _GetLogFontPtr(tinfo);
+
+	int fontSize = 6 + ComboBox_GetCurSel(hFontSize);
+	int height = -MulDiv(fontSize, 96, 72);
+	int delta = -height + lf->lfHeight;
+
+	selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
+	lf->lfHeight = height;
+	_UpdateSizeItem(tinfo);
+	
+	_UpdatePreview(FALSE);
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
+
+	LOGFONT* lf = _GetLogFontPtr(tinfo);
+
+	int len = ::ComboBox_GetTextLength(hFontSize) + 1;
+	wchar_t* szDest = (wchar_t*)malloc(len * sizeof(wchar_t));
+	::ComboBox_GetText(hFontSize, szDest, len);
+
+	int fontSize = _wtoi(szDest);
+	if (fontSize > 0)
+	{
+		int height = -MulDiv(fontSize, 96, 72);
+		int delta = -height + lf->lfHeight;
+
+		selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
+		lf->lfHeight = height;
+		_UpdateSizeItem(tinfo);
+	}
+
+	_UpdatePreview(FALSE);
+
 	return 0;
 }
 
@@ -228,22 +256,12 @@ void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
 {
 	if (info->activeButton & ACTIVE_FONT)
 	{
-		LOGFONT lf;
-		switch (info->fontTarget)
-		{
-			case 0: lf = selectedTheme->selectedScheme->ncm.lfCaptionFont; break;
-			case 1: lf = selectedTheme->selectedScheme->ncm.lfSmCaptionFont; break;
-			case 2: lf = selectedTheme->selectedScheme->ncm.lfMenuFont; break;
-			case 3: lf = selectedTheme->selectedScheme->ncm.lfStatusFont; break;
-			case 4: lf = selectedTheme->selectedScheme->ncm.lfMessageFont; break;
-			case 5: lf = selectedTheme->selectedScheme->lfIconTitle; break;
-			default: break;
-		}
+		LOGFONT* lf = _GetLogFontPtr(info);
 
-		int index = ComboBox_FindString(hFontCmb, -1, lf.lfFaceName);
+		int index = ComboBox_FindString(hFontCmb, -1, lf->lfFaceName);
 		ComboBox_SetCurSel(hFontCmb, index);
 
-		int fontSize = -MulDiv(lf.lfHeight, 72, 96);
+		int fontSize = -MulDiv(lf->lfHeight, 72, 96);
 		for (int i = 6; i < 6 * 4; ++i)
 		{
 			wchar_t buffer[3];
@@ -255,8 +273,8 @@ void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
 		wsprintf(buffer, L"%d", fontSize);
 		ComboBox_SetCurSel(hFontSize, ComboBox_FindString(hFontSize, -1, buffer));
 
-		Button_SetState(hBold, lf.lfWeight == FW_BOLD);
-		Button_SetState(hItalic, lf.lfItalic);
+		Button_SetState(hBold, lf->lfWeight == FW_BOLD);
+		Button_SetState(hItalic, lf->lfItalic);
 	}
 	else
 	{
@@ -265,6 +283,34 @@ void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
 		Button_SetState(hBold, 0);
 		Button_SetState(hItalic, 0);
 	}
+}
+
+void CAppearanceDlgBox::_UpdatePreview(BOOL fClr)
+{
+	UPDATEFLAGS flag = UPDATE_WINDOW;
+	if (fClr) flag |= UPDATE_SOLIDCLR;
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
+	HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
+}
+
+LOGFONT* CAppearanceDlgBox::_GetLogFontPtr(SCHEMEINFO* info)
+{
+	LOGFONT* lf = NULL;
+	switch (info->fontTarget)
+	{
+		case 0: lf = &selectedTheme->selectedScheme->ncm.lfCaptionFont; break;
+		case 1: lf = &selectedTheme->selectedScheme->ncm.lfSmCaptionFont; break;
+		case 2: lf = &selectedTheme->selectedScheme->ncm.lfMenuFont; break;
+		case 3: lf = &selectedTheme->selectedScheme->ncm.lfStatusFont; break;
+		case 4: lf = &selectedTheme->selectedScheme->ncm.lfMessageFont; break;
+		case 5: lf = &selectedTheme->selectedScheme->lfIconTitle; break;
+		default: break;
+	}
+	return lf;
 }
 
 void CAppearanceDlgBox::OnClose()

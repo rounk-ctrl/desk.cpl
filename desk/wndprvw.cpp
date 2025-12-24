@@ -1004,7 +1004,6 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
 			DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
-			//crc.top += MulDiv(17, _dpiWindow, 96);
 			int center = (RECTWIDTH(crc) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
 			crc.bottom -= MulDiv(3, _dpiWindow, 96);
 			crc.left = center - MulDiv(35, _dpiWindow, 96) ;
