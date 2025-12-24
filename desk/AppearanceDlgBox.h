@@ -46,6 +46,8 @@ private:
 		COMMAND_HANDLER(1136, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1141, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1128, EN_CHANGE, OnSpinnerChange)
+		COMMAND_HANDLER(1131, BN_CLICKED, OnStyle)
+		COMMAND_HANDLER(1132, BN_CLICKED, OnStyle)
 		MSG_WM_CLOSE(OnClose)
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
@@ -61,6 +63,7 @@ private:
 	BOOL OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnStyle(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
 	void _UpdateControls(SCHEMEINFO* info);
 	void _UpdateBitmaps(SCHEMEINFO* info);
@@ -83,6 +86,8 @@ private:
 	HWND hItalic;
 	HWND hPreview;
 	SIZE size;
+	BOOL fIsBold;
+	BOOL fIsItalic;
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 
 	// -ve sizes are fixed with preview size in wndprvw

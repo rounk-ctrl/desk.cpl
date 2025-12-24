@@ -161,7 +161,15 @@ BOOL CAppearanceDlgBox::OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 	int height = -MulDiv(fontSize, 96, 72);
 	int delta = -height + lf->lfHeight;
 
-	selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
+	if (tinfo->fontTarget == 0)
+	{
+		selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
+	}
+	else if (tinfo->fontTarget == 2)
+	{
+		selectedTheme->selectedScheme->ncm.iMenuHeight += delta;
+	}
+
 	lf->lfHeight = height;
 	_UpdateSizeItem(tinfo);
 	
@@ -184,11 +192,41 @@ BOOL CAppearanceDlgBox::OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL
 		int height = -MulDiv(fontSize, 96, 72);
 		int delta = -height + lf->lfHeight;
 
-		selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
-		lf->lfHeight = height;
+		if (tinfo->fontTarget == 0)
+		{
+			selectedTheme->selectedScheme->ncm.iCaptionHeight += delta;
+			lf->lfHeight = height;
+		}
+		else if (tinfo->fontTarget == 2)
+		{
+			selectedTheme->selectedScheme->ncm.iMenuHeight += delta;
+			lf->lfHeight = height;
+		}
+
 		_UpdateSizeItem(tinfo);
 	}
 
+	_UpdatePreview(FALSE);
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnStyle(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
+	LOGFONT* lf = _GetLogFontPtr(tinfo);
+
+	if (id == 1131)
+	{
+		lf->lfWeight = fIsBold ? FW_NORMAL : FW_BOLD;
+		fIsBold = !fIsBold;
+		Button_SetCheck(hBold, fIsBold);
+	}
+	if (id == 1132)
+	{
+		lf->lfItalic = !fIsItalic;
+		fIsItalic = !fIsItalic;
+		Button_SetCheck(hItalic, fIsItalic);
+	}
 	_UpdatePreview(FALSE);
 	return 0;
 }
@@ -260,15 +298,17 @@ void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
 		wsprintf(buffer, L"%d", fontSize);
 		ComboBox_SetCurSel(hFontSize, ComboBox_FindString(hFontSize, -1, buffer));
 
-		Button_SetState(hBold, lf->lfWeight == FW_BOLD);
-		Button_SetState(hItalic, lf->lfItalic);
+		fIsBold = lf->lfWeight == FW_BOLD;
+		fIsItalic = lf->lfItalic;
+		Button_SetCheck(hBold, fIsBold);
+		Button_SetCheck(hItalic, fIsItalic);
 	}
 	else
 	{
 		::ComboBox_SetText(hFontCmb, L"");
 		::ComboBox_SetText(hFontSize, L"");
-		Button_SetState(hBold, 0);
-		Button_SetState(hItalic, 0);
+		Button_SetCheck(hBold, 0);
+		Button_SetCheck(hItalic, 0);
 	}
 }
 
