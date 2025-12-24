@@ -983,9 +983,6 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : NcGetSysColor(COLOR_BTNTEXT);
-		SetTextColor(hdc, clr);
-
 		// load button theme
 		if (_fIsThemed)
 		{
@@ -997,6 +994,9 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		}
 		else
 		{
+			COLORREF clr = NcGetSysColor(COLOR_WINDOWTEXT);
+			SetTextColor(hdc, clr);
+
 			WCHAR szText[20];
 			LoadString(g_hThemeUI, 1461, szText, ARRAYSIZE(szText));
 
@@ -1012,6 +1012,10 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			crc.top = crc.bottom - MulDiv(24, _dpiWindow, 96);
 			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
+
+		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : NcGetSysColor(COLOR_BTNTEXT);
+		SetTextColor(hdc, clr);
+
 		WCHAR szText[5];
 		LoadString(g_hThemeUI, 1458, szText, ARRAYSIZE(szText));
 

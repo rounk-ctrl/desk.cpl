@@ -86,6 +86,7 @@ BOOL CAppearanceDlgBox::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bH
 	_UpdateControls(tinfo);
 	_UpdateBitmaps(tinfo);
 	_UpdateSizeItem(tinfo);
+	_UpdateFont(tinfo);
 
 	return 0;
 }
@@ -136,13 +137,44 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 		}
 
 		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
 		HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
 
 		// FUCKKKKK
 		DeleteObject(hPrev);
 		DeleteObject(ebmp);
 	}
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, ComboBox_GetCurSel(hElementCombobox));
+
+	LOGFONT* lf = NULL;
+	switch (tinfo->fontTarget)
+	{
+		case 0: lf = &selectedTheme->selectedScheme->ncm.lfCaptionFont; break;
+		case 1: lf = &selectedTheme->selectedScheme->ncm.lfSmCaptionFont; break;
+		case 2: lf = &selectedTheme->selectedScheme->ncm.lfMenuFont; break;
+		case 3: lf = &selectedTheme->selectedScheme->ncm.lfStatusFont; break;
+		case 4: lf = &selectedTheme->selectedScheme->ncm.lfMessageFont; break;
+		case 5: lf = &selectedTheme->selectedScheme->lfIconTitle; break;
+		default: break;
+	}
+	
+	int index = ComboBox_GetCurSel(hFontCmb);
+	int len = ComboBox_GetLBTextLen(hFontCmb, index) + 1;
+	wchar_t* szDest = (wchar_t*)malloc(len * sizeof(wchar_t));
+
+	ComboBox_GetLBText(hFontCmb, index, szDest);
+	StringCchCopy(lf->lfFaceName, ARRAYSIZE(lf->lfFaceName), szDest);
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
+	HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
+	DeleteObject(hPrev);
+	DeleteObject(ebmp);
 	return 0;
 }
 
@@ -189,6 +221,49 @@ void CAppearanceDlgBox::_UpdateSizeItem(SCHEMEINFO* info)
 	else
 	{
 		::SetWindowText((HWND)SendMessage(hSizeUpdown, UDM_GETBUDDY, 0, 0), L"");
+	}
+}
+
+void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
+{
+	if (info->activeButton & ACTIVE_FONT)
+	{
+		LOGFONT lf;
+		switch (info->fontTarget)
+		{
+			case 0: lf = selectedTheme->selectedScheme->ncm.lfCaptionFont; break;
+			case 1: lf = selectedTheme->selectedScheme->ncm.lfSmCaptionFont; break;
+			case 2: lf = selectedTheme->selectedScheme->ncm.lfMenuFont; break;
+			case 3: lf = selectedTheme->selectedScheme->ncm.lfStatusFont; break;
+			case 4: lf = selectedTheme->selectedScheme->ncm.lfMessageFont; break;
+			case 5: lf = selectedTheme->selectedScheme->lfIconTitle; break;
+			default: break;
+		}
+
+		int index = ComboBox_FindString(hFontCmb, -1, lf.lfFaceName);
+		ComboBox_SetCurSel(hFontCmb, index);
+
+		int fontSize = -MulDiv(lf.lfHeight, 72, 96);
+		for (int i = 6; i < 6 * 4; ++i)
+		{
+			wchar_t buffer[3];
+			wsprintf(buffer, L"%d", i);
+			ComboBox_AddString(hFontSize, buffer);
+		}
+
+		wchar_t buffer[3];
+		wsprintf(buffer, L"%d", fontSize);
+		ComboBox_SetCurSel(hFontSize, ComboBox_FindString(hFontSize, -1, buffer));
+
+		Button_SetState(hBold, lf.lfWeight == FW_BOLD);
+		Button_SetState(hItalic, lf.lfItalic);
+	}
+	else
+	{
+		::ComboBox_SetText(hFontCmb, L"");
+		::ComboBox_SetText(hFontSize, L"");
+		Button_SetState(hBold, 0);
+		Button_SetState(hItalic, 0);
 	}
 }
 

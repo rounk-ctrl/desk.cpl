@@ -25,6 +25,7 @@ typedef struct tagSCHEMEINFO
 	WORD fontColorTarget;
 
 	WORD sizeTarget;
+	WORD fontTarget;
 	// todo: 
 } SCHEMEINFO;
 
@@ -38,6 +39,7 @@ private:
 	BEGIN_MSG_MAP(CAppearanceDlgBox)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_HANDLER(1126, CBN_SELCHANGE, OnComboboxChange)
+		COMMAND_HANDLER(1129, CBN_SELCHANGE, OnFontChange)
 		COMMAND_HANDLER(1135, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1136, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1141, BN_CLICKED, OnColorPick)
@@ -54,11 +56,13 @@ private:
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 
 	void _UpdateControls(SCHEMEINFO* info);
 	void _UpdateBitmaps(SCHEMEINFO* info);
 	void _UpdateColorButton(HWND hButton, bool isActive, COLORREF color);
 	void _UpdateSizeItem(SCHEMEINFO* info);
+	void _UpdateFont(SCHEMEINFO* info);
 
 	HWND hElementCombobox;
 	HWND hSizeUpdown;
@@ -102,6 +106,7 @@ private:
 			.color2Target = COLOR_GRADIENTINACTIVECAPTION,
 			.fontColorTarget = COLOR_INACTIVECAPTIONTEXT,
 			.sizeTarget = SM_CYSIZE,
+			.fontTarget = 0,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
@@ -114,6 +119,7 @@ private:
 			.color2Target = COLOR_GRADIENTACTIVECAPTION,
 			.fontColorTarget = COLOR_CAPTIONTEXT,
 			.sizeTarget = SM_CYSIZE,
+			.fontTarget = 0,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
@@ -125,12 +131,14 @@ private:
 			.color1Target = COLOR_MENU,
 			.fontColorTarget = COLOR_MENUTEXT,
 			.sizeTarget = SM_CYMENUSIZE,
+			.fontTarget = 2,
 		},
 		{
 			.activeButton = ACTIVE_ALL & ~ACTIVE_COLOR2,
 			.color1Target = COLOR_HIGHLIGHT,
 			.fontColorTarget = COLOR_HIGHLIGHTTEXT,
 			.sizeTarget = SM_CYMENUSIZE,
+			.fontTarget = 2,
 		},
 		{
 			// window (8)
@@ -151,6 +159,7 @@ private:
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
 			.sizeTarget = SM_CYSMSIZE,				// change both
+			.fontTarget = 1,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM,
@@ -159,6 +168,7 @@ private:
 		{
 			.activeButton = ACTIVE_FONT | ACTIVE_FONTCOLOR,
 			.fontColorTarget = COLOR_WINDOWTEXT,
+			.fontTarget = 4,
 		},
 		{
 			.activeButton = ACTIVE_COLOR1,
@@ -176,10 +186,12 @@ private:
 			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONT | ACTIVE_FONTCOLOR,
 			.color1Target = COLOR_INFOBK,
 			.fontColorTarget = COLOR_INFOTEXT,
+			.fontTarget = 3,
 		},
 		{
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
 			.sizeTarget = SM_CXICON,
+			.fontTarget = 5,
 		}, // skip 24- small icon
 		{
 			.activeButton = ACTIVE_FONTCOLOR,
