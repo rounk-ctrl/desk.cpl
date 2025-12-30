@@ -79,20 +79,6 @@ void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vecto
 	FindClose(hFind);
 }
 
-void FreeString(LPWSTR& str)
-{
-	delete[] str;
-	str = nullptr;
-}
-
-void StringCpy(LPWSTR& dest, LPWSTR src)
-{
-	size_t len = wcslen(src) + 1;
-	dest = new wchar_t[len];
-	wcscpy_s(dest, len, src);
-
-}
-
 void FreeBitmap(Gdiplus::Bitmap** bmp)
 {
 	if (*bmp)
@@ -306,4 +292,11 @@ void CreateBlankScheme()
 
 		selectedTheme->selectedScheme = currentData;
 	}
+}
+
+void SetBitmap(HWND hWnd, HBITMAP hBmp)
+{
+	HBITMAP hOld = Static_SetBitmap(hWnd, hBmp);
+	DeleteBitmap(hBmp);
+	DeleteBitmap(hOld);
 }

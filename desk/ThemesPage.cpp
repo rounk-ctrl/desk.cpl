@@ -1,3 +1,10 @@
+/* ---------------------------------------------------------
+* Themes page
+* 
+* Responsible for the "Themes" tab
+* 
+------------------------------------------------------------*/
+
 #include "pch.h"
 #include "ThemesPage.h"
 #include "desk.h"
@@ -10,49 +17,46 @@ using namespace Microsoft::WRL::Details;
 
 BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	// global variables
+	// store HWNDs
 	hCombobox = GetDlgItem(1101);
 	hPreview = GetDlgItem(1103);
 	size = GetClientSIZE(hPreview);
 
-	WCHAR ws[MAX_PATH] = { 0 };
-	int count{};
+	int count = 0;
 
 	// add all themes to combobox
 	pThemeManager->GetThemeCount(&count);
-	for (auto i = 0; i < count; ++i)
+	for (int i = 0; i < count; ++i)
 	{
-		// same across all w10
-		IUnknown* the;
-		pThemeManager->GetTheme(i, &the);
-		ITheme10* them = (ITheme10*)the;
+		ComPtr<ITheme10> pTheme;
+		pThemeManager->GetTheme(i, &pTheme);
+
 		LPWSTR str = nullptr;
-		them->get_DisplayName(&str);
+		pTheme->get_DisplayName(&str);
 
 		ComboBox_AddString(hCombobox, str);
-		them->Release();
 	}
 
 	// select current theme in combobox
-	int currThem{};
+	int currThem = 0;
 	pThemeManager->GetCurrentTheme(&currThem);
 	ComboBox_SetCurSel(hCombobox, currThem);
 
 	pThemeManager->GetTheme(currThem, &currentITheme);
 
+	// detect classic theme, to show preview properly
+	selectedTheme->szMsstylePath = L"(classic)";
 	if (!IsClassicThemeEnabled())
 	{
-		ITheme* themeClass = new ITheme(currentITheme);
+		auto themeClass = std::make_unique<ITheme>(currentITheme);
+
 		LPWSTR path = nullptr;
 		themeClass->get_VisualStyle(&path);
-		StringCpy(selectedTheme->szMsstylePath, path);
-	}
-	else
-	{
-		StringCpy(selectedTheme->szMsstylePath, (LPWSTR)L"(classic)");
+		selectedTheme->szMsstylePath = path;
 	}
 
 	// update THEMEINFO before setting bitmap for now
+	WCHAR ws[MAX_PATH] = { 0 };
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
 	UpdateThemeInfo(ws, currThem);
 
@@ -60,8 +64,7 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hPreview, bmp);
-	DeleteObject(bmp);
+	SetBitmap(hPreview, bmp);
 
 	return 0;
 }
@@ -80,7 +83,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	pThemeManager->GetTheme(index, &currentITheme);
 
 	LPWSTR ws = NULL;
-	ITheme* themeClass = new ITheme(currentITheme);
+	auto themeClass = std::make_unique<ITheme>(currentITheme);
 	themeClass->get_background(&ws);
 
 	LPWSTR path = nullptr;
@@ -89,10 +92,9 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	// update the string if different
 	if (PathFileExists(path) 
 		&& !IsClassicThemeEnabled()
-		&& StrCmpI(selectedTheme->szMsstylePath, path) != 0)
+		&& selectedTheme->szMsstylePath.compare(path) != 0)
 	{
-		FreeString(selectedTheme->szMsstylePath);
-		StringCpy(selectedTheme->szMsstylePath, path);
+		selectedTheme->szMsstylePath = path;
 		selectedTheme->fMsstyleChanged = true;
 	}
 
@@ -103,9 +105,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	// set the preview bitmap to the static control
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
-	HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
-	DeleteBitmap(ebmp);
-	DeleteBitmap(hOld);
+	SetBitmap(hPreview, ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -133,11 +133,15 @@ BOOL CThemeDlgProc::OnApply()
 BOOL CThemeDlgProc::OnSetActive()
 {
 	selectionPicker = true;
-	if (selectedTheme->customWallpaperSelection || selectedTheme->newColor != 0xB0000000 || selectedTheme->posChanged != -1 || selectedTheme->updateWallThemesPg)
+	if (selectedTheme->customWallpaperSelection 
+		|| selectedTheme->newColor != 0xB0000000 
+		|| selectedTheme->posChanged != -1 
+		|| selectedTheme->updateWallThemesPg)
 	{
 		int index = ComboBox_GetCurSel(hCombobox);
 		pThemeManager->GetTheme(index, &currentITheme);
-		ITheme* themeClass = new ITheme(currentITheme);
+
+		auto themeClass = std::make_unique<ITheme>(currentITheme);
 		LPWSTR path = nullptr;
 		themeClass->get_VisualStyle(&path);
 
@@ -154,19 +158,15 @@ BOOL CThemeDlgProc::OnSetActive()
 		// set the preview bitmap to the static control
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
-		HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
-		DeleteBitmap(ebmp);
-		DeleteBitmap(hOld);
+		SetBitmap(hPreview, ebmp);
 
 		selectedTheme->updateWallThemesPg = false;
 	}
 	if (selectedTheme->fMsstyleChanged || selectedTheme->fThemePgMsstyleUpdate)
 	{
 		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_WINDOW);
-		HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
-		DeleteBitmap(ebmp);
-		DeleteBitmap(hOld);
+		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_WINDOW);
+		SetBitmap(hPreview, ebmp);
 
 		selectedTheme->fThemePgMsstyleUpdate = selectedTheme->fMsstyleChanged = false;
 	}
@@ -179,21 +179,17 @@ BOOL CThemeDlgProc::OnSetActive()
 // becomes irrelevant, overwrite them
 void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 {
-	printf("\nupdate themeinfo\n");
-
-	// free 
-	FreeString(selectedTheme->wallpaperPath);
-
 	// update THEMEINFO
 	if (lstrlenW(ws) == 0 || PathFileExists(ws) == FALSE)
 	{
 		// no wallpaper applied
+		selectedTheme->wallpaperPath = L"";
 		selectedTheme->wallpaperType = WT_NOWALL;
 	}
 	else
 	{
 		selectedTheme->wallpaperType = WT_PICTURE;
-		StringCpy(selectedTheme->wallpaperPath, ws);
+		selectedTheme->wallpaperPath = ws;
 	}
 
 	// common properties

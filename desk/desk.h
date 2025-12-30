@@ -56,7 +56,7 @@ enum WALLPAPER_TYPE {
 // convenient struct with various information used by various pages
 struct THEMEINFO {
 	WALLPAPER_TYPE wallpaperType;
-	LPWSTR wallpaperPath;
+	std::wstring wallpaperPath;
 	COLORREF newColor;
 	bool customWallpaperSelection = false;
 	int posChanged = -1;
@@ -66,7 +66,7 @@ struct THEMEINFO {
 											// NULL- use current colors
 
 	// reduce overhead every time u load appearancepage
-	LPWSTR szMsstylePath;
+	std::wstring szMsstylePath;
 	bool fMsstyleChanged = false;
 	bool fThemePgMsstyleUpdate = false;		// bruh
 };

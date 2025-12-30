@@ -93,6 +93,19 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	pDesktopWallpaper->GetPosition(&pos);
 	ComboBox_SetCurSel(hPosCombobox, pos);
 
+
+	if (selectedTheme->newColor == NULL)
+	{
+		WCHAR ws[MAX_PATH] = { 0 };
+		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
+
+		selectedTheme->wallpaperType = WT_PICTURE;
+		selectedTheme->wallpaperPath = ws;
+
+		selectedTheme->useDesktopColor = true;
+	}
+
+
 	AddMissingWallpapers(currentITheme);
 	SelectCurrentWallpaper(currentITheme);
 
@@ -224,12 +237,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		{
 			::EnableWindow(hPosCombobox, false);
 
-			if (selectedTheme->wallpaperPath != nullptr)
-			{
-				delete[] selectedTheme->wallpaperPath;
-			}
-
-			selectedTheme->wallpaperPath = nullptr;
+			selectedTheme->wallpaperPath = L"";
 			selectedTheme->wallpaperType = WT_NOWALL;
 
 		}
@@ -238,10 +246,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 			::EnableWindow(hPosCombobox, true);
 
 			// set new path
-			size_t len = wcslen(path) + 1;
-			selectedTheme->wallpaperPath = new wchar_t[len];
-			wcscpy_s(selectedTheme->wallpaperPath, len, path);
-
+			selectedTheme->wallpaperPath = path;
 			selectedTheme->wallpaperType = WT_PICTURE;
 		}
 		if (selectionPicker)
@@ -309,7 +314,7 @@ BOOL CBackgroundDlgProc::OnApply()
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
 			pDesktopWallpaper->Enable(true);
-			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath);
+			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
 		}
 		else if (selectedTheme->wallpaperType == WT_NOWALL)
 		{
@@ -451,13 +456,13 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 
 	LVFINDINFO findInfo = { 0 };
 	findInfo.flags = LVFI_STRING;
-	findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath);
+	findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath.c_str());
 	int inde = ListView_FindItem(hListView, -1, &findInfo);
-	if (inde == -1 && selectedTheme->wallpaperPath != nullptr)
+	if (inde == -1 && !selectedTheme->wallpaperPath.empty())
 	{
-		if (PathFileExists(selectedTheme->wallpaperPath))
+		if (PathFileExists(selectedTheme->wallpaperPath.c_str()))
 		{
-			AddItem(hListView, ListView_GetItemCount(hListView), selectedTheme->wallpaperPath);
+			AddItem(hListView, ListView_GetItemCount(hListView), selectedTheme->wallpaperPath.c_str());
 		}
 	}
 }
@@ -467,24 +472,13 @@ void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
 	int currThe;
 	pThemeManager->GetCurrentTheme(&currThe);
 
-	if (!selectedTheme->wallpaperPath)
-	{
-		WCHAR ws[MAX_PATH] = { 0 };
-		SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-
-		selectedTheme->wallpaperType = WT_PICTURE;
-		StringCpy(selectedTheme->wallpaperPath, ws);
-
-		selectedTheme->useDesktopColor = true;
-	}
-
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
 		::EnableWindow(hPosCombobox, true);
 
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
-		findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath);
+		findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath.c_str());
 		int inde = ListView_FindItem(hListView, -1, &findInfo);
 
 		ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);

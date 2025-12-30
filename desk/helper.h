@@ -20,8 +20,6 @@ extern "C" NTSTATUS NTAPI NtOpenSection(
 void _TerminateProcess(PROCESS_INFORMATION& hp);
 COLORREF GetDeskopColor();
 void EnumDir(LPCWSTR directory, LPCWSTR* extensions, int cExtensions, std::vector<LPWSTR>& vec, BOOL fEnumChildDirs);
-void FreeString(LPWSTR& str);
-void StringCpy(LPWSTR& dest, LPWSTR src);
 void FreeBitmap(Gdiplus::Bitmap** bmp);
 HRESULT DrawBitmapIfNotNull(Gdiplus::Bitmap* bmp, Gdiplus::Graphics* graph, Gdiplus::Rect rect);
 HTHEME OpenNcThemeData(LPVOID file, LPCWSTR pszClassList);
@@ -34,6 +32,7 @@ void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi);
 HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut);
 BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
 void CreateBlankScheme();
+void SetBitmap(HWND hWnd, HBITMAP hBmp);
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

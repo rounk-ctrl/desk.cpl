@@ -44,7 +44,6 @@ private:
 	HWND hSizeCombobox;
 	HWND hPreviewWnd;
 	SIZE size;
-	BOOL _fFirstInit;
 	std::vector<LPWSTR> msstyle;
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 	SCHEMEDATA* schemeMap = NULL;

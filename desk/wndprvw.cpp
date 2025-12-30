@@ -136,7 +136,7 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	if (hTheme == nullptr) _fIsThemed = 0;
 	else
 	{
-		if (lstrcmp(selectedTheme->szMsstylePath, L"(classic)") == 0) _fIsThemed = 0;
+		if (selectedTheme->szMsstylePath.compare(L"(classic)") == 0) _fIsThemed = 0;
 		else _fIsThemed = 1;
 	}
 
@@ -386,7 +386,7 @@ HRESULT CWindowPreview::_RenderWallpaper()
 
 	// cache it to improve performance
 	FreeBitmap(&_bmpWallpaper);
-	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath, FALSE);
+	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath.c_str(), FALSE);
 	return hr;
 }
 

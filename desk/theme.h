@@ -365,13 +365,6 @@ public:
 			th10 = (ITheme10*)iunk;
 		}
 	}
-	~ITheme()
-	{
-		if (th24h2) th24h2->Release();
-		if (th1903) th1903->Release();
-		if (th1809) th1809->Release();
-		if (th10) th10->Release();
-	}
 
 	STDMETHODIMP get_background(LPWSTR* path)
 	{

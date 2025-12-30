@@ -11,8 +11,6 @@ using namespace Gdiplus;
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
-void DumpNonClientMetrics(NONCLIENTMETRICSW ncm);
-
 #define HAS_NORMAL 0x1
 #define HAS_LARGE 0x2
 #define HAS_EXTRA_LARGE 0x4
@@ -20,7 +18,6 @@ void DumpNonClientMetrics(NONCLIENTMETRICSW ncm);
 
 BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	_fFirstInit = TRUE;
 	hPreviewWnd = GetDlgItem(1110);
 	hThemesCombobox = GetDlgItem(1111);
 	hColorCombobox = GetDlgItem(1114);
@@ -34,17 +31,15 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		pThemeManager->GetCurrentTheme(&cur);
 		pThemeManager->GetTheme(cur, &currentITheme);
 
+		selectedTheme->szMsstylePath = L"(classic)";
 		if (!IsClassicThemeEnabled())
 		{
-			ITheme* themeClass = new ITheme(currentITheme);
+			auto themeClass = std::make_unique<ITheme>(currentITheme);
+
 			LPWSTR path = nullptr;
 			themeClass->get_VisualStyle(&path);
 
-			StringCpy(selectedTheme->szMsstylePath, path);
-		}
-		else
-		{
-			StringCpy(selectedTheme->szMsstylePath, (LPWSTR)L"(classic)");
+			selectedTheme->szMsstylePath = path;
 		}
 	}
 
@@ -110,7 +105,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	}
 	else
 	{
-		ITheme* themeClass = new ITheme(currentITheme);
+		auto themeClass = std::make_unique<ITheme>(currentITheme);
+
 		LPWSTR style = NULL;
 		themeClass->get_VisualStyle(&style);
 		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
@@ -131,17 +127,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
 	pWndPreview->GetPreviewImage(&ebmp);
-	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	if (hPrev) DeleteBitmap(hPrev);
+	SetBitmap(hPreviewWnd, ebmp);
 
-	/*
-	NONCLIENTMETRICS ncm = {};
-	ncm.cbSize = sizeof(ncm);
-	SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(ncm), &ncm, 0);
-	DumpNonClientMetrics(ncm);
-	*/
-
-	_fFirstInit = FALSE;
 	return 0;
 }
 
@@ -173,10 +160,8 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	}
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	SetBitmap(hPreviewWnd, ebmp);
 	return 0;
 }
 
@@ -195,15 +180,12 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	_UpdateColorBox(data);
 	_UpdateFontBox(data);
 
-	FreeString(selectedTheme->szMsstylePath);
-	StringCpy(selectedTheme->szMsstylePath, data);
+	selectedTheme->szMsstylePath = data;
 	selectedTheme->fMsstyleChanged = true;
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	SetBitmap(hPreviewWnd, ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -216,10 +198,8 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 	_UpdateFontBox(data);
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	SetBitmap(hPreviewWnd, ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -242,10 +222,8 @@ BOOL CAppearanceDlgProc::OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOO
 	selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	SetBitmap(hPreviewWnd, ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -266,7 +244,7 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 		{
 			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-			if (StrCmpI(data, selectedTheme->szMsstylePath) == 0)
+			if (selectedTheme->szMsstylePath.compare(data) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
 				break;
@@ -277,10 +255,8 @@ BOOL CAppearanceDlgProc::OnSetActive()
 	if (flags != UPDATE_NONE)
 	{
 		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath), &ebmp, flags);
-		HBITMAP hPrev = Static_SetBitmap(hPreviewWnd, ebmp);
-		DeleteObject(hPrev);
-		DeleteObject(ebmp);
+		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, flags);
+		SetBitmap(hPreviewWnd, ebmp);
 	}
 
 	return 0;
@@ -324,7 +300,7 @@ BOOL CAppearanceDlgProc::OnApply()
 	}
 	else
 	{
-		SetSystemVisualStyle(selectedTheme->szMsstylePath, nullptr, nullptr, AT_NONE);
+		SetSystemVisualStyle(selectedTheme->szMsstylePath.c_str(), nullptr, nullptr, AT_NONE);
 	}
 	selectedTheme->fThemePgMsstyleUpdate = true;
 	return 0;
@@ -575,122 +551,3 @@ VOID CAppearanceDlgProc::FillSchemeDataMap(LPCWSTR theme, int index)
 
 	free(value);
 }
-
-
-
-#ifdef _DEBUG
-VOID DumpLogFont(LOGFONT font)
-{
-	printf("lfHeight: %d\n", font.lfHeight);
-	printf("lfWidth: %d\n", font.lfWidth);
-	printf("lfEscapement: %d\n", font.lfEscapement);
-	printf("lfOrientation: %d\n", font.lfOrientation);
-	printf("lfWeight: %d\n", font.lfWeight);
-	printf("lfItalic: %d\n", font.lfItalic);
-	printf("lfUnderline: %d\n", font.lfUnderline);
-	printf("lfStrikeOut: %d\n", font.lfStrikeOut);
-	printf("lfCharSet: %d\n", font.lfCharSet);
-	printf("lfOutPrecision: %d\n", font.lfOutPrecision);
-	printf("lfClipPrecision: %d\n", font.lfClipPrecision);
-	printf("lfQuality: %d\n", font.lfQuality);
-	printf("lfPitchAndFamily: %d\n", font.lfPitchAndFamily);
-	wprintf(L"lfFaceName: %s\n", font.lfFaceName); // size: 64
-}
-
-void DumpNonClientMetrics(NONCLIENTMETRICSW ncm)
-{
-	printf("cbSize: %d\n", ncm.cbSize);
-	printf("iBorderWidth: %d\n", ncm.iBorderWidth);
-	printf("iScrollWidth: %d\n", ncm.iScrollWidth);
-	printf("iScrollHeight: %d\n", ncm.iScrollHeight);
-	printf("iCaptionWidth: %d\n", ncm.iCaptionWidth);
-	printf("iCaptionHeight: %d\n", ncm.iCaptionHeight);
-	printf("\nlfCaptionFont: \n");
-	DumpLogFont(ncm.lfCaptionFont);
-	printf("\niSmCaptionWidth: %d\n", ncm.iSmCaptionWidth);
-	printf("iSmCaptionHeight: %d\n", ncm.iSmCaptionHeight);
-	printf("\nlfSmCaptionFont: \n");
-	DumpLogFont(ncm.lfSmCaptionFont);
-	printf("\niMenuWidth: %d\n", ncm.iMenuWidth);
-	printf("iMenuHeight: %d\n", ncm.iMenuHeight);
-	printf("\nlfMenuFont: \n");
-	DumpLogFont(ncm.lfMenuFont);
-	printf("\nlfStatusFont: \n");
-	DumpLogFont(ncm.lfStatusFont);
-	printf("\nlfMessageFont: \n");
-	DumpLogFont(ncm.lfMessageFont);
-
-	// vista
-	//printf("\niPaddedBorderWidth: % d\n", ncm.iPaddedBorderWidth);
-}
-
-VOID DumpData(LPCWSTR theme)
-{
-	BYTE* value;
-	DWORD dwSize;
-	HRESULT hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, NULL, &dwSize);
-
-	value = (BYTE*)malloc(dwSize);
-	hr = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Appearance\\Schemes", theme, RRF_RT_REG_BINARY, NULL, value, &dwSize);
-
-	if (value)
-	{
-		SCHEMEDATA data;
-		wprintf(L"\nDumping theme info on %s:\n", theme);
-
-		data.version = READ_AT(DWORD, value, 0);
-		printf("Version: %u\n", data.version);
-
-		data.ncm = READ_AT(NONCLIENTMETRICSW_2k, value, 4);
-		printf("\nNONCLIENTMETRICS:\n");
-		printf("cbSize: %u\n", data.ncm.cbSize);
-		printf("iBorderWidth: %u\n", data.ncm.iBorderWidth);
-		printf("iScrollWidth: %u\n", data.ncm.iScrollWidth);
-		printf("iScrollHeight: %u\n", data.ncm.iScrollHeight);
-		printf("iCaptionWidth: %u\n", data.ncm.iCaptionWidth);
-		printf("iCaptionHeight: %u\n", data.ncm.iCaptionHeight);
-
-		printf("\nLOGFONT: lfCaptionFont:\n");
-		DumpLogFont(data.ncm.lfCaptionFont);
-
-		printf("\n");
-		printf("iSmCaptionWidth: %u\n", data.ncm.iSmCaptionWidth);
-		printf("iSmCaptionHeight: %u\n", data.ncm.iSmCaptionHeight);
-
-		printf("\nLOGFONT: lfSmCaptionFont:\n");
-		DumpLogFont(data.ncm.lfSmCaptionFont);
-
-		printf("\n");
-		printf("iMenuWidth: %u\n", data.ncm.iMenuWidth);
-		printf("iMenuHeight: %u\n", data.ncm.iMenuHeight);
-
-		printf("\nLOGFONT: lfMenuFont:\n");
-		DumpLogFont(data.ncm.lfMenuFont);
-
-		printf("\nLOGFONT: lfStatusFont:\n");
-		DumpLogFont(data.ncm.lfStatusFont);
-
-		printf("\nLOGFONT: lfMessageFont:\n");
-		DumpLogFont(data.ncm.lfMessageFont);
-
-		// doesnt have padded border ??
-		data.lfIconTitle = READ_AT(LOGFONTW, value, 504);
-		printf("\nLOGFONT: lfIconTitle:\n");
-		DumpLogFont(data.lfIconTitle);
-
-		//596
-		int start = 596;
-		for (int i = 0; i < MAX_COLORS; i++)
-		{
-			data.rgb[i] = READ_AT(COLORREF, value, start + (4 * i));
-		}
-
-		COLORREF bgColor = data.rgb[COLOR_BACKGROUND];
-		wprintf(L"\nCOLOR_BACKGROUND %d,%d,%d\n", GetRValue(bgColor), GetGValue(bgColor), GetBValue(bgColor));
-
-		free(value);
-	}
-
-}
-
-#endif
