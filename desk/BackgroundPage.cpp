@@ -40,7 +40,10 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	::GetClientRect(hListView, &rect);
 	AddColumn(hListView, rect.right - rect.left - 30);
 
-	AddItem(hListView, 0, L"(None)");
+	WCHAR szText[20];
+	LoadString(g_hThemeUI, 2022, szText, ARRAYSIZE(szText));
+
+	AddItem(hListView, 0, szText);
 	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
@@ -132,6 +135,8 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 
 BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
+	std::wstring path;
+
 	IFileDialog* pfd;
 	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
 	if (SUCCEEDED(hr))
@@ -157,10 +162,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 			PWSTR pszFilePath = NULL;
 			hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
 			if (SUCCEEDED(hr)) {
-				int inde = AddItem(hListView, ListView_GetItemCount(hListView), pszFilePath);
-
-				ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-				ListView_EnsureVisible(hListView, inde, FALSE);
+				path = pszFilePath;
 				CoTaskMemFree(pszFilePath);
 			}
 		}
@@ -183,12 +185,13 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 
 		if (GetOpenFileName(&ofn) == TRUE)
 		{
-			int inde = AddItem(hListView, ListView_GetItemCount(hListView), ofn.lpstrFile);
-
-			ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-			ListView_EnsureVisible(hListView, inde, FALSE);
+			path = ofn.lpstrFile;
 		}
 	}
+
+	int inde = AddItem(hListView, ListView_GetItemCount(hListView), path.c_str());
+	ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	ListView_EnsureVisible(hListView, inde, FALSE);
 	return 0;
 }
 
@@ -197,7 +200,6 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 	CHOOSECOLOR cc = {0};
 	if (ColorPicker(GetDeskopColor(), hWnd, &cc) == TRUE)
 	{
-		selectedTheme->useDesktopColor = true;
 		selectedTheme->newColor = cc.rgbResult;
 
 		_UpdateButtonBmp();
@@ -219,7 +221,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		selectedIndex = pnmv->iItem;
 		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
 
-		if (lstrcmpi(path, L"(None)") == 0)
+		if (selectedIndex == 0)
 		{
 			::EnableWindow(hPosCombobox, false);
 
