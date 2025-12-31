@@ -328,7 +328,6 @@ void CSettingsDlgProc::_UpdateColorPreview()
 	default:
 		break;
 	}
-	printf("image index: %d\n", img);
 
 	SIZE size = GetClientSIZE(_clrPreview);
 	HBITMAP bmp = (HBITMAP)LoadImage(g_hinst, MAKEINTRESOURCE(img), IMAGE_BITMAP, size.cx, 0, LR_DEFAULTCOLOR);

@@ -26,7 +26,6 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	if (!currentITheme)
 	{
-		LPWSTR path = nullptr;
 		int cur;
 		pThemeManager->GetCurrentTheme(&cur);
 		pThemeManager->GetTheme(cur, &currentITheme);
@@ -103,30 +102,9 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 			FreeLibrary(hStyle);
 		}
 	}
+	int selindex = _FindCurrentIndex();
 
-	int selindex = 0;
-	if (IsClassicThemeEnabled())
-	{
-		selindex = ComboBox_FindString(hThemesCombobox, 0, L"Windows Classic style");
-	}
-	else
-	{
-		auto themeClass = std::make_unique<CTheme>(currentITheme);
-
-		LPWSTR style = NULL;
-		themeClass->get_VisualStyle(&style);
-		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
-		{
-			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-			if (StrCmpI(data, style) == 0)
-			{
-				selindex = i;
-				break;
-			}
-		}
-	}
 	ComboBox_SetCurSel(hThemesCombobox, selindex);
-
 	_UpdateColorBox(msstyle[selindex]);
 	_UpdateFontBox(msstyle[selindex]);
 
@@ -250,7 +228,7 @@ BOOL CAppearanceDlgProc::OnSetActive()
 		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 		{
 			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-			if (selectedTheme->szMsstylePath.compare(data) == 0)
+			if (StrCmpI(selectedTheme->szMsstylePath.c_str(), data) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
 				break;
@@ -512,6 +490,32 @@ void CAppearanceDlgProc::_FixColorBox()
 
 		delete[] value;
 	}
+}
+
+int CAppearanceDlgProc::_FindCurrentIndex()
+{
+	int selindex = 0;
+	if (IsClassicThemeEnabled())
+	{
+		selindex = ComboBox_FindString(hThemesCombobox, 0, L"Windows Classic style");
+	}
+	else
+	{
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
+
+		LPWSTR style = NULL;
+		themeClass->get_VisualStyle(&style);
+		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
+		{
+			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+			if (StrCmpI(data, style) == 0)
+			{
+				selindex = i;
+				break;
+			}
+		}
+	}
+	return selindex;
 }
 
 

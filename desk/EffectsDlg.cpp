@@ -136,8 +136,8 @@ LRESULT CEffectsDlg::OnOK(UINT uNotifyCode, int nID, HWND hWnd, BOOL& bHandled)
 	if (flags & UPDATE_ANIM)
 	{
 		// set both menu and tooltip, like xp
-		SystemParametersInfo(SPI_SETMENUANIMATION, 0, (PVOID)(_iAnimEnabled > 0 ? 1 : 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-		SystemParametersInfo(SPI_SETTOOLTIPANIMATION, 0, (PVOID)(_iAnimEnabled > 0 ? 1 : 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETMENUANIMATION, 0, (PVOID)(_iAnimEnabled > 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETTOOLTIPANIMATION, 0, (PVOID)(_iAnimEnabled > 0), SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
 		SystemParametersInfo(SPI_SETMENUFADE, 0, (PVOID)!_fAnimType, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETTOOLTIPFADE, 0, (PVOID)!_fAnimType, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);

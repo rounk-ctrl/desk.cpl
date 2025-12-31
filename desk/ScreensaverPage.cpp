@@ -64,6 +64,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		::EnableWindow(GetDlgItem(1322), FALSE);
 	}
 	ScreenPreview(hScrPreview);
+
 	int timeout;
 	SystemParametersInfo(SPI_GETSCREENSAVETIMEOUT, 0, &timeout, 0);
 	SendMessage(updown, UDM_SETPOS32, 0, timeout / 60);

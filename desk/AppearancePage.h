@@ -37,6 +37,7 @@ private:
 	void _UpdateColorBox(LPWSTR data);
 	void _UpdateFontBox(LPWSTR data);
 	void _FixColorBox();
+	int _FindCurrentIndex();
 
 
 	HWND hThemesCombobox;
