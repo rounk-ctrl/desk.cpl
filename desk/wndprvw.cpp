@@ -1,4 +1,10 @@
-﻿#include "pch.h"
+﻿/* ---------------------------------------------------------
+* Window Preview
+*
+* Responsible for rendering the preview
+* 
+------------------------------------------------------------*/
+#include "pch.h"
 #include "wndprvw.h"
 #include "helper.h"
 #include "uxtheme.h"

@@ -56,26 +56,36 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
 
 	CThemeDlgProc themedlg;
-	sheet.AddPage(themedlg);
-
 	CBackgroundDlgProc backgrounddlg;
-	sheet.AddPage(backgrounddlg);
-
 	CScrSaverDlgProc screensaverdlg;
-	sheet.AddPage(screensaverdlg);
-
 	CAppearanceDlgProc appearancedlg;
-	sheet.AddPage(appearancedlg);
-
 	CSettingsDlgProc settingsdlg;
+
+#ifndef VISTA
+	sheet.AddPage(themedlg);
+	sheet.AddPage(backgrounddlg);
+	sheet.AddPage(screensaverdlg);
+	sheet.AddPage(appearancedlg);
 	sheet.AddPage(settingsdlg);
+#endif
 
 	if (lpCmdLine)
 	{
 		int index = _wtoi(lpCmdLine) + 1;
 		if (index > 4 || index < 0) index = 4;
+#ifndef VISTA
 		sheet.SetActivePage(index);
+#else
+		std::vector<LPCPROPSHEETPAGE> array = { themedlg, backgrounddlg, screensaverdlg, appearancedlg, settingsdlg };
+		sheet.AddPage(array[index]);
+#endif
 	}
+#ifdef VISTA
+	else
+	{
+		sheet.AddPage(settingsdlg);
+	}
+#endif
 
 	//show
 	sheet.DoModal();
