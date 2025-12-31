@@ -1,4 +1,11 @@
-﻿#include "pch.h"
+﻿/* ---------------------------------------------------------
+* Background page
+*
+* Responsible for the "Desktop" tab
+*
+------------------------------------------------------------*/
+
+#include "pch.h"
 #include "BackgroundPage.h"
 #include "desk.h"
 #include "helper.h"
@@ -34,8 +41,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	AddColumn(hListView, rect.right - rect.left - 30);
 
 	AddItem(hListView, 0, L"(None)");
-	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_AS_DATAFILE)
-		, MAKEINTRESOURCE(1027));
+	HICON barrierico = LoadIcon(LoadLibraryEx(L"imageres.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_AS_DATAFILE), MAKEINTRESOURCE(1027));
 	ImageList_AddIcon(hml, barrierico);
 	ListView_SetImageList(hListView, hml, LVSIL_SMALL);
 	DestroyIcon(barrierico);
@@ -74,14 +80,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		k++;
 	}
 
-	// first time do it with current theme, the other func will take care of missing
-	IUnknown* thcr;
-	int cu;
-	pThemeManager->GetCurrentTheme(&cu);
-	pThemeManager->GetTheme(cu, &thcr);
-	AddMissingWallpapers(thcr);
-	thcr->Release();
-
 	// combobox with positions of wallpaper
 	LPCWSTR items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
 	for (int i = 0; i < _countof(items); i++)
@@ -92,7 +90,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	DESKTOP_WALLPAPER_POSITION pos;
 	pDesktopWallpaper->GetPosition(&pos);
 	ComboBox_SetCurSel(hPosCombobox, pos);
-
 
 	if (selectedTheme->newColor == NULL)
 	{
@@ -109,11 +106,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	AddMissingWallpapers(currentITheme);
 	SelectCurrentWallpaper(currentITheme);
 
-	HBITMAP hBmp;
-	GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
-	HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
-	DeleteBitmap(hOld);
-	DeleteBitmap(hBmp);
+	_UpdateButtonBmp();
 
 	firstInit = FALSE;
 	return 0;
@@ -130,10 +123,8 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 	selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
 
 	HBITMAP bmp;
-	pWndPreview->GetPreviewImage(&bmp);
-	HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
-	DeleteBitmap(bmp);
-	DeleteBitmap(hOld);
+	pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER);
+	SetBitmap(hBackPreview, bmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -209,16 +200,11 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 		selectedTheme->useDesktopColor = true;
 		selectedTheme->newColor = cc.rgbResult;
 
-		HBITMAP hBmp;
-		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
-		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
-		DeleteBitmap(hOld);
-		DeleteBitmap(hBmp);
+		_UpdateButtonBmp();
 
-		pWndPreview->GetPreviewImage(&hBmp);
-		hOld = Static_SetBitmap(hBackPreview, hBmp);
-		DeleteBitmap(hOld);
-		DeleteBitmap(hBmp);
+		HBITMAP hBmp;
+		pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &hBmp, UPDATE_SOLIDCLR);
+		SetBitmap(hBackPreview, hBmp);
 
 		SetModified(TRUE);
 	}
@@ -249,26 +235,10 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 			selectedTheme->wallpaperPath = path;
 			selectedTheme->wallpaperType = WT_PICTURE;
 		}
-		if (selectionPicker)
-		{
-			selectedTheme->customWallpaperSelection = false;
-		}
-		else
-		{
-			selectedTheme->customWallpaperSelection = true;
-		}
 
-		COLORREF clrlv;
-		if (selectedTheme->useDesktopColor)
-		{
-			pDesktopWallpaper->GetBackgroundColor(&clrlv);
-		}
-		else
-		{
-			ITheme* themeClass = new ITheme(currentITheme);
-			themeClass->GetBackgroundColor(&clrlv);
-		}
 
+		selectedTheme->customWallpaperSelection = !selectionPicker;
+		
 		HBITMAP bmp;
 		if (!pWndPreview)
 		{
@@ -277,13 +247,11 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		}
 		else
 		{
-			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
+			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER);
 		}
-		HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
+		SetBitmap(hBackPreview, bmp);
 
 		SetModified(TRUE);
-		DeleteObject(hOld);
-		DeleteObject(bmp);
 	}
 	return 0;
 }
@@ -311,14 +279,10 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 	if (selectedTheme->customWallpaperSelection)
 	{
+		pDesktopWallpaper->Enable(selectedTheme->wallpaperType == WT_PICTURE);
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
-			pDesktopWallpaper->Enable(true);
 			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
-		}
-		else if (selectedTheme->wallpaperType == WT_NOWALL)
-		{
-			pDesktopWallpaper->Enable(false);
 		}
 		selectedTheme->customWallpaperSelection = false;
 	}
@@ -336,10 +300,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		AddMissingWallpapers(currentITheme);
 		SelectCurrentWallpaper(currentITheme);
 
-		HBITMAP hBmp;
-		GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
-		HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
-		if (hOld) DeleteBitmap(hOld);
+		_UpdateButtonBmp();
 
 		if (selectedTheme->posChanged == -1)
 		{
@@ -358,9 +319,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 		if (pWndPreview)
 		{
 			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-			HBITMAP hOld = Static_SetBitmap(hBackPreview, bmp);
-			DeleteObject(hOld);
-			DeleteObject(bmp);
+			SetBitmap(hBackPreview, bmp);
 		}
 	}
 	_TerminateProcess(pi);
@@ -415,21 +374,17 @@ LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 
 void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 {
-	hListView = GetDlgItem(1202);
-
 	std::vector<LPWSTR> missingWall;
-	// 1- enabled
-	// 0- disabled
-	int isEn = 0;
-	ITheme* themeClass = new ITheme(th);
-	themeClass->IsSlideshowEnabled(&isEn);
 
-	if (isEn == 1)
+	BOOL isEn = 0;
+	auto themeClass = std::make_unique<ITheme>(th);
+	themeClass->IsSlideshowEnabled(&isEn);
+	if (isEn)
 	{
-		ISlideshowSettings* st = NULL;
+		ComPtr<ISlideshowSettings> st = NULL;
 		themeClass->get_SlideshowSettings(&st);
 
-		IWallpaperCollection* wlp;
+		ComPtr<IWallpaperCollection> wlp;
 		st->GetAllMatchingWallpapers(&wlp);
 
 		int count = wlp->GetCount();
@@ -446,11 +401,9 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 		findInfo.flags = LVFI_STRING;
 		findInfo.psz = PathFindFileName(path);
 		int inde = ListView_FindItem(hListView, -1, &findInfo);
-		int k = ListView_GetItemCount(hListView);
 		if (inde == -1)
 		{
-			AddItem(hListView, k, path);
-			k++;
+			AddItem(hListView, ListView_GetItemCount(hListView), path);
 		}
 	}
 
@@ -469,26 +422,26 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 
 void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
 {
-	int currThe;
-	pThemeManager->GetCurrentTheme(&currThe);
+	::EnableWindow(hPosCombobox, selectedTheme->wallpaperType != WT_NOWALL);
+	int index = 0;
 
 	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
-		::EnableWindow(hPosCombobox, true);
-
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
 		findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath.c_str());
-		int inde = ListView_FindItem(hListView, -1, &findInfo);
-
-		ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-		ListView_EnsureVisible(hListView, inde, FALSE);
-	}
-	else if (selectedTheme->wallpaperType == WT_NOWALL)
-	{
-		::EnableWindow(hPosCombobox, false);
-		ListView_SetItemState(hListView, 0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-		ListView_EnsureVisible(hListView, 0, FALSE);
+		index = ListView_FindItem(hListView, -1, &findInfo);
 	}
 
+	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	ListView_EnsureVisible(hListView, index, FALSE);
+}
+
+void CBackgroundDlgProc::_UpdateButtonBmp()
+{
+	HBITMAP hBmp;
+	GetSolidBtnBmp(GetDeskopColor(), GetDpiForWindow(m_hWnd), GetClientSIZE(GetDlgItem(1207)), &hBmp);
+	HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
+	DeleteBitmap(hOld);
+	DeleteBitmap(hBmp);
 }

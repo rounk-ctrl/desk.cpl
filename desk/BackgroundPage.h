@@ -37,6 +37,7 @@ private:
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
     void AddMissingWallpapers(IUnknown* th);
     void SelectCurrentWallpaper(IUnknown* th);
+    void _UpdateButtonBmp();
 
     /// custom variables
     HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
