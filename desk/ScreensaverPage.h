@@ -53,7 +53,7 @@ private:
     HWND secureCheck;
     SIZE scrSize;
     SIZE energySize;
-    LPCWSTR selectedScrSaver{};
+    std::wstring selectedScrSaver;
     PROCESS_INFORMATION pi2;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

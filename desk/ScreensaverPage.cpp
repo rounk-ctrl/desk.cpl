@@ -20,18 +20,19 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	scrSize = GetClientSIZE(hScrPreview);
 	energySize = GetClientSIZE(hEnergy);
 
-
-	pWndPreview = Make<CWindowPreview>(scrSize, nullptr, 0, PAGETYPE::PT_SCRSAVER, nullptr, GetDpiForWindow(m_hWnd));
 	HBITMAP bmp;
+	pWndPreview = Make<CWindowPreview>(scrSize, nullptr, 0, PAGETYPE::PT_SCRSAVER, nullptr, GetDpiForWindow(m_hWnd));
 	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hScrPreview, bmp);
-	DeleteObject(bmp);
+	SetBitmap(hScrPreview, bmp);
 
 	bmp = MonitorAsBmp(GETSIZE(energySize), IDB_BITMAP2, RGB(255, 204, 204));
-	Static_SetBitmap(hEnergy, bmp);
-	DeleteObject(bmp);
+	SetBitmap(hEnergy, bmp);
 
-	ComboBox_AddString(hScrCombo, L"(None)");
+
+	WCHAR szText[20];
+	LoadString(g_hThemeUI, 2022, szText, ARRAYSIZE(szText));
+
+	ComboBox_AddString(hScrCombo, szText);
 	AddScreenSavers(hScrCombo);
 
 	WCHAR path[MAX_PATH];
@@ -39,9 +40,9 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	LRESULT status = RegGetValue(HKEY_CURRENT_USER, L"Control Panel\\Desktop", L"SCRNSAVE.EXE", RRF_RT_REG_SZ, NULL, &path, &size);
 	if (status == ERROR_SUCCESS)
 	{
-		selectedScrSaver = _wcsdup(path);
+		selectedScrSaver = path;
 
-		HMODULE hScr = LoadLibraryEx(selectedScrSaver, NULL, LOAD_LIBRARY_AS_DATAFILE);
+		HMODULE hScr = LoadLibraryEx(selectedScrSaver.c_str(), NULL, LOAD_LIBRARY_AS_DATAFILE);
 		if (hScr)
 		{
 			WCHAR name[MAX_PATH];
@@ -52,7 +53,7 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	}
 	else
 	{
-		selectedScrSaver = nullptr;
+		selectedScrSaver = L"";
 		ComboBox_SetCurSel(hScrCombo, 0);
 		::EnableWindow(hBtnPreview, FALSE);
 		::EnableWindow(hBtnSettings, FALSE);
@@ -89,7 +90,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverComboboxChange(UINT code, UINT id, HWND hWnd
 
 	if (index == 0)
 	{
-		selectedScrSaver = nullptr;
+		selectedScrSaver = L"";
 		::EnableWindow(hBtnPreview, FALSE);
 		::EnableWindow(hBtnSettings, FALSE);
 		::EnableWindow(updown, FALSE);
@@ -123,11 +124,6 @@ BOOL CScrSaverDlgProc::OnScreenSaverSettings(UINT code, UINT id, HWND hWnd, BOOL
 	::DestroyWindow(hWndStatic);
 	hWndStatic = nullptr;
 
-	HBITMAP bmp;
-	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hScrPreview, bmp);
-	DeleteObject(bmp);
-
 	ScreenSettings(hScrPreview);
 	return 0;
 }
@@ -138,12 +134,7 @@ BOOL CScrSaverDlgProc::OnScreenSaverPreview(UINT code, UINT id, HWND hWnd, BOOL&
 	::DestroyWindow(hWndStatic);
 	hWndStatic = nullptr;
 
-	HBITMAP bmp;
-	pWndPreview->GetPreviewImage(&bmp);
-	Static_SetBitmap(hScrPreview, bmp);
-	DeleteObject(bmp);
-
-	ShellExecute(0, L"open", selectedScrSaver, NULL, NULL, SW_SHOW);
+	ShellExecute(0, L"open", selectedScrSaver.c_str(), NULL, NULL, SW_SHOW);
 	return 0;
 }
 
@@ -188,7 +179,7 @@ BOOL CScrSaverDlgProc::OnApply()
 		RegOpenKey(HKEY_CURRENT_USER, L"Control Panel\\Desktop", &key);
 		if (key)
 		{
-			RegSetValueEx(key, L"SCRNSAVE.EXE", 0, REG_SZ, (const BYTE*)selectedScrSaver, ((DWORD)wcslen(selectedScrSaver) + 1) * sizeof(wchar_t));
+			RegSetValueEx(key, L"SCRNSAVE.EXE", 0, REG_SZ, (const BYTE*)selectedScrSaver.c_str(), (selectedScrSaver.length() + 1) * sizeof(wchar_t));
 			RegCloseKey(key);
 		}
 
@@ -215,9 +206,7 @@ BOOL CScrSaverDlgProc::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL&
 		// show with new settings
 		ScreenPreview(hScrPreview);
 
-		CloseHandle(pi2.hThread);
-		CloseHandle(pi2.hProcess);
-		ZeroMemory(&pi2, sizeof(pi2));
+		_TerminateProcess(pi2);
 	}
 	return 0;
 }
@@ -282,7 +271,6 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 	_TerminateProcess(pi);
 	if (!hWndStatic)
 	{
-		int dpi = GetDpiForWindow(preview);
 		Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
 		pWndPreview.As(&pConfig);
 		
@@ -295,12 +283,12 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 		::SetWindowLongPtr(hWndStatic, GWLP_WNDPROC, (LONG_PTR)StaticProc);
 	}
 
-	if (selectedScrSaver)
+	if (!selectedScrSaver.empty())
 	{
 		ZeroMemory(&pi, sizeof(pi));
 
 		TCHAR cmdLine[256];
-		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver, (UINT_PTR)hWndStatic);
+		wsprintf(cmdLine, L"%s /p %u", selectedScrSaver.c_str(), (UINT_PTR)hWndStatic);
 
 		STARTUPINFO si = { sizeof(si) };
 		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi);
@@ -311,22 +299,18 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 		{
 			::DestroyWindow(hWndStatic);
 			hWndStatic = nullptr;
-			HBITMAP bmp;
-			pWndPreview->GetPreviewImage(&bmp);
-			Static_SetBitmap(hScrPreview, bmp);
-			DeleteObject(bmp);
 		}
 	}
 }
 
 VOID CScrSaverDlgProc::ScreenSettings(HWND preview)
 {
-	if (selectedScrSaver)
+	if (!selectedScrSaver.empty())
 	{
 		ZeroMemory(&pi2, sizeof(pi2));
 
 		TCHAR cmdLine[256];
-		wsprintf(cmdLine, L"%s /c /p %u", selectedScrSaver, (UINT_PTR)::GetParent(preview));
+		wsprintf(cmdLine, L"%s /c /p %u", selectedScrSaver.c_str(), (UINT_PTR)::GetParent(preview));
 
 		STARTUPINFO si = { sizeof(si) };
 		CreateProcess(0, cmdLine, 0, 0, FALSE, 0, 0, 0, &si, &pi2);
