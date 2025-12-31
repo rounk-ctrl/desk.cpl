@@ -34,13 +34,19 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		selectedTheme->szMsstylePath = L"(classic)";
 		if (!IsClassicThemeEnabled())
 		{
-			auto themeClass = std::make_unique<ITheme>(currentITheme);
+			auto themeClass = std::make_unique<CTheme>(currentITheme);
 
 			LPWSTR path = nullptr;
 			themeClass->get_VisualStyle(&path);
 
 			selectedTheme->szMsstylePath = path;
 		}
+	}
+
+	if (selectedTheme->newColor == NULL)
+	{
+		selectedTheme->useDesktopColor = true;
+		selectedTheme->newColor = 0xB0000000;
 	}
 
 	WCHAR msstyledir[MAX_PATH];
@@ -105,7 +111,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	}
 	else
 	{
-		auto themeClass = std::make_unique<ITheme>(currentITheme);
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
 
 		LPWSTR style = NULL;
 		themeClass->get_VisualStyle(&style);

@@ -33,7 +33,7 @@ COLORREF GetDeskopColor()
 	}
 	else
 	{
-		ITheme* themeClass = new ITheme(currentITheme);
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
 		themeClass->GetBackgroundColor(&clr);
 	}
 	return clr;

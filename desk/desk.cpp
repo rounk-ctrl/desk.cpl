@@ -70,6 +70,13 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	CSettingsDlgProc settingsdlg;
 	sheet.AddPage(settingsdlg);
 
+	if (lpCmdLine)
+	{
+		int index = _wtoi(lpCmdLine) + 1;
+		if (index > 4 || index < 0) index = 4;
+		sheet.SetActivePage(index);
+	}
+
 	//show
 	sheet.DoModal();
 

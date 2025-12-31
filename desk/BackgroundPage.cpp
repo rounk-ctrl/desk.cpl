@@ -103,6 +103,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		selectedTheme->wallpaperPath = ws;
 
 		selectedTheme->useDesktopColor = true;
+		selectedTheme->newColor = 0xB0000000;
 	}
 
 
@@ -379,7 +380,7 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 	std::vector<LPWSTR> missingWall;
 
 	BOOL isEn = 0;
-	auto themeClass = std::make_unique<ITheme>(th);
+	auto themeClass = std::make_unique<CTheme>(th);
 	themeClass->IsSlideshowEnabled(&isEn);
 	if (isEn)
 	{

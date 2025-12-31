@@ -343,10 +343,10 @@ struct ITheme24H2 : IUnknown
 };
 
 // fuck this shit
-class ITheme
+class CTheme
 {
 public:
-	ITheme(IUnknown* iunk)
+	CTheme(IUnknown* iunk)
 	{
 		if (g_osVersion.BuildNumber() >= 26100)
 		{

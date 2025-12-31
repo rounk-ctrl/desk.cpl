@@ -48,7 +48,7 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	selectedTheme->szMsstylePath = L"(classic)";
 	if (!IsClassicThemeEnabled())
 	{
-		auto themeClass = std::make_unique<ITheme>(currentITheme);
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
 
 		LPWSTR path = nullptr;
 		themeClass->get_VisualStyle(&path);
@@ -83,7 +83,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	pThemeManager->GetTheme(index, &currentITheme);
 
 	LPWSTR ws = NULL;
-	auto themeClass = std::make_unique<ITheme>(currentITheme);
+	auto themeClass = std::make_unique<CTheme>(currentITheme);
 	themeClass->get_background(&ws);
 
 	LPWSTR path = nullptr;
@@ -141,7 +141,7 @@ BOOL CThemeDlgProc::OnSetActive()
 		int index = ComboBox_GetCurSel(hCombobox);
 		pThemeManager->GetTheme(index, &currentITheme);
 
-		auto themeClass = std::make_unique<ITheme>(currentITheme);
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
 		LPWSTR path = nullptr;
 		themeClass->get_VisualStyle(&path);
 
