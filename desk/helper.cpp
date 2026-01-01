@@ -346,6 +346,7 @@ void CreateThemedMetricsScheme(int dpi)
 	selectedTheme->selectedScheme->ncm.iMenuWidth = GetThemeSysSize(hTheme, SM_CXMENUSIZE);
 
 	UnScaleNonClientMetrics(selectedTheme->selectedScheme->ncm, dpi);
+	selectedTheme->selectedScheme->lfIconTitle.lfHeight = MulDiv(selectedTheme->selectedScheme->lfIconTitle.lfHeight, 96, dpi);
 
 	UXTHEMEFILE* ltf = (UXTHEMEFILE*)pTheme;
 	if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
