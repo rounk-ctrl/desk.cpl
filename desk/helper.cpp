@@ -198,6 +198,26 @@ void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
 	ScaleLogFont(ncm.lfMessageFont, dpi);
 }
 
+void UnScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi)
+{
+	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, 96, dpi);
+	ncm.iScrollWidth = MulDiv(ncm.iScrollWidth, 96, dpi);
+	ncm.iCaptionHeight = MulDiv(ncm.iCaptionHeight, 96, dpi);
+	ncm.iCaptionWidth = MulDiv(ncm.iCaptionWidth, 96, dpi);
+	ncm.lfCaptionFont.lfHeight = MulDiv(ncm.lfCaptionFont.lfHeight, 96, dpi);
+
+	ncm.iSmCaptionHeight = MulDiv(ncm.iSmCaptionHeight, 96, dpi);
+	ncm.iSmCaptionWidth = MulDiv(ncm.iSmCaptionWidth, 96, dpi);
+	ncm.lfSmCaptionFont.lfHeight = MulDiv(ncm.lfSmCaptionFont.lfHeight, 96, dpi);
+
+	ncm.iMenuHeight = MulDiv(ncm.iMenuHeight, 96, dpi);
+	ncm.iMenuWidth = MulDiv(ncm.iMenuWidth, 96, dpi);
+
+	ncm.lfMenuFont.lfHeight = MulDiv(ncm.lfMenuFont.lfHeight, 96, dpi);
+	ncm.lfStatusFont.lfHeight = MulDiv(ncm.lfStatusFont.lfHeight, 96, dpi);
+	ncm.lfMessageFont.lfHeight = MulDiv(ncm.lfMessageFont.lfHeight, 96, dpi);
+}
+
 void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi)
 {
 	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, dpi, 96);
@@ -210,7 +230,6 @@ void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi)
 
 	ncm.iMenuHeight = MulDiv(ncm.iMenuHeight, dpi, 96);
 	ncm.iMenuWidth = MulDiv(ncm.iMenuWidth, dpi, 96);
-
 }
 
 void ScaleLogFont(LOGFONT& lf, int dpi)
@@ -280,6 +299,8 @@ void CreateBlankScheme()
 	}
 	else
 	{
+		if (selectedTheme->selectedScheme->variant == 0x10) return;
+
 		SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
 		*currentData = *selectedTheme->selectedScheme;
 		currentData->variant = 0x8;		// indicates custom theme
@@ -292,6 +313,46 @@ void CreateBlankScheme()
 
 		selectedTheme->selectedScheme = currentData;
 	}
+}
+
+void CreateThemedMetricsScheme(int dpi)
+{
+	CreateBlankScheme();
+	selectedTheme->selectedScheme->variant = 0x10;
+
+	void* pTheme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
+	HTHEME hTheme = OpenNcThemeData(pTheme, L"Window");
+
+	for (int i = 0; i < MAX_COLORS; ++i)
+	{
+		selectedTheme->selectedScheme->rgb[i] = GetThemeSysColor(hTheme, i);
+	}
+	 
+	GetThemeSysFont(hTheme, TMT_CAPTIONFONT, &selectedTheme->selectedScheme->ncm.lfCaptionFont);
+	GetThemeSysFont(hTheme, TMT_SMALLCAPTIONFONT, &selectedTheme->selectedScheme->ncm.lfSmCaptionFont);
+	GetThemeSysFont(hTheme, TMT_MENUFONT, &selectedTheme->selectedScheme->ncm.lfMenuFont);
+	GetThemeSysFont(hTheme, TMT_STATUSFONT, &selectedTheme->selectedScheme->ncm.lfStatusFont);
+	GetThemeSysFont(hTheme, TMT_MSGBOXFONT, &selectedTheme->selectedScheme->ncm.lfMessageFont);
+	GetThemeSysFont(hTheme, TMT_ICONTITLEFONT, &selectedTheme->selectedScheme->lfIconTitle);
+
+	selectedTheme->selectedScheme->ncm.iBorderWidth = GetThemeSysSize(hTheme, SM_CXBORDER);
+	selectedTheme->selectedScheme->ncm.iScrollHeight = GetThemeSysSize(hTheme, SM_CXVSCROLL); // BUG BUG
+	selectedTheme->selectedScheme->ncm.iScrollWidth = GetThemeSysSize(hTheme, SM_CXVSCROLL);
+	selectedTheme->selectedScheme->ncm.iCaptionHeight = GetThemeSysSize(hTheme, SM_CYSIZE);
+	selectedTheme->selectedScheme->ncm.iCaptionWidth = GetThemeSysSize(hTheme, SM_CXSIZE);
+	selectedTheme->selectedScheme->ncm.iSmCaptionHeight = GetThemeSysSize(hTheme, SM_CYSMSIZE);
+	selectedTheme->selectedScheme->ncm.iSmCaptionWidth = GetThemeSysSize(hTheme, SM_CXSMSIZE);
+	selectedTheme->selectedScheme->ncm.iMenuHeight = GetThemeSysSize(hTheme, SM_CYMENUSIZE);
+	selectedTheme->selectedScheme->ncm.iMenuWidth = GetThemeSysSize(hTheme, SM_CXMENUSIZE);
+
+	UnScaleNonClientMetrics(selectedTheme->selectedScheme->ncm, dpi);
+
+	UXTHEMEFILE* ltf = (UXTHEMEFILE*)pTheme;
+	if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
+	if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
+
+	ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
+	free(pTheme);
 }
 
 void SetBitmap(HWND hWnd, HBITMAP hBmp)

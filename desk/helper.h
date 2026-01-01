@@ -32,6 +32,7 @@ void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi);
 HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut);
 BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
 void CreateBlankScheme();
+void CreateThemedMetricsScheme(int dpi);
 void SetBitmap(HWND hWnd, HBITMAP hBmp);
 
 inline SIZE GetClientSIZE(HWND _hwnd)

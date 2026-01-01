@@ -171,6 +171,12 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	SetBitmap(hPreviewWnd, ebmp);
 
+
+	if (StrCmpI(data, L"(classic)") != 0)
+	{
+		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd));
+	}
+
 	SetModified(TRUE);
 	return 0;
 }
@@ -250,40 +256,43 @@ BOOL CAppearanceDlgProc::OnApply()
 {
 	int i = ComboBox_GetCurSel(hThemesCombobox);
 	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-	if (StrCmpI(data, L"(classic)"))
+	if (StrCmpI(data, L"(classic)") != 0)
 	{
 		SetSystemVisualStyle(selectedTheme->szMsstylePath.c_str(), nullptr, nullptr, AT_NONE);
 	}
 
-	int elements[29] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 };
-	SetSysColors(29, elements, selectedTheme->selectedScheme->rgb);
+	if (selectedTheme->selectedScheme)
+	{ 
+		int elements[29] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 };
+		SetSysColors(29, elements, selectedTheme->selectedScheme->rgb);
 
-	NONCLIENTMETRICS ncm;
-	memcpy(&ncm, &selectedTheme->selectedScheme->ncm, sizeof(NONCLIENTMETRICSW_2k));
-	ncm.cbSize = sizeof(ncm);
-	ncm.iPaddedBorderWidth = 0;
+		NONCLIENTMETRICS ncm;
+		memcpy(&ncm, &selectedTheme->selectedScheme->ncm, sizeof(NONCLIENTMETRICSW_2k));
+		ncm.cbSize = sizeof(ncm);
+		ncm.iPaddedBorderWidth = 0;
 
-	LOGFONT lfIcon = selectedTheme->selectedScheme->lfIconTitle;
+		LOGFONT lfIcon = selectedTheme->selectedScheme->lfIconTitle;
 
-	// bruhhh
-	if (!selectedTheme->selectedScheme->dpiScaled)
-	{
-		ScaleNonClientMetrics(ncm, GetDpiForWindow(m_hWnd));
+		// bruhhh
+		if (!selectedTheme->selectedScheme->dpiScaled)
+		{
+			ScaleNonClientMetrics(ncm, GetDpiForWindow(m_hWnd));
+		}
+		else
+		{
+			// scale the fonts
+			ScaleLogFont(ncm.lfCaptionFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfSmCaptionFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfMenuFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfStatusFont, GetDpiForWindow(m_hWnd));
+			ScaleLogFont(ncm.lfMessageFont, GetDpiForWindow(m_hWnd));
+		}
+		ScaleLogFont(lfIcon, GetDpiForWindow(m_hWnd));
+		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+
+		// delete temp scheme on combobox change
 	}
-	else
-	{
-		// scale the fonts
-		ScaleLogFont(ncm.lfCaptionFont, GetDpiForWindow(m_hWnd));
-		ScaleLogFont(ncm.lfSmCaptionFont, GetDpiForWindow(m_hWnd));
-		ScaleLogFont(ncm.lfMenuFont, GetDpiForWindow(m_hWnd));
-		ScaleLogFont(ncm.lfStatusFont, GetDpiForWindow(m_hWnd));
-		ScaleLogFont(ncm.lfMessageFont, GetDpiForWindow(m_hWnd));
-	}
-	ScaleLogFont(lfIcon, GetDpiForWindow(m_hWnd));
-	SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-	SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-
-	// delete temp scheme on combobox change
 	selectedTheme->fThemePgMsstyleUpdate = true;
 	return 0;
 }
