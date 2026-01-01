@@ -127,6 +127,7 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	static COLORREF lastUsedClr = 0xB0000000;
 
 	selectedTheme->newColor = lastUsedClr;
+	if (themeSelected) selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
 	CAppearanceDlgBox dlg;
 	int ret = dlg.DoModal();
@@ -143,14 +144,24 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 				selectedTheme->selectedScheme = NULL;
 			}
 
-			if (themeSelected)
+			int i = ComboBox_GetCurSel(hThemesCombobox);
+			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+
+			if (StrCmpI(data, L"(classic)") != 0)
 			{
-				CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
-				selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
+				if (themeSelected)
+				{
+					CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+					selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
+				}
+				else
+				{
+					selectedTheme->newColor = lastUsedClr;
+				}
 			}
 			else
 			{
-				selectedTheme->newColor = lastUsedClr;
+				_UpdateFontBox(data);
 			}
 		}
 	}
@@ -197,9 +208,9 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 				free(selectedTheme->selectedScheme);
 				selectedTheme->selectedScheme = NULL;
 			}
-			CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
-			selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 		}
+		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+		selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 	}
 
 	HBITMAP ebmp;
