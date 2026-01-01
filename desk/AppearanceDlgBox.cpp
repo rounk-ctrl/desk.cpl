@@ -247,6 +247,11 @@ void CAppearanceDlgBox::_UpdateControls(SCHEMEINFO* info)
 void CAppearanceDlgBox::_UpdateBitmaps(SCHEMEINFO* info)
 {
 	_UpdateColorButton(hColor1, info->activeButton & ACTIVE_COLOR1, NcGetSysColor(info->color1Target));
+	// HACKHACK
+	if (info->color1Target == COLOR_BACKGROUND)
+	{
+		_UpdateColorButton(hColor1, info->activeButton & ACTIVE_COLOR1, GetDeskopColor());
+	}
 	_UpdateColorButton(hColor2, info->activeButton & ACTIVE_COLOR2, NcGetSysColor(info->color2Target));
 	_UpdateColorButton(hFontColor, info->activeButton & ACTIVE_FONTCOLOR, NcGetSysColor(info->fontColorTarget));
 }
@@ -318,7 +323,7 @@ void CAppearanceDlgBox::_UpdatePreview(BOOL fClr)
 	if (fClr) flag |= UPDATE_SOLIDCLR;
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WINDOW);
+	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, flag);
 	HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
 	DeleteObject(hPrev);
 	DeleteObject(ebmp);

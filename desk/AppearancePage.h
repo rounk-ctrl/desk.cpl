@@ -49,6 +49,7 @@ private:
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 	SCHEMEDATA* schemeMap = NULL;
 	ULONG mapSize;
+	BOOL themeSelected = FALSE;
 
 	// -ve sizes are fixed with preview size in wndprvw
 	MYWINDOWINFO wnd[3] =

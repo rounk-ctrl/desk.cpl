@@ -124,6 +124,10 @@ BOOL CAppearanceDlgProc::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 
 BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
+	static COLORREF lastUsedClr = 0xB0000000;
+
+	selectedTheme->newColor = lastUsedClr;
+
 	CAppearanceDlgBox dlg;
 	int ret = dlg.DoModal();
 
@@ -137,14 +141,23 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 			{
 				free(selectedTheme->selectedScheme);
 				selectedTheme->selectedScheme = NULL;
+			}
 
+			if (themeSelected)
+			{
 				CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+				selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
+			}
+			else
+			{
+				selectedTheme->newColor = lastUsedClr;
 			}
 		}
 	}
 	else
 	{
 		SetModified(TRUE);
+		lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
 	}
 
 	HBITMAP ebmp;
@@ -162,6 +175,8 @@ BOOL CAppearanceDlgProc::OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled
 
 BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
+	themeSelected = TRUE;
+
 	int i = ComboBox_GetCurSel(hThemesCombobox);
 	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
 
@@ -182,8 +197,9 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 				free(selectedTheme->selectedScheme);
 				selectedTheme->selectedScheme = NULL;
 			}
+			CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+			selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 		}
-		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
 	}
 
 	HBITMAP ebmp;

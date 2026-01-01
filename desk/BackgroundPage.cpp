@@ -292,6 +292,13 @@ BOOL CBackgroundDlgProc::OnApply()
 
 	selectedTheme->updateWallThemesPg = true;
 	SetModified(FALSE);
+
+	HBITMAP bmp;
+	selectedTheme->useDesktopColor = true;
+	pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
+	SetBitmap(hBackPreview, bmp);
+	_UpdateButtonBmp();
+
 	return 0;
 }
 
