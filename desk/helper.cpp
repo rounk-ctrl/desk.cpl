@@ -315,13 +315,19 @@ void CreateBlankScheme()
 	}
 }
 
-void CreateThemedMetricsScheme(int dpi)
+void CreateThemedMetricsScheme(int dpi, void* pTheme)
 {
-	CreateBlankScheme();
-	selectedTheme->selectedScheme->variant = 0x10;
-
-	void* pTheme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
 	HTHEME hTheme = OpenNcThemeData(pTheme, L"Window");
+
+	SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
+	if (currentData)
+	{
+		ZeroMemory(currentData, sizeof(SCHEMEDATA));
+		currentData->dpiScaled = false;
+		currentData->variant = 0x8;
+
+		selectedTheme->selectedScheme = currentData;
+	}
 
 	for (int i = 0; i < MAX_COLORS; ++i)
 	{
@@ -348,12 +354,6 @@ void CreateThemedMetricsScheme(int dpi)
 	UnScaleNonClientMetrics(selectedTheme->selectedScheme->ncm, dpi);
 	selectedTheme->selectedScheme->lfIconTitle.lfHeight = MulDiv(selectedTheme->selectedScheme->lfIconTitle.lfHeight, 96, dpi);
 
-	UXTHEMEFILE* ltf = (UXTHEMEFILE*)pTheme;
-	if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
-	if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
-
-	ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
-	free(pTheme);
 }
 
 void SetBitmap(HWND hWnd, HBITMAP hBmp)

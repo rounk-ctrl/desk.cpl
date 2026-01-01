@@ -127,6 +127,8 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	CAppearanceDlgBox dlg;
 	int ret = dlg.DoModal();
 
+	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
+
 	if (ret == 1)
 	{
 		if (selectedTheme->selectedScheme)
@@ -135,6 +137,8 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 			{
 				free(selectedTheme->selectedScheme);
 				selectedTheme->selectedScheme = NULL;
+
+				CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
 			}
 		}
 	}
@@ -144,7 +148,7 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	}
 
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
 	SetBitmap(hPreviewWnd, ebmp);
 	return 0;
 }
@@ -167,15 +171,24 @@ BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	selectedTheme->szMsstylePath = data;
 	selectedTheme->fMsstyleChanged = true;
 
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	SetBitmap(hPreviewWnd, ebmp);
-
+	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
 
 	if (StrCmpI(data, L"(classic)") != 0)
 	{
-		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd));
+		if (selectedTheme->selectedScheme)
+		{
+			if (selectedTheme->selectedScheme->variant == 0x8)
+			{
+				free(selectedTheme->selectedScheme);
+				selectedTheme->selectedScheme = NULL;
+			}
+		}
+		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
 	}
+
+	HBITMAP ebmp;
+	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+	SetBitmap(hPreviewWnd, ebmp);
 
 	SetModified(TRUE);
 	return 0;
@@ -291,14 +304,6 @@ BOOL CAppearanceDlgProc::OnApply()
 		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
-		if (selectedTheme->selectedScheme)
-		{
-			if (selectedTheme->selectedScheme->variant == 0x10)
-			{
-				free(selectedTheme->selectedScheme);
-				selectedTheme->selectedScheme = NULL;
-			}
-		}
 		// delete temp scheme on combobox change
 	}
 	selectedTheme->fThemePgMsstyleUpdate = true;
