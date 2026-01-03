@@ -162,6 +162,8 @@ BOOL CScrSaverDlgProc::OnSecureCheck(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 
 BOOL CScrSaverDlgProc::OnTimeChange(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled)
 {
+	NMUPDOWN* ud = (NMUPDOWN*)nmhdr;
+	ud->iDelta = -ud->iDelta;
 	SetModified(TRUE);
 	return 0;
 }

@@ -46,6 +46,7 @@ private:
 		COMMAND_HANDLER(1136, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1141, BN_CLICKED, OnColorPick)
 		COMMAND_HANDLER(1128, EN_CHANGE, OnSpinnerChange)
+		NOTIFY_CODE_HANDLER(UDN_DELTAPOS, OnSpinnerDelta)
 		COMMAND_HANDLER(1131, BN_CLICKED, OnStyle)
 		COMMAND_HANDLER(1132, BN_CLICKED, OnStyle)
 		MSG_WM_CLOSE(OnClose)
@@ -60,6 +61,7 @@ private:
 	BOOL OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+	BOOL OnSpinnerDelta(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled);
 	BOOL OnFontChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnFontSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
 	BOOL OnFontSizeEditChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);

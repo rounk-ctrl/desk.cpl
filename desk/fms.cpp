@@ -18,7 +18,7 @@ void InitFms()
 	}
 }
 
-HRESULT GetFilteredFontFamilies(_Out_ int* cFontFamily, _Out_ wchar_t*** ppFontFamily)
+HRESULT GetFilteredFontFamilies(_Out_ UINT* cFontFamily, _Out_ wchar_t*** ppFontFamily)
 {
 	*cFontFamily = 0;
 	*ppFontFamily = NULL;

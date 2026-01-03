@@ -51,7 +51,7 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	}
 
 	wchar_t** ppFontList;
-	int cFontList;
+	UINT cFontList;
 	GetFilteredFontFamilies(&cFontList, &ppFontList);
 	for (UINT i = 0; i < cFontList; ++i)
 	{
@@ -133,6 +133,13 @@ BOOL CAppearanceDlgBox::OnSpinnerChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 
 		_UpdatePreview(FALSE);
 	}
+	return 0;
+}
+
+BOOL CAppearanceDlgBox::OnSpinnerDelta(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled)
+{
+	NMUPDOWN* ud = (NMUPDOWN*)nmhdr;
+	ud->iDelta = -ud->iDelta;
 	return 0;
 }
 
