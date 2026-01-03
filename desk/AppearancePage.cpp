@@ -152,10 +152,7 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 				if (themeSelected)
 				{
 					CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
-					selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
-				}
-				else
-				{
+					lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
 					selectedTheme->newColor = lastUsedClr;
 				}
 			}

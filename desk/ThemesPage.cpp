@@ -141,23 +141,9 @@ BOOL CThemeDlgProc::OnSetActive()
 		int index = ComboBox_GetCurSel(hCombobox);
 		pThemeManager->GetTheme(index, &currentITheme);
 
-		auto themeClass = std::make_unique<CTheme>(currentITheme);
-		LPWSTR path = nullptr;
-		themeClass->get_VisualStyle(&path);
-
-		COLORREF clr;
-		if (selectedTheme->useDesktopColor)
-		{
-			pDesktopWallpaper->GetBackgroundColor(&clr);
-		}
-		else
-		{
-			themeClass->GetBackgroundColor(&clr);
-		}
-
 		// set the preview bitmap to the static control
 		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
+		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		SetBitmap(hPreview, ebmp);
 
 		selectedTheme->updateWallThemesPg = false;

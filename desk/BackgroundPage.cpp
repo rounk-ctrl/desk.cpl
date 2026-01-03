@@ -250,7 +250,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		}
 		else
 		{
-			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER);
+			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		}
 		SetBitmap(hBackPreview, bmp);
 
@@ -305,12 +305,11 @@ BOOL CBackgroundDlgProc::OnApply()
 BOOL CBackgroundDlgProc::OnSetActive()
 {
 	selectionPicker = false;
+	_UpdateButtonBmp();
 	if (!selectedTheme->customWallpaperSelection && !firstInit)
 	{
 		AddMissingWallpapers(currentITheme);
 		SelectCurrentWallpaper(currentITheme);
-
-		_UpdateButtonBmp();
 
 		if (selectedTheme->posChanged == -1)
 		{
