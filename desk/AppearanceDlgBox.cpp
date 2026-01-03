@@ -28,10 +28,8 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 
 	HBITMAP ebmp;
 	pWndPreview->GetPreviewImage(&ebmp);
-	HBITMAP hOld = Static_SetBitmap(hPreview, ebmp);
-	if (hOld) DeleteBitmap(hOld);
+	SetBitmap(hPreview, ebmp);
 
-	int in = 0;
 	for (int i = 1; i < 28; ++i) // 28
 	{
 		WCHAR szBuffer[40];
@@ -40,16 +38,15 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 			if (i == 24) continue;
 
 			int index = ComboBox_AddString(hElementCombobox, szBuffer);
-			ComboBox_SetItemData(hElementCombobox, index, &info[in]);
+			ComboBox_SetItemData(hElementCombobox, index, &info[i-1]);
 			
 			if (i == 1)
 			{
 				ComboBox_SetCurSel(hElementCombobox, index);
-				_UpdateControls(&info[in]);
-				_UpdateBitmaps(&info[in]);
-				_UpdateSizeItem(&info[in]);
+				_UpdateControls(&info[i-1]);
+				_UpdateBitmaps(&info[i-1]);
+				_UpdateSizeItem(&info[i-1]);
 			}
-			in++;
 		}
 	}
 
@@ -59,7 +56,10 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	for (UINT i = 0; i < cFontList; ++i)
 	{
 		ComboBox_AddString(hFontCmb, ppFontList[i]);
+		free(ppFontList[i]);
 	}
+	free(ppFontList);
+
 
 	// create a dummy scheme
 	CreateBlankScheme();
@@ -265,7 +265,8 @@ void CAppearanceDlgBox::_UpdateColorButton(HWND hButton, bool isActive, COLORREF
 	}
 
 	HBITMAP hOld = Button_SetBitmap(hButton, bmp);
-	if (hOld) DeleteBitmap(hOld);
+	DeleteBitmap(hOld);
+	DeleteBitmap(bmp);
 }
 
 void CAppearanceDlgBox::_UpdateSizeItem(SCHEMEINFO* info)
@@ -324,9 +325,7 @@ void CAppearanceDlgBox::_UpdatePreview(BOOL fClr)
 
 	HBITMAP ebmp;
 	pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, flag);
-	HBITMAP hPrev = Static_SetBitmap(hPreview, ebmp);
-	DeleteObject(hPrev);
-	DeleteObject(ebmp);
+	SetBitmap(hPreview, ebmp);
 }
 
 LOGFONT* CAppearanceDlgBox::_GetLogFontPtr(SCHEMEINFO* info)
@@ -347,8 +346,7 @@ LOGFONT* CAppearanceDlgBox::_GetLogFontPtr(SCHEMEINFO* info)
 
 void CAppearanceDlgBox::OnClose()
 {
-	HBITMAP hOld = Static_SetBitmap(hPreview, NULL);
-	if (hOld) DeleteBitmap(hOld);
+	SetBitmap(hPreview, NULL);
 
 	EndDialog(1);
 }
