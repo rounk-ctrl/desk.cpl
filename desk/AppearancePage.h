@@ -38,6 +38,7 @@ private:
 	void _UpdateFontBox(LPWSTR data);
 	void _FixColorBox();
 	int _FindCurrentIndex();
+	void _FilterHiddenThemes();
 
 
 	HWND hThemesCombobox;

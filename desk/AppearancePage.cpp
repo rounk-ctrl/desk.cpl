@@ -53,6 +53,8 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	LPCWSTR extensions[] = { L".msstyles" };
 	EnumDir(msstyledir, extensions, ARRAYSIZE(extensions), msstyle, TRUE);
 
+	_FilterHiddenThemes();
+
 	// add classic style
 	int index = ComboBox_AddString(hThemesCombobox, L"Windows Classic style");
 	ComboBox_SetItemData(hThemesCombobox, index, L"(classic)");
@@ -103,10 +105,12 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		}
 	}
 	int selindex = _FindCurrentIndex();
-
-	ComboBox_SetCurSel(hThemesCombobox, selindex);
-	_UpdateColorBox(msstyle[selindex]);
-	_UpdateFontBox(msstyle[selindex]);
+	if (selindex != -1)
+	{
+		ComboBox_SetCurSel(hThemesCombobox, selindex);
+		_UpdateColorBox(msstyle[selindex]);
+		_UpdateFontBox(msstyle[selindex]);
+	}
 
 	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
@@ -130,7 +134,7 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	if (themeSelected) selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
 	CAppearanceDlgBox dlg;
-	int ret = dlg.DoModal();
+	int ret = (int)dlg.DoModal();
 
 	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
 
@@ -145,20 +149,22 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 			}
 
 			int i = ComboBox_GetCurSel(hThemesCombobox);
-			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-
-			if (StrCmpI(data, L"(classic)") != 0)
+			if (i != -1)
 			{
-				if (themeSelected)
+				LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+				if (StrCmpI(data, L"(classic)") != 0)
 				{
-					CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
-					lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
-					selectedTheme->newColor = lastUsedClr;
+					if (themeSelected)
+					{
+						CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+						lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
+						selectedTheme->newColor = lastUsedClr;
+					}
 				}
-			}
-			else
-			{
-				_UpdateFontBox(data);
+				else
+				{
+					_UpdateFontBox(data);
+				}
 			}
 		}
 	}
@@ -538,7 +544,7 @@ void CAppearanceDlgProc::_FixColorBox()
 
 int CAppearanceDlgProc::_FindCurrentIndex()
 {
-	int selindex = 0;
+	int selindex = -1;
 	if (IsClassicThemeEnabled())
 	{
 		selindex = ComboBox_FindString(hThemesCombobox, 0, L"Windows Classic style");
@@ -560,6 +566,40 @@ int CAppearanceDlgProc::_FindCurrentIndex()
 		}
 	}
 	return selindex;
+}
+
+void CAppearanceDlgProc::_FilterHiddenThemes()
+{
+	DWORD cbData = 0;
+	DWORD type = 0;
+
+	LONG status = RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Control Panel\\Cpls\\desk.cpl", 
+		L"HideMsstyles", RRF_RT_REG_MULTI_SZ, &type, nullptr, &cbData);
+	if (status != ERROR_SUCCESS) return;
+
+	wchar_t* buffer = (wchar_t*)malloc(cbData);
+	status = RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Control Panel\\Cpls\\desk.cpl", 
+		L"HideMsstyles", RRF_RT_REG_MULTI_SZ, &type, buffer, &cbData);
+
+	wchar_t* ptr = buffer;
+	while (*ptr)
+	{
+		int len = lstrlen(ptr) + 1;
+		wchar_t* str = (wchar_t*)malloc(sizeof(wchar_t) * len);
+		StringCchPrintf(str, len, L"%s", ptr);
+
+
+		msstyle.erase(
+			std::remove_if(msstyle.begin(), msstyle.end(), 
+				[&](LPWSTR& lstr)
+				{
+					return StrCmpI(lstr, str) == 0;
+				})
+			,msstyle.end());
+
+		ptr += len;
+		free(str);
+	}
 }
 
 
