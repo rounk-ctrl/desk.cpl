@@ -21,6 +21,7 @@
 #include <windowsx.h>
 #include <shellapi.h>
 #include <wrl.h>
+#include <sddl.h>
 
 
 #ifdef _DEBUG

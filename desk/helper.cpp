@@ -2,10 +2,6 @@
 #include "helper.h"
 #include "desk.h"
 #include "uxtheme.h"
-#include <sddl.h>
-#include <AclAPI.h>
-
-#define STATUS_ACCESS_DENIED             ((NTSTATUS)0xC0000022L)
 
 VOID _TerminateProcess(PROCESS_INFORMATION& hp)
 {
@@ -146,27 +142,6 @@ BOOL IsClassicThemeEnabled()
 	return bRet;
 }
 
-// https://stackoverflow.com/questions/656542/trim-a-string-in-c
-char* ltrim(char* s)
-{
-	while (isspace(*s)) s++;
-	return s;
-}
-
-char* rtrim(char* s)
-{
-	char* back = s + strlen(s);
-	while (isspace(*--back));
-	*(back + 1) = '\0';
-	return s;
-}
-
-char* trim(char* s)
-{
-	return rtrim(ltrim(s));
-}
-
-
 wchar_t* strCut(wchar_t* s, const wchar_t* pattern)
 {
 	if (wchar_t* p = wcsstr(s, pattern))
@@ -178,7 +153,7 @@ wchar_t* strCut(wchar_t* s, const wchar_t* pattern)
 }
 
 
-void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
+__declspec(noinline) void ScaleNonClientMetrics(NONCLIENTMETRICS& ncm, int dpi)
 {
 	ncm.iScrollHeight = MulDiv(ncm.iScrollHeight, dpi, 96);
 	ncm.iScrollWidth = MulDiv(ncm.iScrollWidth, dpi, 96);

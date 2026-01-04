@@ -130,7 +130,7 @@ void CSettingsDlgProc::_GetDisplayMonitors()
 							memcpy(monitorName, &value[i + 5], 13);
 							monitorName[13] = '\0';
 
-							trim(monitorName);
+							StrTrimA(monitorName, " ");
 							free(value);
 							break;
 						}

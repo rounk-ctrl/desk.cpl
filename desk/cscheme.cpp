@@ -23,7 +23,7 @@ HBRUSH NcGetSysColorBrush(int nIndex)
 	return GetSysColorBrush(nIndex);
 }
 
-BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
+__declspec(noinline) BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
 {
 	HBRUSH br = NcGetSysColorBrush(COLOR_BTNFACE);
 	FillRect(hdc, lprc, br);
@@ -63,7 +63,7 @@ BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type)
 	return TRUE;
 }
 
-int NcGetSystemMetrics(int nIndex)
+__declspec(noinline) int NcGetSystemMetrics(int nIndex)
 {
 	if (selectedTheme->selectedScheme)
 	{

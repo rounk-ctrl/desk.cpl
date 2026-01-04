@@ -53,17 +53,12 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	WCHAR windowswaldir[MAX_PATH];
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
 	ExpandEnvironmentStrings(L"%windir%", windowswaldir, MAX_PATH);
+
 	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
 
 	// this basically combines wallpaperdir and windowswaldir
-	std::vector<std::pair<std::wstring, BOOL>> searchdir;
-	searchdir.emplace_back(wallpaperdir, TRUE);
-	searchdir.emplace_back(windowswaldir, FALSE);
-
-	for (const auto& [dir, recurse] : searchdir)
-	{
-		EnumDir(dir.c_str(), extensions, ARRAYSIZE(extensions), wallpapers, recurse);
-	}
+	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers, TRUE);
+	EnumDir(windowswaldir, extensions, ARRAYSIZE(extensions), wallpapers, FALSE);
 
 	// this basically alphabetically sorts the wallpaper file names, for example if you have
 	// a few files in windir and a few in web it will put windir files at the end and the web files on top
@@ -79,8 +74,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	int k = 1;
 	for (auto path : wallpapers)
 	{
-		AddItem(hListView, k, path);
-		k++;
+		AddItem(hListView, k++, path);
 	}
 
 	HINSTANCE hThemeCpl = LoadLibraryEx(L"themecpl.dll", 0, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32);
