@@ -54,7 +54,8 @@ enum WALLPAPER_TYPE {
 
 // todo: convert this to a single class
 // convenient struct with various information used by various pages
-struct THEMEINFO {
+struct THEMEINFO
+{
 	WALLPAPER_TYPE wallpaperType;
 	std::wstring wallpaperPath;
 	COLORREF newColor;
@@ -70,6 +71,12 @@ struct THEMEINFO {
 	bool fMsstyleChanged = false;
 	bool fThemePgMsstyleUpdate = false;		// bruh
 };
+
+typedef struct tag_FONTINFO
+{
+	wchar_t** ppFontList;
+	UINT cFontList;
+} FONTINFO;
 
 // global HINSTANCE for the current app
 extern HINSTANCE g_hinst;
@@ -97,3 +104,6 @@ extern BOOL selectionPicker;
 // process information for the loaded screen saver preview
 // defined here so it can be killed by other pages
 extern PROCESS_INFORMATION pi;
+
+// font list
+extern FONTINFO* fontInfo;

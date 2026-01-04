@@ -50,16 +50,10 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 		}
 	}
 
-	wchar_t** ppFontList;
-	UINT cFontList;
-	GetFilteredFontFamilies(&cFontList, &ppFontList);
-	for (UINT i = 0; i < cFontList; ++i)
+	for (UINT i = 0; i < fontInfo->cFontList; ++i)
 	{
-		ComboBox_AddString(hFontCmb, ppFontList[i]);
-		free(ppFontList[i]);
+		ComboBox_AddString(hFontCmb, fontInfo->ppFontList[i]);
 	}
-	free(ppFontList);
-
 
 	// create a dummy scheme
 	CreateBlankScheme();

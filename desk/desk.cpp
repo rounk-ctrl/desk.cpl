@@ -20,8 +20,18 @@ IUnknown* currentITheme;
 THEMEINFO* selectedTheme = new THEMEINFO();
 BOOL selectionPicker;
 PROCESS_INFORMATION pi;
+FONTINFO* fontInfo = new FONTINFO();
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
+
+void FillFontList(void*)
+{
+	// init fms
+	InitFms();
+
+	// fill list
+	GetFilteredFontFamilies(&fontInfo->cFontList, &fontInfo->ppFontList);
+}
 
 void PropertySheetMoment(LPWSTR lpCmdLine)
 {
@@ -47,8 +57,8 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	// initialize theme manager
 	InitUxtheme();
 
-	// init fms
-	InitFms();
+	// cache the font list
+	_beginthread(FillFontList, 0, NULL);
 
 	// init property sheet
 	WTL::CPropertySheet sheet(L"Display Properties");
@@ -76,7 +86,7 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 #ifndef VISTA
 		sheet.SetActivePage(index);
 #else
-		std::vector<LPCPROPSHEETPAGE> array = { themedlg, backgrounddlg, screensaverdlg, appearancedlg, settingsdlg };
+		LPCPROPSHEETPAGE array[5] = {themedlg, backgrounddlg, screensaverdlg, appearancedlg, settingsdlg};
 		sheet.AddPage(array[index]);
 #endif
 	}

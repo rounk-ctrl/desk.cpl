@@ -588,12 +588,14 @@ void CAppearanceDlgProc::_FilterHiddenThemes()
 		wchar_t* str = (wchar_t*)malloc(sizeof(wchar_t) * len);
 		StringCchPrintf(str, len, L"%s", ptr);
 
+		WCHAR path[MAX_PATH];
+		ExpandEnvironmentStrings(str, path, MAX_PATH);
 
 		msstyle.erase(
 			std::remove_if(msstyle.begin(), msstyle.end(), 
 				[&](LPWSTR& lstr)
 				{
-					return StrCmpI(lstr, str) == 0;
+					return StrCmpI(lstr, path) == 0;
 				})
 			,msstyle.end());
 

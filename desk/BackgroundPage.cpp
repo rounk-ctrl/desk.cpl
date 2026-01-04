@@ -83,12 +83,23 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		k++;
 	}
 
+	HINSTANCE hThemeCpl = LoadLibraryEx(L"themecpl.dll", 0, LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_SEARCH_SYSTEM32);
+
 	// combobox with positions of wallpaper
-	LPCWSTR items[] = { L"Centre", L"Tile", L"Stretch",  L"Fit",  L"Fill",  L"Span" };
-	for (int i = 0; i < _countof(items); i++)
+	for (int i = 0; i < 6; i++)
 	{
-		ComboBox_AddString(hPosCombobox, items[i]);
+		// cool ms
+		if (i == 3) i = 4;
+		else if (i == 4) i = 3;
+
+		WCHAR string[10];
+		LoadString(hThemeCpl, 500 + (8 - i), string, 10);
+		ComboBox_AddString(hPosCombobox, string);
+		
+		if (i == 4) i = 3;
+		else if (i == 3) i = 4;
 	}
+	FreeLibrary(hThemeCpl);
 
 	DESKTOP_WALLPAPER_POSITION pos;
 	pDesktopWallpaper->GetPosition(&pos);
@@ -105,7 +116,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		selectedTheme->useDesktopColor = true;
 		selectedTheme->newColor = 0xB0000000;
 	}
-
 
 	AddMissingWallpapers(currentITheme);
 	SelectCurrentWallpaper(currentITheme);

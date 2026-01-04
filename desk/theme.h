@@ -27,9 +27,9 @@ struct ISlideshowSettings : IUnknown
 	virtual INT64 WINAPI GetInterval() = 0;
 	virtual INT64 WINAPI GetShuffle() = 0;
 	virtual HRESULT WINAPI UselessFunc1() = 0;
-	virtual unsigned __int16* WINAPI GetFeedUrl() = 0;
+	virtual LPWSTR WINAPI GetFeedUrl() = 0;
 	virtual BOOL WINAPI IsRssFeed() = 0;
-	virtual HRESULT WINAPI SetSourceDirectory(const unsigned __int16*) = 0;
+	virtual HRESULT WINAPI SetSourceDirectory(LPWSTR) = 0;
 	virtual HRESULT WINAPI GetAllMatchingWallpapers(IWallpaperCollection**) = 0;
 };
 
