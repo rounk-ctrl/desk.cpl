@@ -166,7 +166,7 @@ BOOL CThemeDlgProc::OnSetActive()
 void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 {
 	// update THEMEINFO
-	if (lstrlenW(ws) == 0 || PathFileExists(ws) == FALSE)
+	if (lstrlen(ws) == 0 || PathFileExists(ws) == FALSE)
 	{
 		// no wallpaper applied
 		selectedTheme->wallpaperPath = L"";

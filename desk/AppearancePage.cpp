@@ -92,7 +92,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 			LoadString(hStyle, 101, name, MAX_PATH);
 
 			index = 0;
-			if (lstrlenW(name) != 0)
+			if (lstrlen(name) != 0)
 			{
 				index = ComboBox_AddString(hThemesCombobox, name);
 			}
@@ -498,7 +498,7 @@ void CAppearanceDlgProc::_FixColorBox()
 		LPCWSTR variants[] = { L" (large)", L" (extra large)" };
 		for (int j = 0; j < ARRAYSIZE(variants); ++j)
 		{
-			size_t totalSize = wcslen(value) + wcslen(variants[j]) + 1;
+			size_t totalSize = lstrlen(value) + lstrlen(variants[j]) + 1;
 			LPWSTR dest = new WCHAR[totalSize];
 			dest[0] = L'\0';
 
@@ -628,20 +628,12 @@ VOID CAppearanceDlgProc::FillSchemeDataMap(LPCWSTR theme, int index)
 	{
 		WCHAR buffer[256];
 		HRESULT hr = SHLoadIndirectString(theme, buffer, ARRAYSIZE(buffer), NULL);
-		if (SUCCEEDED(hr))
-		{
-			wcscpy_s(data.name, 40, buffer);
-		}
-		else
-		{
-			size_t len = wcslen(theme) + 1;
-			wcscpy_s(data.name, len, theme);
-		}
+
+		lstrcpy(data.name, SUCCEEDED(hr) ? buffer : theme);
 	}
 	else
 	{
-		size_t len = wcslen(theme) + 1;
-		wcscpy_s(data.name, len, theme);
+		lstrcpy(data.name, theme);
 	}
 	schemeMap[index] = data;
 
