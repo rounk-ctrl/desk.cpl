@@ -15,6 +15,7 @@ private:
         COMMAND_HANDLER(1205, CBN_SELCHANGE, OnBgSizeChange)
         COMMAND_HANDLER(1203, BN_CLICKED, OnBrowse)
         COMMAND_HANDLER(1207, BN_CLICKED, OnColorPick)
+        COMMAND_HANDLER(1208, BN_CLICKED, OnDeskCustomize)
         NOTIFY_HANDLER(1202, LVN_ITEMCHANGED, OnWallpaperSelection)
         MESSAGE_HANDLER(WM_SETTINGCHANGE, OnSettingChange)
         CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CBackgroundDlgProc>)
@@ -26,6 +27,7 @@ private:
     BOOL OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
+    BOOL OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled);
     BOOL OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     BOOL OnApply();

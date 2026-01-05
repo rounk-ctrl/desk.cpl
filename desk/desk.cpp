@@ -9,6 +9,7 @@
 #include "helper.h"
 #include "uxtheme.h"
 #include "fms.h"
+//#include "todo.h"
 
 HINSTANCE g_hinst;
 HINSTANCE g_hThemeUI;
@@ -59,6 +60,8 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 
 	// cache the font list
 	_beginthread(FillFontList, 0, NULL);
+
+	//_beginthread(BrowserThread, 0, 0);
 
 	// init property sheet
 	WTL::CPropertySheet sheet(L"Display Properties");

@@ -10,6 +10,7 @@
 #include "desk.h"
 #include "helper.h"
 #include "wndprvw.h"
+#include "DeskIcons.h"
 
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
@@ -161,17 +162,20 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 		// Show the dialog
 		hr = pfd->Show(hWnd);
 
-		IShellItem* psiResult;
-		hr = pfd->GetResult(&psiResult);
-		if (SUCCEEDED(hr)) {
-			PWSTR pszFilePath = NULL;
-			hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+		if (SUCCEEDED(hr))
+		{
+			IShellItem* psiResult;
+			hr = pfd->GetResult(&psiResult);
 			if (SUCCEEDED(hr)) {
-				path = pszFilePath;
-				CoTaskMemFree(pszFilePath);
+				PWSTR pszFilePath = NULL;
+				hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+				if (SUCCEEDED(hr)) {
+					path = pszFilePath;
+					CoTaskMemFree(pszFilePath);
+				}
 			}
+			pfd->Release();
 		}
-		pfd->Release();
 	}
 	else
 	{
@@ -193,10 +197,12 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 			path = ofn.lpstrFile;
 		}
 	}
-
-	int inde = AddItem(hListView, ListView_GetItemCount(hListView), path.c_str());
-	ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-	ListView_EnsureVisible(hListView, inde, FALSE);
+	if (!path.empty())
+	{
+		int inde = AddItem(hListView, ListView_GetItemCount(hListView), path.c_str());
+		ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+		ListView_EnsureVisible(hListView, inde, FALSE);
+	}
 	return 0;
 }
 
@@ -215,6 +221,29 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 
 		SetModified(TRUE);
 	}
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	WTL::CPropertySheet sheet(L"Display Properties");
+	sheet.m_psh.dwFlags |= PSH_NOAPPLYNOW;
+
+	// use the dialog template from shell32
+	HINSTANCE hShell32 = LoadLibraryEx(L"shell32.dll", NULL, LOAD_LIBRARY_AS_DATAFILE);
+	if (hShell32)
+	{
+		HINSTANCE hOldRes = _AtlBaseModule.GetResourceInstance();
+		_AtlBaseModule.SetResourceInstance(hShell32);
+
+		CDesktopIconsDlg dlg;
+		sheet.AddPage(dlg);
+		_AtlBaseModule.SetResourceInstance(hOldRes);
+
+		FreeLibrary(hShell32);
+	}
+	sheet.DoModal();
+
 	return 0;
 }
 

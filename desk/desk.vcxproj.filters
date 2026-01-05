@@ -72,6 +72,9 @@
     <ClInclude Include="fms.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DeskIcons.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -130,6 +133,9 @@
     </ClCompile>
     <ClCompile Include="fms.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeskIcons.cpp">
+      <Filter>Dialogs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

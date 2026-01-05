@@ -29,12 +29,11 @@
 #endif
 
 #include <atlbase.h>
+#include <atlcom.h>
 #include <atlwin.h>
 #include <atlapp.h>
 #include <atldlgs.h>
-#include <atlctrls.h>
 #include <atlcrack.h>
-#include <atlframe.h>
 
 
 #include <SetupAPI.h>

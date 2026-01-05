@@ -1,8 +1,7 @@
 #pragma once
 /*
-#include <atlbase.h>
-#include <atlwin.h>
-#include <atlcom.h>
+#include "pch.h"
+#include "desk.h"
 
 CComModule _Module;
 CAtlWinModule _AtlWinModule;
@@ -23,7 +22,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
 	case WM_CREATE:
 	{
-		AtlAxCreateControl(L"https://www.google.com", hwnd, NULL, NULL);
+		AtlAxCreateControl(L"file:///C:/Users/ro/Desktop/Windows98.htm", hwnd, NULL, NULL);
 		break;
 	}
 	case WM_DESTROY:
@@ -33,7 +32,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-DWORD WINAPI BrowserThread(LPVOID lpParam)
+void BrowserThread(LPVOID lpParam)
 {
 	CoInitialize(NULL);
 
@@ -73,6 +72,5 @@ DWORD WINAPI BrowserThread(LPVOID lpParam)
 		DispatchMessage(&msg);
 	}
 	CoUninitialize();
-	return 0;
 }
 */
