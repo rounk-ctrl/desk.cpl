@@ -416,17 +416,56 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 	float scaleX = (float)rc.Width / monitorwidth;
 	float scaleY = (float)rc.Height / monitorheight;
 
+	float scaledW = (float)_bmpWallpaper->GetWidth() * scaleX;
+	float scaledH = (float)_bmpWallpaper->GetHeight() * scaleY;
+
+
 	if (pos == DWPOS_CENTER)
 	{
-		float newW = (float)_bmpWallpaper->GetWidth() * scaleX;
-		float newH = (float)_bmpWallpaper->GetHeight() * scaleY;
+		rc.X += (int)((rc.Width - scaledW) / 2);
+		rc.Y += (int)((rc.Height - scaledH) / 2);
 
-		rc.X += (rc.Width - newW) / 2;
-		rc.Y += (rc.Height - newH) / 2;
+		rc.Width = (int)scaledW;
+		rc.Height = (int)scaledH;
 
-		rc.Width = newW;
-		rc.Height = newH;
+		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
+	}
+	else if (pos == DWPOS_TILE)
+	{
+		int sideImages = (int)((rc.Width / scaledW) + 1);
+		int topImages = (int)((rc.Height / scaledH) + 1);
 
+		rc.Width = (int)scaledW;
+		rc.Height = (int)scaledH;
+
+		for (int i = 0; i < topImages; i++)
+		{
+			for (int j = 0; j < sideImages; j++)
+			{
+				DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
+				rc.X += rc.Width;
+			}
+			rc.X = _marMonitor.cxLeftWidth > 0 ? _marMonitor.cxLeftWidth : 0;
+			rc.Y += rc.Height;
+		}
+	}
+	else if (pos == DWPOS_FIT)
+	{
+		float ratio = scaledW / scaledH;
+		float newW = ratio * rc.Height;
+		if (newW > rc.Width)
+		{
+			ratio = scaledH / scaledW;
+			float newH = ratio * rc.Width;
+
+			rc.Y += (int)((rc.Height - newH) / 2);
+			rc.Height = (int)newH;
+		}
+		else
+		{
+			rc.X += (int)((rc.Width - newW) / 2);
+			rc.Width = (int)newW;
+		}
 		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
 	}
 	else
