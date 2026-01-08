@@ -75,6 +75,7 @@ private:
 	HRESULT _DrawMonitor();
 	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, int index);
 	HRESULT _RenderWallpaper();
+	HRESULT _AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gdiplus::Rect rc);
 	HRESULT _RenderBin();
 	HRESULT _RenderSolidColor();
 	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);

@@ -294,6 +294,7 @@
     <ClInclude Include="ThemesPage.h" />
     <ClInclude Include="todo.h" />
     <ClInclude Include="uxtheme.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppearanceDlgBox.cpp" />
@@ -320,7 +321,6 @@
     <ClCompile Include="ThemesPage.cpp" />
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />
-    <ClCompile Include="version.h" />
     <ClCompile Include="wndprvw.cpp" />
     <ClCompile Include="wndprvw.h" />
   </ItemGroup>

@@ -200,8 +200,12 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		rect.Width = 152;
 		rect.Height = 112;
 	}
+	
 	hr = DrawBitmapIfNotNull(_bmpSolidColor, &graphics, rect);
-	hr = DrawBitmapIfNotNull(_bmpWallpaper, &graphics, rect);
+
+	graphics.SetClip(rect);
+	_AdjustAndDrawWallpaper(&graphics, rect);
+	graphics.ResetClip();
 
 	if (_pageType == PT_SCRSAVER)
 	{
@@ -394,6 +398,42 @@ HRESULT CWindowPreview::_RenderWallpaper()
 	FreeBitmap(&_bmpWallpaper);
 	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath.c_str(), FALSE);
 	return hr;
+}
+
+HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gdiplus::Rect rc)
+{
+	if (!_bmpWallpaper) return E_FAIL;
+
+	int monitorwidth = GetSystemMetrics(SM_CXSCREEN);
+	int monitorheight = GetSystemMetrics(SM_CYSCREEN);
+
+	DESKTOP_WALLPAPER_POSITION pos = (DESKTOP_WALLPAPER_POSITION)selectedTheme->posChanged;
+	if (selectedTheme->posChanged == -1)
+	{
+		pDesktopWallpaper->GetPosition(&pos);
+	}
+
+	float scaleX = (float)rc.Width / monitorwidth;
+	float scaleY = (float)rc.Height / monitorheight;
+
+	if (pos == DWPOS_CENTER)
+	{
+		float newW = (float)_bmpWallpaper->GetWidth() * scaleX;
+		float newH = (float)_bmpWallpaper->GetHeight() * scaleY;
+
+		rc.X += (rc.Width - newW) / 2;
+		rc.Y += (rc.Height - newH) / 2;
+
+		rc.Width = newW;
+		rc.Height = newH;
+
+		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
+	}
+	else
+	{
+		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
+	}
+	return S_OK;
 }
 
 HRESULT CWindowPreview::_RenderBin()
