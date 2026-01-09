@@ -111,11 +111,11 @@ private:
 
 	SCHEMEINFO info[28] =
 	{
-		{
+		{	// desktop (1)
 			.activeButton = ACTIVE_COLOR1,
 			.color1Target = COLOR_DESKTOP,
 		},
-		{
+		{	//inactive titlebar (2)
 			.activeButton = ACTIVE_ALL,
 			.color1Target = COLOR_INACTIVECAPTION,
 			.color2Target = COLOR_GRADIENTINACTIVECAPTION,
@@ -123,12 +123,12 @@ private:
 			.sizeTarget = SM_CYSIZE,
 			.fontTarget = 0,
 		},
-		{
+		{	// inactive window border (3)
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_INACTIVEBORDER,
 			.sizeTarget = SM_CYBORDER,
 		},
-		{
+		{	// active titlebar (4)
 			.activeButton = ACTIVE_ALL,
 			.color1Target = COLOR_ACTIVECAPTION,
 			.color2Target = COLOR_GRADIENTACTIVECAPTION,
@@ -136,87 +136,92 @@ private:
 			.sizeTarget = SM_CYSIZE,
 			.fontTarget = 0,
 		},
-		{
+		{	// active window border (5)
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_ACTIVEBORDER,
 			.sizeTarget = SM_CYBORDER,
 		},
-		{
+		{	// menu (6)
 			.activeButton = ACTIVE_ALL & ~ACTIVE_COLOR2,
 			.color1Target = COLOR_MENU,
 			.fontColorTarget = COLOR_MENUTEXT,
 			.sizeTarget = SM_CYMENUSIZE,
 			.fontTarget = 2,
 		},
-		{
+		{	// selected items (7)
 			.activeButton = ACTIVE_ALL & ~ACTIVE_COLOR2,
 			.color1Target = COLOR_HIGHLIGHT,
 			.fontColorTarget = COLOR_HIGHLIGHTTEXT,
 			.sizeTarget = SM_CYMENUSIZE,
 			.fontTarget = 2,
 		},
-		{
-			// window (8)
+		{	// window (8)
 			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONTCOLOR,
 			.color1Target = COLOR_WINDOW,
 			.fontColorTarget = COLOR_WINDOWTEXT,
 		},
-		{
+		{	// scrollbar (9)
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_COLOR1,
 			.color1Target = COLOR_SCROLLBAR,		// MOD
 			.sizeTarget = SM_CYVSCROLL,				// change both
 		},
-		{
+		{	// 3d object (10)
 			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONTCOLOR,
 			.color1Target = COLOR_BTNFACE,
 			.fontColorTarget = COLOR_BTNTEXT,
 		},
-		{
+		{	// palette title (11)
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
 			.sizeTarget = SM_CYSMSIZE,				// change both
 			.fontTarget = 1,
 		},
-		{
+		{ }, // REMOVED (12)
+		{	// caption buttons (13)
 			.activeButton = ACTIVE_SIZEITEM,
 			.sizeTarget = SM_CYSIZE,				// change both
 		},
-		{
+		{}, // REMOVED (14)
+		{	// message box (15)
 			.activeButton = ACTIVE_FONT | ACTIVE_FONTCOLOR,
 			.fontColorTarget = COLOR_WINDOWTEXT,
 			.fontTarget = 4,
 		},
-		{
+		{}, // REMOVED (16)
+		{	// application background (17)
 			.activeButton = ACTIVE_COLOR1,
 			.color1Target = COLOR_APPWORKSPACE,
 		},
-		{
+		{}, // REMOVED (18)
+		{},	// REMOVED (19)
+		{	// horizontal icon (20)
 			.activeButton = ACTIVE_SIZEITEM,		// TODO: fix
 			.sizeTarget = SM_CXICONSPACING,			
 		},
-		{
+		{	// vertical icon (21)
 			.activeButton = ACTIVE_SIZEITEM,		// TODO: fix
 			.sizeTarget = SM_CYICONSPACING,
 		},
-		{
+		{	// tooltip (22)
 			.activeButton = ACTIVE_COLOR1 | ACTIVE_FONT | ACTIVE_FONTCOLOR,
 			.color1Target = COLOR_INFOBK,
 			.fontColorTarget = COLOR_INFOTEXT,
 			.fontTarget = 3,
 		},
-		{
+		{	// icon (23)
 			.activeButton = ACTIVE_SIZEITEM | ACTIVE_FONT,
 			.sizeTarget = SM_CXICON,
 			.fontTarget = 5,
-		}, // skip 24- small icon
-		{
+		}, 
+		{}, // skip 24- small icon
+		{	// disabled (25)
 			.activeButton = ACTIVE_FONTCOLOR,
 			.fontColorTarget = COLOR_GRAYTEXT,
 		},
-		{
+		{	// hyperlink (26)
 			.activeButton = ACTIVE_FONTCOLOR,
 			.fontColorTarget = COLOR_HOTLIGHT,
 		},
-		{
+		{	// padded border (27)
 			.activeButton = ACTIVE_SIZEITEM,
 			.sizeTarget = SM_CXPADDEDBORDER,
 		}

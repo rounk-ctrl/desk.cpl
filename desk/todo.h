@@ -73,4 +73,54 @@ void BrowserThread(LPVOID lpParam)
 	}
 	CoUninitialize();
 }
+
+
+
+		ITheme24H2* pth = (ITheme24H2*)currentITheme;
+		LPWSTR path2;
+		pth->GetPath(currThem, &path2);
+		wprintf(L"%s\n", path2);
+
+		IShellItemArray* array;
+		pDesktopWallpaper->GetSlideshow(&array);
+
+		std::vector<PIDLIST_ABSOLUTE> pidlList;
+
+		DWORD size;
+		array->GetCount(&size);
+		for (int i = 0; i < size; ++i)
+		{
+			IShellItem* item;
+			array->GetItemAt(i, &item);
+
+			LPWSTR yes;
+			item->GetDisplayName(SIGDN_FILESYSPATH, &yes);
+
+			PIDLIST_ABSOLUTE pidl = nullptr;
+			HRESULT hr = SHGetIDListFromObject(item, &pidl);
+			if (SUCCEEDED(hr))
+			{
+				pidlList.push_back(pidl);
+			}
+
+			item->Release();
+		}
+		IShellItem* pShellItem = NULL;
+		PIDLIST_ABSOLUTE pidlNew = nullptr;
+		SHCreateItemFromParsingName(L"C:\\Windows\\ASUS\\Wallpapers\\ASUS.JPG", NULL, IID_PPV_ARGS(&pShellItem));
+		HRESULT hr = SHGetIDListFromObject(pShellItem, &pidlNew);
+		if (SUCCEEDED(hr))
+		{
+			pidlList.push_back(pidlNew);
+		}
+
+		IShellItemArray* ppNewArray;
+
+		SHCreateShellItemArrayFromIDLists(
+			static_cast<UINT>(pidlList.size()),
+			const_cast<LPCITEMIDLIST*>(pidlList.data()),
+			&ppNewArray);
+
+		pDesktopWallpaper->SetSlideshow(ppNewArray);
+
 */

@@ -24,7 +24,7 @@ void InitUxtheme()
 		OpenThemeDataFromFile = (OpenThemeDataFromFile_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(16));
 		ClearTheme = (ClearTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(84));
 		LoaderLoadTheme = (LoaderLoadTheme_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(92));
-		DrawTextWithGlow = (DrawTextWithGlow_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(126));
+		//DrawTextWithGlow = (DrawTextWithGlow_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(126));
 
 		SetSystemVisualStyle = (SetSystemVisualStyle_t)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(65));
 		//FreeLibrary(hUxtheme);

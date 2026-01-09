@@ -37,6 +37,7 @@ typedef struct tagSCHEMEDATA {
 	NONCLIENTMETRICSW_2k ncm;
 	LOGFONT lfIconTitle;
 	COLORREF rgb[MAX_COLORS];
+	int iPaddedBorderWidth = 0;
 
 	// custom fields
 	WCHAR name[40];

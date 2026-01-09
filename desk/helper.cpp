@@ -268,6 +268,7 @@ void CreateBlankScheme()
 			memcpy(currentData->rgb, rgb, sizeof(rgb));
 			currentData->variant = 0x8;			// indicates custom theme
 			currentData->dpiScaled = false;
+			currentData->iPaddedBorderWidth = ncm.iPaddedBorderWidth;
 
 			selectedTheme->selectedScheme = currentData;
 		}
@@ -327,6 +328,7 @@ void CreateThemedMetricsScheme(int dpi, void* pTheme)
 	UnScaleNonClientMetrics(selectedTheme->selectedScheme->ncm, dpi);
 	selectedTheme->selectedScheme->lfIconTitle.lfHeight = MulDiv(selectedTheme->selectedScheme->lfIconTitle.lfHeight, 96, dpi);
 
+	selectedTheme->selectedScheme->iPaddedBorderWidth = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
 }
 
 void SetBitmap(HWND hWnd, HBITMAP hBmp)
