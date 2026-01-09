@@ -468,6 +468,25 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 		}
 		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
 	}
+	else if (pos == DWPOS_FILL)
+	{
+		float ratio = scaledH / scaledW;
+		float newH = ratio * rc.Width;
+		if (newH < rc.Height)
+		{
+			ratio = scaledW / scaledH;
+			float newW = ratio * rc.Height;
+
+			rc.X += (int)((rc.Width - newW) / 2);
+			rc.Width = (int)newW;
+		}
+		else
+		{
+			rc.Y += (int)((rc.Height - newH) / 2);
+			rc.Height = (int)newH;
+		}
+		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
+	}
 	else
 	{
 		DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
