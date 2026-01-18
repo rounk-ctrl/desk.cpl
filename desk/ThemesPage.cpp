@@ -138,9 +138,6 @@ BOOL CThemeDlgProc::OnSetActive()
 		|| selectedTheme->posChanged != -1 
 		|| selectedTheme->updateWallThemesPg)
 	{
-		int index = ComboBox_GetCurSel(hCombobox);
-		pThemeManager->GetTheme(index, &currentITheme);
-
 		// set the preview bitmap to the static control
 		HBITMAP ebmp;
 		pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
@@ -156,6 +153,7 @@ BOOL CThemeDlgProc::OnSetActive()
 
 		selectedTheme->fThemePgMsstyleUpdate = selectedTheme->fMsstyleChanged = false;
 	}
+
 	_TerminateProcess(pi);
 	return 0;
 }

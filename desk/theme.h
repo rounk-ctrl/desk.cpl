@@ -457,12 +457,12 @@ MIDL_INTERFACE("{c1e8c83e-845d-4d95-81db-e283fdffc000}") IThemeManager2 : IUnkno
   ) = 0;
   virtual HRESULT WINAPI GetCustomTheme(int*) = 0;
   virtual HRESULT WINAPI GetDefaultTheme(int*) = 0;
-  virtual HRESULT WINAPI CreateThemePack(HWND, LPCWSTR, ULONG pack_flags) = 0;
-  virtual HRESULT WINAPI CloneAndSetCurrentTheme(HWND, LPCWSTR, LPWSTR*) = 0;
+  virtual HRESULT WINAPI CreateThemePack(HWND, LPCWSTR pszPackPath, ULONG pack_flags) = 0;
+  virtual HRESULT WINAPI CloneAndSetCurrentTheme(HWND, LPCWSTR pszThemeFile, LPWSTR* ppszClonedThemeFile) = 0; // called in save dialog
   virtual HRESULT WINAPI InstallThemePack(HWND, LPCWSTR, int, ULONG pack_flags, LPWSTR*, IUnknown**) = 0;
   virtual HRESULT WINAPI DeleteTheme(LPCWSTR) = 0;
   virtual HRESULT WINAPI OpenTheme(HWND, LPCWSTR, ULONG pack_flags) = 0;
-  virtual HRESULT WINAPI AddAndSelectTheme(HWND, LPCWSTR, ULONG apply_flags, ULONG pack_flags) = 0;
+  virtual HRESULT WINAPI AddAndSelectTheme(HWND, LPCWSTR pszThemeFile, ULONG apply_flags, ULONG pack_flags) = 0;
   virtual HRESULT WINAPI SQMCurrentTheme() = 0;
   virtual HRESULT WINAPI ExportRoamingThemeToStream(IStream*, int) = 0;
   virtual HRESULT WINAPI ImportRoamingThemeFromStream(IStream*, int) = 0;

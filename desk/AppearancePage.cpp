@@ -334,6 +334,7 @@ BOOL CAppearanceDlgProc::OnApply()
 		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
+		UpdateCustomTheme();
 		// delete temp scheme on combobox change
 	}
 	selectedTheme->fThemePgMsstyleUpdate = true;

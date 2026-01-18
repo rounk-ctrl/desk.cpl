@@ -34,6 +34,7 @@ BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
 void CreateBlankScheme();
 void CreateThemedMetricsScheme(int dpi, void* pTheme);
 void SetBitmap(HWND hWnd, HBITMAP hBmp);
+void UpdateCustomTheme();
 
 inline SIZE GetClientSIZE(HWND _hwnd)
 {

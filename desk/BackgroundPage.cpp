@@ -324,6 +324,8 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 
 	selectedTheme->updateWallThemesPg = true;
+	UpdateCustomTheme();
+
 	SetModified(FALSE);
 
 	HBITMAP bmp;

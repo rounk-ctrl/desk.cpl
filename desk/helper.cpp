@@ -337,3 +337,12 @@ void SetBitmap(HWND hWnd, HBITMAP hBmp)
 	DeleteBitmap(hBmp);
 	DeleteBitmap(hOld);
 }
+
+void UpdateCustomTheme()
+{
+	WCHAR szCustomThemePath[MAX_PATH];
+	ExpandEnvironmentStrings(L"%localappdata%\\Microsoft\\Windows\\Themes\\Custom.theme", szCustomThemePath, MAX_PATH);
+
+	DeleteFile(szCustomThemePath);
+	pThemeManager->Refresh();
+}
