@@ -1,0 +1,41 @@
+name: desk.cpl
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        platform: [x64]
+    runs-on: windows-latest
+    env:
+      SOLUTION_FILE_PATH: .
+      RELEASE_DIR: ${{ matrix.configuration }}
+      ZIP_NAME: ${{ matrix.platform }}-${{ matrix.configuration }}
+      ARCH: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v6.0.2
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      # Add additional options to the MSBuild command line here (like platform or verbosity level).
+      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      run: msbuild /m /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /p:ReleaseDirectory=..\$env:RELEASE_DIR ${{env.SOLUTION_FILE_PATH}}
+    - name: Upload ${{ env.ARCH }}
+      uses: actions/upload-artifact@v6.0.0
+      with:
+      # Artifact name
+        name:  ${{ env.ZIP_NAME }}
+      # A file, directory or wildcard pattern that describes what to upload (ik its shit)
+        path: ${{ env.ARCH }}\${{ env.RELEASE_DIR }}\
