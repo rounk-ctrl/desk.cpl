@@ -27,6 +27,7 @@
     <LocalDebuggerCommand>C:\Windows\SysWOW64\Rundll32.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>shell32.dll, Control_RunDLL "$(TargetPath)"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArgumentsHistory>shell32.dll, Control_RunDLL "D:\files\Code\repos\desk.cpl\Release\deskn.cpl"|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-Vista|Win32'">
     <LocalDebuggerCommand>C:\Windows\SysWOW64\Rundll32.exe</LocalDebuggerCommand>
