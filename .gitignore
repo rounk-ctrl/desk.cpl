@@ -40,3 +40,5 @@ packages
 /Debug
 /desk/Debug
 /desk/Release
+/desk/Win32
+/Win32
