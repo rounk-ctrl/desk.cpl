@@ -46,7 +46,11 @@ BOOL CScrSaverDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		if (hScr)
 		{
 			WCHAR name[MAX_PATH];
-			LoadString(hScr, 1, name, MAX_PATH);
+			
+			if (!LoadString(hScr, 1, name, MAX_PATH))
+			{
+				LoadString(hScr, 100, name, MAX_PATH);
+			}
 			ComboBox_SetCurSel(hScrCombo, ComboBox_FindString(hScrCombo, 0, name));
 			FreeLibrary(hScr);
 		}
@@ -262,7 +266,10 @@ VOID CScrSaverDlgProc::AddScreenSavers(HWND comboBox)
 		WCHAR name[MAX_PATH];
 		if (!hScr) continue;
 
-		LoadString(hScr, 1, name, MAX_PATH);
+		if (!LoadString(hScr, 1, name, MAX_PATH))
+		{
+			LoadString(hScr, 100, name, MAX_PATH);
+		}
 		FreeLibrary(hScr);
 		int index = ComboBox_AddString(comboBox, name);
 		ComboBox_SetItemData(comboBox, index, path);
