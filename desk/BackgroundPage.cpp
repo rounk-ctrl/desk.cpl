@@ -141,7 +141,7 @@ BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHa
 
 BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
-	std::wstring path;
+	LPWSTR path = NULL;
 
 	IFileDialog* pfd;
 	HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd));
@@ -167,12 +167,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 			IShellItem* psiResult;
 			hr = pfd->GetResult(&psiResult);
 			if (SUCCEEDED(hr)) {
-				PWSTR pszFilePath = NULL;
-				hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
-				if (SUCCEEDED(hr)) {
-					path = pszFilePath;
-					CoTaskMemFree(pszFilePath);
-				}
+				hr = psiResult->GetDisplayName(SIGDN_FILESYSPATH, &path);
 			}
 			pfd->Release();
 		}
@@ -197,9 +192,10 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 			path = ofn.lpstrFile;
 		}
 	}
-	if (!path.empty())
+	if (path && lstrlen(path)!= 0)
 	{
-		int inde = AddItem(hListView, ListView_GetItemCount(hListView), path.c_str());
+		int inde = AddItem(hListView, ListView_GetItemCount(hListView), path);
+		ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
 		ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 		ListView_EnsureVisible(hListView, inde, FALSE);
 	}
@@ -214,10 +210,7 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 		selectedTheme->newColor = cc.rgbResult;
 
 		_UpdateButtonBmp();
-
-		HBITMAP hBmp;
-		pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &hBmp, UPDATE_SOLIDCLR);
-		SetBitmap(hBackPreview, hBmp);
+		_UpdatePreview(UPDATE_SOLIDCLR);
 
 		SetModified(TRUE);
 	}
@@ -249,44 +242,21 @@ BOOL CBackgroundDlgProc::OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bH
 
 BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled)
 {
+	int count = ListView_GetSelectedCount(hListView);
 	LPNMLISTVIEW pnmv = (LPNMLISTVIEW)nmhdr;
-	if (pnmv->uNewState & LVIS_SELECTED)
+	if (pnmv->uNewState & LVIS_SELECTED && count == 1)
 	{
 		selectedIndex = pnmv->iItem;
 		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
+		BOOL bValid = PathFileExists(path);
 
-		if (selectedIndex == 0)
-		{
-			::EnableWindow(hPosCombobox, false);
-
-			selectedTheme->wallpaperPath = L"";
-			selectedTheme->wallpaperType = WT_NOWALL;
-
-		}
-		else
-		{
-			::EnableWindow(hPosCombobox, true);
-
-			// set new path
-			selectedTheme->wallpaperPath = path;
-			selectedTheme->wallpaperType = WT_PICTURE;
-		}
-
+		::EnableWindow(hPosCombobox, bValid);
+		selectedTheme->wallpaperPath = bValid ? path : L"";
+		selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
 
 		selectedTheme->customWallpaperSelection = !selectionPicker;
 		
-		HBITMAP bmp;
-		if (!pWndPreview)
-		{
-			pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr, GetDpiForWindow(m_hWnd));
-			pWndPreview->GetPreviewImage(&bmp);
-		}
-		else
-		{
-			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-		}
-		SetBitmap(hBackPreview, bmp);
-
+		_UpdatePreview(UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		SetModified(TRUE);
 	}
 	return 0;
@@ -315,25 +285,51 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 	if (selectedTheme->customWallpaperSelection)
 	{
-		pDesktopWallpaper->Enable(selectedTheme->wallpaperType == WT_PICTURE);
+		pDesktopWallpaper->Enable(selectedTheme->wallpaperType != WT_NOWALL);
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
-			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
+			if (ListView_GetSelectedCount(hListView) == 1)
+			{
+				pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
+			}
+
+			// todo: rewrite this
+			if (ListView_GetSelectedCount(hListView) > 1)
+			{
+				std::vector<PIDLIST_ABSOLUTE> pidlList;
+
+				int index = -1;
+				while ((index = ListView_GetNextItem(hListView, index, LVNI_SELECTED)) != -1)
+				{
+					LPWSTR path = GetWallpaperPath(hListView, index);
+					MessageBox(path);
+
+					IShellItem* pShellItem = NULL;
+					PIDLIST_ABSOLUTE pidlNew = nullptr;
+					SHCreateItemFromParsingName(path, NULL, IID_PPV_ARGS(&pShellItem));
+					HRESULT hr = SHGetIDListFromObject(pShellItem, &pidlNew);
+					if (SUCCEEDED(hr))
+					{
+						pidlList.push_back(pidlNew);
+					}
+				}
+
+				IShellItemArray* ppNewArray;
+				SHCreateShellItemArrayFromIDLists(pidlList.size(), const_cast<LPCITEMIDLIST*>(pidlList.data()), &ppNewArray);
+				pDesktopWallpaper->SetSlideshow(ppNewArray);
+			}
 		}
 		selectedTheme->customWallpaperSelection = false;
 	}
 
 	selectedTheme->updateWallThemesPg = true;
+	selectedTheme->useDesktopColor = true;
 	UpdateCustomTheme();
 
-	SetModified(FALSE);
-
-	HBITMAP bmp;
-	selectedTheme->useDesktopColor = true;
-	pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-	SetBitmap(hBackPreview, bmp);
+	_UpdatePreview(UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 	_UpdateButtonBmp();
 
+	SetModified(FALSE);
 	return 0;
 }
 
@@ -352,18 +348,6 @@ BOOL CBackgroundDlgProc::OnSetActive()
 			DESKTOP_WALLPAPER_POSITION pos;
 			pDesktopWallpaper->GetPosition(&pos);
 			ComboBox_SetCurSel(hPosCombobox, pos);
-		}
-	}
-	// special case where preview wont update if (none) 
-	// and background color changes due to theme change
-	// just update each time u activate
-	if (!firstInit && selectedIndex == 0)
-	{
-		HBITMAP bmp; 
-		if (pWndPreview)
-		{
-			pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
-			SetBitmap(hBackPreview, bmp);
 		}
 	}
 	_TerminateProcess(pi);
@@ -477,6 +461,7 @@ void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
 		index = ListView_FindItem(hListView, -1, &findInfo);
 	}
 
+	ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
 	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, index, FALSE);
 }
@@ -488,4 +473,20 @@ void CBackgroundDlgProc::_UpdateButtonBmp()
 	HBITMAP hOld = Button_SetBitmap(GetDlgItem(1207), hBmp);
 	DeleteBitmap(hOld);
 	DeleteBitmap(hBmp);
+}
+
+void CBackgroundDlgProc::_UpdatePreview(UINT uFlags)
+{
+	HBITMAP bmp;
+	if (!pWndPreview)
+	{
+		pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr, GetDpiForWindow(m_hWnd));
+		pWndPreview->GetPreviewImage(&bmp);
+		
+	}
+	else
+	{
+		pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, uFlags);
+	}
+	SetBitmap(hBackPreview, bmp);
 }
