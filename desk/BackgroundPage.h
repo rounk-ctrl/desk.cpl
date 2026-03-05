@@ -44,12 +44,11 @@ private:
 
     /// custom variables
     HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
-    BOOL firstInit;
     HWND hListView;
     HWND hBackPreview;
     HWND hPosCombobox;
     SIZE backPreviewSize;
     int selCount;
-    BOOL bSlideshowApply;
+    BOOL fWallpaperApply;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

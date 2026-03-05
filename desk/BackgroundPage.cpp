@@ -24,13 +24,12 @@ const COMDLG_FILTERSPEC file_types[] = {
 
 BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	firstInit = TRUE;
 	hListView = GetDlgItem(1202);
 	hBackPreview = GetDlgItem(1200);
 	hPosCombobox = GetDlgItem(1205);
 	backPreviewSize = GetClientSIZE(hBackPreview);
 	selCount = 0;
-	bSlideshowApply = FALSE;
+	fWallpaperApply = TRUE;
 
 	if (!currentITheme)
 	{
@@ -120,7 +119,6 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 
 	_UpdateButtonBmp();
 
-	firstInit = FALSE;
 	return 0;
 }
 
@@ -133,10 +131,7 @@ BOOL CBackgroundDlgProc::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL
 BOOL CBackgroundDlgProc::OnBgSizeChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	selectedTheme->posChanged = ComboBox_GetCurSel(hPosCombobox);
-
-	HBITMAP bmp;
-	pWndPreview->GetUpdatedPreviewImage(nullptr, nullptr, &bmp, UPDATE_WALLPAPER);
-	SetBitmap(hBackPreview, bmp);
+	_UpdatePreview(UPDATE_WALLPAPER);
 
 	SetModified(TRUE);
 	return 0;
@@ -253,12 +248,13 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 
 	selectedTheme->fSlideshowSelection = FALSE;
 
-	if (pnmv->uNewState & LVIS_SELECTED && count == 1)
+	if (pnmv->uChanged & LVIF_STATE && pnmv->uNewState & LVIS_SELECTED && count == 1)
 	{
 		::EnableWindow(hPosCombobox, bValid);
 		selectedTheme->wallpaperPath = bValid ? path : L"";
 		selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
 		selCount = 1;
+		fWallpaperApply = FALSE;
 
 		carouselWallpapers.clear();
 		carouselWallpapers.push_back(path);
@@ -267,6 +263,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 
 		_UpdatePreview(UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		SetModified(TRUE);
+
 	}
 	else if (count > 1 && pnmv->uChanged & LVIF_STATE)
 	{
@@ -292,7 +289,6 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 		std::erase(carouselWallpapers, path);
 		selCount--;
 	}
-
 	return 0;
 }
 
@@ -320,12 +316,13 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 	if (selectedTheme->customWallpaperSelection)
 	{
-		selectedTheme->fSlideshowSelection = selectedTheme->wallpaperType == WT_SLIDESHOW;
+		//selectedTheme->fSlideshowSelection = selectedTheme->wallpaperType == WT_SLIDESHOW;
 		pDesktopWallpaper->Enable(selectedTheme->wallpaperType != WT_NOWALL);
 
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
 			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
+			fWallpaperApply = TRUE;
 		}
 		else if (selectedTheme->wallpaperType == WT_SLIDESHOW)
 		{
@@ -367,7 +364,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 {
 	selectionPicker = false;
 	_UpdateButtonBmp();
-	if (!selectedTheme->customWallpaperSelection && !firstInit && !selectedTheme->fSlideshowSelection)
+	if (!selectedTheme->customWallpaperSelection && !fWallpaperApply)
 	{
 		AddMissingWallpapers(currentITheme);
 		SelectCurrentWallpaper();
@@ -480,10 +477,13 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 
 void CBackgroundDlgProc::SelectCurrentWallpaper()
 {
+	// temp
+	if (selectedTheme->wallpaperType == WT_SLIDESHOW) return;
+
 	::EnableWindow(hPosCombobox, selectedTheme->wallpaperType != WT_NOWALL);
 	int index = 0;
 
-	if (selectedTheme->wallpaperType != WT_NOWALL)
+	if (selectedTheme->wallpaperType == WT_PICTURE)
 	{
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
@@ -494,6 +494,8 @@ void CBackgroundDlgProc::SelectCurrentWallpaper()
 	ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
 	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, index, FALSE);
+
+	SetModified(FALSE);
 }
 
 void CBackgroundDlgProc::_UpdateButtonBmp()
