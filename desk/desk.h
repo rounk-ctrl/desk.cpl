@@ -71,6 +71,7 @@ struct THEMEINFO
 	std::wstring szMsstylePath;
 	bool fMsstyleChanged = false;
 	bool fThemePgMsstyleUpdate = false;		// bruh
+	bool fSlideshowSelection;
 };
 
 typedef struct tag_FONTINFO

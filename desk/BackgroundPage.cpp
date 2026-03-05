@@ -15,7 +15,7 @@
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
-std::vector<LPWSTR> wallpapers;
+std::vector<LPWSTR> carouselWallpapers;
 const COMDLG_FILTERSPEC file_types[] = {
 	{L"All Picture Files (*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png)",
 	L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
@@ -29,6 +29,8 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	hBackPreview = GetDlgItem(1200);
 	hPosCombobox = GetDlgItem(1205);
 	backPreviewSize = GetClientSIZE(hBackPreview);
+	selCount = 0;
+	bSlideshowApply = FALSE;
 
 	if (!currentITheme)
 	{
@@ -55,6 +57,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ExpandEnvironmentStrings(L"%windir%\\Web\\Wallpaper", wallpaperdir, MAX_PATH);
 	ExpandEnvironmentStrings(L"%windir%", windowswaldir, MAX_PATH);
 
+	std::vector<LPWSTR> wallpapers;
 	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
 
 	// this basically combines wallpaperdir and windowswaldir
@@ -113,7 +116,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	}
 
 	AddMissingWallpapers(currentITheme);
-	SelectCurrentWallpaper(currentITheme);
+	SelectCurrentWallpaper();
 
 	_UpdateButtonBmp();
 
@@ -244,29 +247,61 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 {
 	int count = ListView_GetSelectedCount(hListView);
 	LPNMLISTVIEW pnmv = (LPNMLISTVIEW)nmhdr;
+
+	LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
+	BOOL bValid = PathFileExists(path);
+
+	selectedTheme->fSlideshowSelection = FALSE;
+
 	if (pnmv->uNewState & LVIS_SELECTED && count == 1)
 	{
-		selectedIndex = pnmv->iItem;
-		LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
-		BOOL bValid = PathFileExists(path);
-
 		::EnableWindow(hPosCombobox, bValid);
 		selectedTheme->wallpaperPath = bValid ? path : L"";
 		selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
+		selCount = 1;
+
+		carouselWallpapers.clear();
+		carouselWallpapers.push_back(path);
 
 		selectedTheme->customWallpaperSelection = !selectionPicker;
-		
+
 		_UpdatePreview(UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
 		SetModified(TRUE);
 	}
+	else if (count > 1 && pnmv->uChanged & LVIF_STATE)
+	{
+		selectedTheme->wallpaperType = WT_SLIDESHOW;
+
+		if (pnmv->uNewState & LVIS_SELECTED)
+		{
+			carouselWallpapers.push_back(path);
+			selectedTheme->wallpaperPath = bValid ? path : L"";
+			selCount++;
+		}
+		else if (pnmv->uOldState & LVIS_SELECTED)
+		{
+			std::erase(carouselWallpapers, path);
+			selCount--;
+		}
+
+		_UpdatePreview(UPDATE_WALLPAPER | UPDATE_SOLIDCLR);
+		SetModified(TRUE);
+	}
+	else if (pnmv->uOldState & LVIS_SELECTED && selCount > 1)
+	{
+		std::erase(carouselWallpapers, path);
+		selCount--;
+	}
+
 	return 0;
 }
+
 
 BOOL CBackgroundDlgProc::OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	printf("WM_SETTINGCHANGED:\n");
 	AddMissingWallpapers(currentITheme);
-	SelectCurrentWallpaper(currentITheme);
+	SelectCurrentWallpaper();
 	return 0;
 }
 
@@ -285,39 +320,34 @@ BOOL CBackgroundDlgProc::OnApply()
 	}
 	if (selectedTheme->customWallpaperSelection)
 	{
+		selectedTheme->fSlideshowSelection = selectedTheme->wallpaperType == WT_SLIDESHOW;
 		pDesktopWallpaper->Enable(selectedTheme->wallpaperType != WT_NOWALL);
+
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
-			if (ListView_GetSelectedCount(hListView) == 1)
-			{
-				pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
-			}
+			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
+		}
+		else if (selectedTheme->wallpaperType == WT_SLIDESHOW)
+		{
+			std::vector<PIDLIST_ABSOLUTE> pidlList;
 
-			// todo: rewrite this
-			if (ListView_GetSelectedCount(hListView) > 1)
+			for (LPWSTR path : carouselWallpapers)
 			{
-				std::vector<PIDLIST_ABSOLUTE> pidlList;
-
-				int index = -1;
-				while ((index = ListView_GetNextItem(hListView, index, LVNI_SELECTED)) != -1)
+				IShellItem* pShellItem = NULL;
+				PIDLIST_ABSOLUTE pidlNew = nullptr;
+				SHCreateItemFromParsingName(path, NULL, IID_PPV_ARGS(&pShellItem));
+				HRESULT hr = SHGetIDListFromObject(pShellItem, &pidlNew);
+				if (SUCCEEDED(hr))
 				{
-					LPWSTR path = GetWallpaperPath(hListView, index);
-					MessageBox(path);
-
-					IShellItem* pShellItem = NULL;
-					PIDLIST_ABSOLUTE pidlNew = nullptr;
-					SHCreateItemFromParsingName(path, NULL, IID_PPV_ARGS(&pShellItem));
-					HRESULT hr = SHGetIDListFromObject(pShellItem, &pidlNew);
-					if (SUCCEEDED(hr))
-					{
-						pidlList.push_back(pidlNew);
-					}
+					pidlList.push_back(pidlNew);
 				}
-
-				IShellItemArray* ppNewArray;
-				SHCreateShellItemArrayFromIDLists(pidlList.size(), const_cast<LPCITEMIDLIST*>(pidlList.data()), &ppNewArray);
-				pDesktopWallpaper->SetSlideshow(ppNewArray);
 			}
+
+			IShellItemArray* ppNewArray;
+			SHCreateShellItemArrayFromIDLists(pidlList.size(), const_cast<LPCITEMIDLIST*>(pidlList.data()), &ppNewArray);
+			pDesktopWallpaper->SetSlideshow(ppNewArray);
+
+			selectedTheme->wallpaperPath = carouselWallpapers[0];
 		}
 		selectedTheme->customWallpaperSelection = false;
 	}
@@ -337,10 +367,10 @@ BOOL CBackgroundDlgProc::OnSetActive()
 {
 	selectionPicker = false;
 	_UpdateButtonBmp();
-	if (!selectedTheme->customWallpaperSelection && !firstInit)
+	if (!selectedTheme->customWallpaperSelection && !firstInit && !selectedTheme->fSlideshowSelection)
 	{
 		AddMissingWallpapers(currentITheme);
-		SelectCurrentWallpaper(currentITheme);
+		SelectCurrentWallpaper();
 
 		if (selectedTheme->posChanged == -1)
 		{
@@ -448,12 +478,12 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 	}
 }
 
-void CBackgroundDlgProc::SelectCurrentWallpaper(IUnknown* th)
+void CBackgroundDlgProc::SelectCurrentWallpaper()
 {
 	::EnableWindow(hPosCombobox, selectedTheme->wallpaperType != WT_NOWALL);
 	int index = 0;
 
-	if (selectedTheme->wallpaperType == WT_PICTURE)
+	if (selectedTheme->wallpaperType != WT_NOWALL)
 	{
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;

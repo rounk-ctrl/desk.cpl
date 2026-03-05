@@ -38,17 +38,18 @@ private:
     int AddColumn(HWND hListView, int width);
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
     void AddMissingWallpapers(IUnknown* th);
-    void SelectCurrentWallpaper(IUnknown* th);
+    void SelectCurrentWallpaper();
     void _UpdateButtonBmp();
     void _UpdatePreview(UINT uFlags);
 
     /// custom variables
     HIMAGELIST hml = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 1, 1);
     BOOL firstInit;
-    int selectedIndex;
     HWND hListView;
     HWND hBackPreview;
     HWND hPosCombobox;
     SIZE backPreviewSize;
+    int selCount;
+    BOOL bSlideshowApply;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };
