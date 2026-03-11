@@ -2,6 +2,9 @@
 #include "pch.h"
 #include "wndprvw.h"
 
+#define WM_SLIDESHOW_BEGIN  (WM_USER + 1)  // deselect all
+#define WM_ADD_SLIDESHOW_ITEMS (WM_USER + 2)  // select wallpaper
+
 class CBackgroundDlgProc
     : public CPropertyPageImpl<CBackgroundDlgProc>
 {
@@ -18,6 +21,9 @@ private:
         COMMAND_HANDLER(1208, BN_CLICKED, OnDeskCustomize)
         NOTIFY_HANDLER(1202, LVN_ITEMCHANGED, OnWallpaperSelection)
         MESSAGE_HANDLER(WM_SETTINGCHANGE, OnSettingChange)
+
+        MESSAGE_HANDLER(WM_SLIDESHOW_BEGIN, OnSlideshowBegin)
+        MESSAGE_HANDLER(WM_ADD_SLIDESHOW_ITEMS, OnAddSlideshowItems)
         CHAIN_MSG_MAP(WTL::CPropertyPageImpl<CBackgroundDlgProc>)
     END_MSG_MAP()
 
@@ -30,6 +36,8 @@ private:
     BOOL OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bHandled);
     BOOL OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL& bHandled);
     BOOL OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    BOOL OnSlideshowBegin(UINT, WPARAM, LPARAM, BOOL&);
+    BOOL OnAddSlideshowItems(UINT, WPARAM, LPARAM, BOOL&);
     BOOL OnApply();
     BOOL OnSetActive();
 
@@ -50,5 +58,6 @@ private:
     SIZE backPreviewSize;
     int selCount;
     BOOL fWallpaperApply;
+    std::vector<LPWSTR> slideshowWallpapers;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

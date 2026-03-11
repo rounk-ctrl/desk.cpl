@@ -172,7 +172,19 @@ void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
 	}
 	else
 	{
-		selectedTheme->wallpaperType = WT_PICTURE;
+		BOOL isEn = FALSE;
+		auto themeClass = std::make_unique<CTheme>(currentITheme);
+		themeClass->IsSlideshowEnabled(&isEn);
+		if (isEn)
+		{
+			selectedTheme->wallpaperType = WT_SLIDESHOW;
+		}
+		else
+		{
+			selectedTheme->wallpaperType = WT_PICTURE;
+		}
+
+		// wndprvw uses this to display the preview
 		selectedTheme->wallpaperPath = ws;
 	}
 

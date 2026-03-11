@@ -21,6 +21,46 @@ const COMDLG_FILTERSPEC file_types[] = {
 	L"*.bmp;*.gif;*.jpg;*.jpeg;*.dib;*.png"},
 };
 
+struct SlideshowThreadData {
+	HWND wnd;
+	IUnknown* iTheme;
+};
+
+void SlideshowWorkerThread(void* lpParam)
+{
+	SlideshowThreadData* data = (SlideshowThreadData*)lpParam;
+
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+
+	BOOL isEn = 0;
+	auto themeClass = std::make_unique<CTheme>(data->iTheme);
+	themeClass->IsSlideshowEnabled(&isEn);
+
+	if (isEn)
+	{
+		PostMessage(data->wnd, WM_SLIDESHOW_BEGIN, 0, 0);
+
+		// fix this: this pathway only reads single file if i add multiple files from different folders
+		ComPtr<ISlideshowSettings> st;
+		themeClass->get_SlideshowSettings(&st);
+		ComPtr<IWallpaperCollection> wlp;
+		st->GetAllMatchingWallpapers(&wlp);
+		int count = wlp->GetCount();
+
+		for (int i = 0; i < count; i++)
+		{
+			LPWSTR path = { 0 };
+			wlp->GetWallpaperAt(i, &path);
+
+			wchar_t* pathCopy = new wchar_t[wcslen(path) + 1];
+			wcscpy_s(pathCopy, wcslen(path) + 1, path);
+
+			PostMessage(data->wnd, WM_ADD_SLIDESHOW_ITEMS, 0, (LPARAM)pathCopy);
+		}
+	}
+
+	CoUninitialize();
+}
 
 BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -57,7 +97,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	ExpandEnvironmentStrings(L"%windir%", windowswaldir, MAX_PATH);
 
 	std::vector<LPWSTR> wallpapers;
-	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif"};
+	LPCWSTR extensions[] = { L".jpg",  L".png", L".bmp", L".jpeg", L".dib", L".gif" };
 
 	// this basically combines wallpaperdir and windowswaldir
 	EnumDir(wallpaperdir, extensions, ARRAYSIZE(extensions), wallpapers, TRUE);
@@ -71,8 +111,8 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		LPCWSTR fileB = PathFindFileNameW(b);
 		int cmpResult = StrCmpLogicalW(fileA, fileB);
 		return cmpResult < 0;
-	});
-	
+		});
+
 	// start with k=1, k=0 is (none)
 	int k = 1;
 	for (auto path : wallpapers)
@@ -92,7 +132,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		WCHAR string[10];
 		LoadString(hThemeCpl, 500 + (8 - i), string, 10);
 		ComboBox_AddString(hPosCombobox, string);
-		
+
 		if (i == 4) i = 3;
 		else if (i == 3) i = 4;
 	}
@@ -114,11 +154,10 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		selectedTheme->newColor = 0xB0000000;
 	}
 
-	AddMissingWallpapers(currentITheme);
+	// bug
 	SelectCurrentWallpaper();
 
 	_UpdateButtonBmp();
-
 	return 0;
 }
 
@@ -190,7 +229,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 			path = ofn.lpstrFile;
 		}
 	}
-	if (path && lstrlen(path)!= 0)
+	if (path && lstrlen(path) != 0)
 	{
 		int inde = AddItem(hListView, ListView_GetItemCount(hListView), path);
 		ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
@@ -202,7 +241,7 @@ BOOL CBackgroundDlgProc::OnBrowse(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 
 BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
-	CHOOSECOLOR cc = {0};
+	CHOOSECOLOR cc = { 0 };
 	if (ColorPicker(GetDeskopColor(), hWnd, &cc) == TRUE)
 	{
 		selectedTheme->newColor = cc.rgbResult;
@@ -268,6 +307,7 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 	else if (count > 1 && pnmv->uChanged & LVIF_STATE)
 	{
 		selectedTheme->wallpaperType = WT_SLIDESHOW;
+		fWallpaperApply = TRUE;
 
 		if (pnmv->uNewState & LVIS_SELECTED)
 		{
@@ -296,8 +336,39 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 BOOL CBackgroundDlgProc::OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	printf("WM_SETTINGCHANGED:\n");
-	AddMissingWallpapers(currentITheme);
-	SelectCurrentWallpaper();
+	if (!fWallpaperApply)
+	{
+		AddMissingWallpapers(currentITheme);
+		SelectCurrentWallpaper();
+	}
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnSlideshowBegin(UINT, WPARAM, LPARAM, BOOL&)
+{
+	ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
+	return 0;
+}
+
+BOOL CBackgroundDlgProc::OnAddSlideshowItems(UINT, WPARAM, LPARAM lParam, BOOL&)
+{
+	wchar_t* path = (wchar_t*)lParam;
+
+	LVFINDINFO findInfo = { 0 };
+	findInfo.flags = LVFI_STRING;
+	findInfo.psz = PathFindFileName(path);
+	int inde = ListView_FindItem(hListView, -1, &findInfo);
+	if (inde == -1)
+	{
+		inde = AddItem(hListView, ListView_GetItemCount(hListView), path);
+	}
+
+	ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+	ListView_EnsureVisible(hListView, inde, FALSE);
+
+	free(path);
+	fWallpaperApply = FALSE;
+	SetModified(FALSE);
 	return 0;
 }
 
@@ -326,6 +397,8 @@ BOOL CBackgroundDlgProc::OnApply()
 		}
 		else if (selectedTheme->wallpaperType == WT_SLIDESHOW)
 		{
+			fWallpaperApply = TRUE;
+
 			std::vector<PIDLIST_ABSOLUTE> pidlList;
 
 			for (LPWSTR path : carouselWallpapers)
@@ -429,39 +502,6 @@ LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 
 void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 {
-	std::vector<LPWSTR> missingWall;
-
-	BOOL isEn = 0;
-	auto themeClass = std::make_unique<CTheme>(th);
-	themeClass->IsSlideshowEnabled(&isEn);
-	if (isEn)
-	{
-		ComPtr<ISlideshowSettings> st = NULL;
-		themeClass->get_SlideshowSettings(&st);
-
-		ComPtr<IWallpaperCollection> wlp;
-		st->GetAllMatchingWallpapers(&wlp);
-
-		int count = wlp->GetCount();
-		for (int i = 0; i < count; i++)
-		{
-			LPWSTR path = { 0 };
-			wlp->GetWallpaperAt(i, &path);
-			missingWall.push_back(path);
-		}
-	}
-	for (auto path : missingWall)
-	{
-		LVFINDINFO findInfo = { 0 };
-		findInfo.flags = LVFI_STRING;
-		findInfo.psz = PathFindFileName(path);
-		int inde = ListView_FindItem(hListView, -1, &findInfo);
-		if (inde == -1)
-		{
-			AddItem(hListView, ListView_GetItemCount(hListView), path);
-		}
-	}
-
 	LVFINDINFO findInfo = { 0 };
 	findInfo.flags = LVFI_STRING;
 	findInfo.psz = PathFindFileName(selectedTheme->wallpaperPath.c_str());
@@ -477,13 +517,10 @@ void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
 
 void CBackgroundDlgProc::SelectCurrentWallpaper()
 {
-	// temp
-	if (selectedTheme->wallpaperType == WT_SLIDESHOW) return;
-
 	::EnableWindow(hPosCombobox, selectedTheme->wallpaperType != WT_NOWALL);
-	int index = 0;
 
-	if (selectedTheme->wallpaperType == WT_PICTURE)
+	int index = 0;
+	if (selectedTheme->wallpaperType != WT_NOWALL)
 	{
 		LVFINDINFO findInfo = { 0 };
 		findInfo.flags = LVFI_STRING;
@@ -494,6 +531,12 @@ void CBackgroundDlgProc::SelectCurrentWallpaper()
 	ListView_SetItemState(hListView, -1, 0, LVIS_SELECTED);
 	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, index, FALSE);
+	
+	// select slideshow wallpapers on a different thread, since its expensive
+	SlideshowThreadData* data = new SlideshowThreadData();
+	data->wnd = m_hWnd;
+	data->iTheme = currentITheme;
+	_beginthread(SlideshowWorkerThread, 0, data);
 
 	SetModified(FALSE);
 }
@@ -514,7 +557,7 @@ void CBackgroundDlgProc::_UpdatePreview(UINT uFlags)
 	{
 		pWndPreview = Make<CWindowPreview>(backPreviewSize, nullptr, 0, PAGETYPE::PT_BACKGROUND, nullptr, GetDpiForWindow(m_hWnd));
 		pWndPreview->GetPreviewImage(&bmp);
-		
+
 	}
 	else
 	{
