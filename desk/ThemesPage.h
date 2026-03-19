@@ -23,7 +23,7 @@ private:
     BOOL OnSetActive();
 
     // custom methods
-    void UpdateThemeInfo(LPWSTR ws, int currThem);
+    void UpdateThemeInfo(LPWSTR ws);
 
     /// variables
     HWND hCombobox;

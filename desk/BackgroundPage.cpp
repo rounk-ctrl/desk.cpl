@@ -155,6 +155,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	}
 
 	// bug
+	AddMissingWallpapers();
 	SelectCurrentWallpaper();
 
 	_UpdateButtonBmp();
@@ -338,7 +339,7 @@ BOOL CBackgroundDlgProc::OnSettingChange(UINT uMsg, WPARAM wParam, LPARAM lParam
 	printf("WM_SETTINGCHANGED:\n");
 	if (!fWallpaperApply)
 	{
-		AddMissingWallpapers(currentITheme);
+		AddMissingWallpapers();
 		SelectCurrentWallpaper();
 	}
 	return 0;
@@ -439,7 +440,7 @@ BOOL CBackgroundDlgProc::OnSetActive()
 	_UpdateButtonBmp();
 	if (!selectedTheme->customWallpaperSelection && !fWallpaperApply)
 	{
-		AddMissingWallpapers(currentITheme);
+		AddMissingWallpapers();
 		SelectCurrentWallpaper();
 
 		if (selectedTheme->posChanged == -1)
@@ -500,7 +501,7 @@ LPWSTR CBackgroundDlgProc::GetWallpaperPath(HWND hListView, int iIndex)
 }
 #pragma endregion
 
-void CBackgroundDlgProc::AddMissingWallpapers(IUnknown* th)
+void CBackgroundDlgProc::AddMissingWallpapers()
 {
 	LVFINDINFO findInfo = { 0 };
 	findInfo.flags = LVFI_STRING;

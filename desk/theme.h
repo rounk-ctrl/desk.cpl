@@ -352,7 +352,7 @@ public:
 		{
 			th24h2 = (ITheme24H2*)iunk;
 		}
-		if (g_osVersion.BuildNumber() >= 18362)
+		else if (g_osVersion.BuildNumber() >= 18362)
 		{
 			th1903 = (ITheme1903*)iunk;
 		}

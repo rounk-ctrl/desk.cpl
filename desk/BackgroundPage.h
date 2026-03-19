@@ -45,7 +45,7 @@ private:
     int AddItem(HWND hListView, int rowIndex, LPCWSTR text);
     int AddColumn(HWND hListView, int width);
     LPWSTR GetWallpaperPath(HWND hListView, int iIndex);
-    void AddMissingWallpapers(IUnknown* th);
+    void AddMissingWallpapers();
     void SelectCurrentWallpaper();
     void _UpdateButtonBmp();
     void _UpdatePreview(UINT uFlags);

@@ -44,21 +44,10 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 
 	pThemeManager->GetTheme(currThem, &currentITheme);
 
-	// detect classic theme, to show preview properly
-	selectedTheme->szMsstylePath = L"(classic)";
-	if (!IsClassicThemeEnabled())
-	{
-		auto themeClass = std::make_unique<CTheme>(currentITheme);
-
-		LPWSTR path = nullptr;
-		themeClass->get_VisualStyle(&path);
-		selectedTheme->szMsstylePath = path;
-	}
-
 	// update THEMEINFO before setting bitmap for now
 	WCHAR ws[MAX_PATH] = { 0 };
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
-	UpdateThemeInfo(ws, currThem);
+	UpdateThemeInfo(ws);
 
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, nullptr, GetDpiForWindow(m_hWnd));
 
@@ -100,7 +89,7 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 
 
 	// update THEMEINFO
-	UpdateThemeInfo(ws, index);
+	UpdateThemeInfo(ws);
 
 	// set the preview bitmap to the static control
 	HBITMAP ebmp;
@@ -161,7 +150,7 @@ BOOL CThemeDlgProc::OnSetActive()
 // set relevant info accordng to this page
 // if u select a new theme, the settings set by background page
 // becomes irrelevant, overwrite them
-void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws, int currThem)
+void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws)
 {
 	// update THEMEINFO
 	if (lstrlen(ws) == 0 || PathFileExists(ws) == FALSE)
