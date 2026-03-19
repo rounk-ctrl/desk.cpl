@@ -21,6 +21,7 @@ jobs:
       RELEASE_DIR: ${{ matrix.configuration }}
       ZIP_NAME: ${{ matrix.platform }}-${{ matrix.configuration }}
       ARCH: ${{ matrix.platform }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - uses: actions/checkout@v6.0.2
@@ -41,7 +42,7 @@ jobs:
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /p:ReleaseDirectory=..\$env:RELEASE_DIR ${{env.SOLUTION_FILE_PATH}}
     - name: Upload
-      uses: actions/upload-artifact@v6.0.0
+      uses: actions/upload-artifact@v7.0.0
       with:
       # Artifact name
         name:  ${{ env.ZIP_NAME }}
