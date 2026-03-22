@@ -25,6 +25,18 @@ FONTINFO* fontInfo = new FONTINFO();
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
 
+HFONT font = CreateFontW(-11, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, L"MS Sans Serif");;
+
+BOOL CALLBACK ForceFont(HWND hwnd, LPARAM) { 
+	SendMessageW(hwnd, WM_SETFONT, (WPARAM)font, TRUE); 
+	return TRUE; 
+}
+
+int CALLBACK DeskCallback(HWND hwnd, UINT msg, LPARAM) {
+	EnumChildWindows(hwnd, ForceFont, 0);
+	return 0;
+}
+
 void FillFontList(void*)
 {
 	// init fms
@@ -63,10 +75,23 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 
 	//_beginthread(BrowserThread, 0, 0);
 
+	// init invisible owner window
+	HWND owner = CreateWindowExW(
+		0,
+		L"STATIC",
+		L"",
+		WS_POPUP | WS_CAPTION,
+		50, 50, 0, 0,
+		NULL,
+		NULL,
+		GetModuleHandle(NULL),
+		NULL
+	);
+	
 	// init property sheet
 	WTL::CPropertySheet sheet(L"Display Properties");
 	sheet.m_psh.dwFlags |= PSH_USEICONID;
-	sheet.m_psh.pszIcon = MAKEINTRESOURCE(IDI_ICON1);
+	sheet.m_psh.pfnCallback = DeskCallback;
 
 	CThemeDlgProc themedlg;
 	CBackgroundDlgProc backgrounddlg;
@@ -101,7 +126,8 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 #endif
 
 	//show
-	sheet.DoModal();
+	sheet.DoModal(owner);
+	DestroyWindow(owner);
 
 	// cleanup
 	Gdiplus::GdiplusShutdown(gdiplusToken);
