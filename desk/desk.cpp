@@ -25,15 +25,22 @@ FONTINFO* fontInfo = new FONTINFO();
 
 const IID IID_IThemeManager2 = { 0xc1e8c83e, 0x845d, 0x4d95, {0x81, 0xdb, 0xe2, 0x83, 0xfd, 0xff, 0xc0, 0x00} };
 
-HFONT font = CreateFontW(-11, 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, L"MS Sans Serif");;
-
-BOOL CALLBACK ForceFont(HWND hwnd, LPARAM) { 
-	SendMessageW(hwnd, WM_SETFONT, (WPARAM)font, TRUE); 
-	return TRUE; 
-}
 
 int CALLBACK DeskCallback(HWND hwnd, UINT msg, LPARAM) {
-	EnumChildWindows(hwnd, ForceFont, 0);
+	if (msg == PSCB_INITIALIZED)
+	{
+		HFONT font = CreateFont(MulDiv(-11, GetDpiForWindow(hwnd), 96), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0, 0, 0, L"MS Sans Serif");
+
+		HWND hwndTab = PropSheet_GetTabControl(hwnd);
+		HWND hwndOK = GetDlgItem(hwnd, IDOK);
+		HWND hwndCancel = GetDlgItem(hwnd, IDCANCEL);
+		HWND hwndApply = GetDlgItem(hwnd, 0x3021);
+
+		SendMessageW(hwndTab, WM_SETFONT, (WPARAM)font, TRUE);
+		SendMessageW(hwndOK, WM_SETFONT, (WPARAM)font, TRUE);
+		SendMessageW(hwndCancel, WM_SETFONT, (WPARAM)font, TRUE);
+		SendMessageW(hwndApply, WM_SETFONT, (WPARAM)font, TRUE);
+	}
 	return 0;
 }
 
@@ -90,7 +97,6 @@ void PropertySheetMoment(LPWSTR lpCmdLine)
 	
 	// init property sheet
 	WTL::CPropertySheet sheet(L"Display Properties");
-	sheet.m_psh.dwFlags |= PSH_USEICONID;
 	sheet.m_psh.pfnCallback = DeskCallback;
 
 	CThemeDlgProc themedlg;
