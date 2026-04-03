@@ -58,6 +58,7 @@ private:
     SIZE backPreviewSize;
     int selCount;
     BOOL fWallpaperApply;
+    BOOL fInit;
     std::vector<LPWSTR> slideshowWallpapers;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

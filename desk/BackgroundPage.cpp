@@ -52,10 +52,7 @@ void SlideshowWorkerThread(void* lpParam)
 			LPWSTR path = { 0 };
 			wlp->GetWallpaperAt(i, &path);
 
-			wchar_t* pathCopy = new wchar_t[wcslen(path) + 1];
-			wcscpy_s(pathCopy, wcslen(path) + 1, path);
-
-			PostMessage(data->wnd, WM_ADD_SLIDESHOW_ITEMS, 0, (LPARAM)pathCopy);
+			PostMessage(data->wnd, WM_ADD_SLIDESHOW_ITEMS, 0, (LPARAM)path);
 		}
 	}
 
@@ -154,7 +151,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		selectedTheme->newColor = 0xB0000000;
 	}
 
-	// bug
+	fInit = TRUE;
 	AddMissingWallpapers();
 	SelectCurrentWallpaper();
 
@@ -441,7 +438,9 @@ BOOL CBackgroundDlgProc::OnSetActive()
 	if (!selectedTheme->customWallpaperSelection && !fWallpaperApply)
 	{
 		AddMissingWallpapers();
-		SelectCurrentWallpaper();
+		
+		if (!fInit) SelectCurrentWallpaper();
+		else fInit = FALSE;
 
 		if (selectedTheme->posChanged == -1)
 		{
