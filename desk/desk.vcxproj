@@ -307,6 +307,7 @@
     <ClInclude Include="theme.h" />
     <ClInclude Include="ThemeChngDlg.h" />
     <ClInclude Include="ThemesPage.h" />
+    <ClInclude Include="thmfile.h" />
     <ClInclude Include="todo.h" />
     <ClInclude Include="uxtheme.h" />
     <ClInclude Include="version.h" />
@@ -334,6 +335,7 @@
     <ClCompile Include="SettingsPage.cpp" />
     <ClCompile Include="ThemeChngDlg.cpp" />
     <ClCompile Include="ThemesPage.cpp" />
+    <ClCompile Include="thmfile.cpp" />
     <ClCompile Include="uxtheme.cpp" />
     <ClCompile Include="version.cpp" />
     <ClCompile Include="wndprvw.cpp" />

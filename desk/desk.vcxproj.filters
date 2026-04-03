@@ -78,6 +78,9 @@
     <ClInclude Include="version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="thmfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -136,6 +139,9 @@
     </ClCompile>
     <ClCompile Include="DeskIcons.cpp">
       <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="thmfile.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

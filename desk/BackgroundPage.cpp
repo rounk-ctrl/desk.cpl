@@ -254,6 +254,7 @@ BOOL CBackgroundDlgProc::OnColorPick(UINT code, UINT id, HWND hWnd, BOOL& bHandl
 
 BOOL CBackgroundDlgProc::OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
+	/*
 	WTL::CPropertySheet sheet(L"Display Properties");
 	sheet.m_psh.dwFlags |= PSH_NOAPPLYNOW;
 
@@ -271,7 +272,9 @@ BOOL CBackgroundDlgProc::OnDeskCustomize(UINT code, UINT id, HWND hWnd, BOOL& bH
 		FreeLibrary(hShell32);
 	}
 	sheet.DoModal();
+	*/
 
+	ShellExecute(0, L"open", L"Rundll32.exe", L"shell32.dll,Control_RunDLL desk.cpl,,0", 0, SW_SHOW);
 	return 0;
 }
 
