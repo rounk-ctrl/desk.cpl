@@ -49,6 +49,13 @@ IWindowConfig : IUnknown
 	STDMETHOD(SetClassicPrev)(BOOL fEnable) = 0;
 };
 
+MIDL_INTERFACE("77BE699F-116A-4354-9B31-1DE029996302")
+IWindowMetrics : IUnknown
+{
+	STDMETHOD(GetBoundingRect)(int elmId, RECT* pRect) = 0;
+};
+
+
 class CWindowPreview final: 
 	public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>
 		, IWindowPreview
@@ -69,6 +76,10 @@ public:
 	STDMETHODIMP SetClassicPrev(BOOL fEnable);
 	//~ End IWindowConfig interface
 
+	//~ Begin IWindowMetrics interface
+	STDMETHODIMP GetBoundingRect(int elmId, RECT* pRect);
+	//~ End IWindowMetrics interface
+
 private:
 	HRESULT _CleanupUxThemeFile(void** hFile);
 	HRESULT _DesktopScreenShooter(Gdiplus::Graphics* pGraphics);
@@ -76,6 +87,10 @@ private:
 	HRESULT _RenderWindow(MYWINDOWINFO wndInfo, int index);
 	HRESULT _RenderWallpaper();
 	HRESULT _AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gdiplus::Rect rc);
+
+	HRESULT _CalculateRectsOfElements();
+
+	// render elements
 	HRESULT _RenderBin();
 	HRESULT _RenderSolidColor();
 	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
@@ -99,10 +114,19 @@ private:
 	BOOL _fIsThemed;
 	int _dpiWindow;
 
+	Gdiplus::Rect _rcPreview;
+	Gdiplus::Rect _rcBin;
+	Gdiplus::Rect _rcMonitor;
+	Gdiplus::Rect _rcMonitorInside;
+
+	// 2d array for each state window and elements of a window
+	RECT** _rcBounds;
+	RECT* _rcMargin;
+
 	// layer bitmaps, compose all for the final preview
 	Gdiplus::Bitmap* _bmpSolidColor;
 	Gdiplus::Bitmap* _bmpWallpaper;
 	Gdiplus::Bitmap* _bmpBin;
 	Gdiplus::Bitmap* _bmpMonitor;
-	Gdiplus::Bitmap** _bmpWindows; // todo: maybe split this ??
+	Gdiplus::Bitmap** _bmpWindows;
 };

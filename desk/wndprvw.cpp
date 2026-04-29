@@ -20,6 +20,7 @@
 #define LOG_IF_FAILED
 #endif
 
+#define ADJUSTDPI(x) MulDiv(x, _dpiWindow, 96)
 using namespace Gdiplus;
 
 CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, int wndInfoCount, PAGETYPE pageType, LPVOID hTheme, int dpi)
@@ -73,6 +74,7 @@ CWindowPreview::~CWindowPreview()
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
 	HRESULT hr = S_OK;
+	_CalculateRectsOfElements();
 
 	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER)
 	{
@@ -136,6 +138,8 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags)
 {
+	_CalculateRectsOfElements();
+
 	if (_hTheme) _CleanupUxThemeFile(&_hTheme);
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
@@ -172,6 +176,11 @@ HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
 	return S_OK;
 }
 
+HRESULT CWindowPreview::GetBoundingRect(int elmId, RECT* pRect)
+{
+	return E_NOTIMPL;
+}
+
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 {
 	if (pbOut && *pbOut)
@@ -189,35 +198,28 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	RETURN_IF_NULL_ALLOC(&graphics);
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
+	// draw monitor bitmap if it exists
+	hr = DrawBitmapIfNotNull(_bmpMonitor, &graphics, _rcPreview);
 
-	Rect rect(0, 0, GETSIZE(_sizePreview));
-	hr = DrawBitmapIfNotNull(_bmpMonitor, &graphics, rect);
+	Gdiplus::Rect rc = _rcPreview;
+	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER) rc = _rcMonitorInside;
 
-	if (_marMonitor.cxLeftWidth > 0)
-	{
-		rect.X += _marMonitor.cxLeftWidth;
-		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width = 152;
-		rect.Height = 112;
-	}
-	
-	hr = DrawBitmapIfNotNull(_bmpSolidColor, &graphics, rect);
+	// draw solid color behind
+	hr = DrawBitmapIfNotNull(_bmpSolidColor, &graphics, rc);
 
-	graphics.SetClip(rect);
-	_AdjustAndDrawWallpaper(&graphics, rect);
+	// now draw wallpaper on top of it
+	graphics.SetClip(rc);
+	_AdjustAndDrawWallpaper(&graphics, rc);
 	graphics.ResetClip();
 
 	if (_pageType == PT_SCRSAVER)
 	{
 		hr = _DesktopScreenShooter(&graphics);
 	}
+	
+	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, _rcBin);
 
-	int xOff = MulDiv(48, _dpiWindow, 96);
-	int yOff = MulDiv(40, _dpiWindow, 96);
-
-	rect = { _sizePreview.cx - xOff, _sizePreview.cy - yOff, NcGetSystemMetrics(SM_CXICON), NcGetSystemMetrics(SM_CYICON) };
-	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, rect);
-
+	Rect rect(0, 0, GETSIZE(_sizePreview));
 	for (int i = 0; i < _wndInfoCount; ++i)
 	{
 		rect = { _pwndInfo[i].wndPos.left, _pwndInfo[i].wndPos.top, RECTWIDTH(_pwndInfo[i].wndPos), RECTHEIGHT(_pwndInfo[i].wndPos) };
@@ -278,15 +280,6 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	int cx = NcGetSystemMetrics(SM_CXSCREEN);
 	int cy = NcGetSystemMetrics(SM_CYSCREEN);
 
-	Rect rect(0, 0, GETSIZE(_sizePreview));
-	if (_marMonitor.cxLeftWidth > 0)
-	{
-		rect.X += _marMonitor.cxLeftWidth;
-		rect.Y += _marMonitor.cyTopHeight;
-		rect.Width = 152;
-		rect.Height = 112;
-	}
-
 	HDC hScreenDC = ::GetDC(NULL);
 	HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
 	HBITMAP _hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
@@ -294,7 +287,7 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
 
 	Bitmap* bm = new Bitmap(_hbDesktop, NULL);
-	hr = pGraphics->DrawImage(bm, rect) == Ok ? S_OK : E_FAIL;
+	hr = pGraphics->DrawImage(bm, _rcMonitorInside) == Ok ? S_OK : E_FAIL;
 
 	SelectObject(hMemoryDC, oldBmp);
 	DeleteBitmap(_hbDesktop);
@@ -314,20 +307,12 @@ HRESULT CWindowPreview::_DrawMonitor()
 	ImageAttributes imgAttr;
 	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
 
-	// cache it to improve performance
 	FreeBitmap(&_bmpMonitor);
 	_bmpMonitor = new Bitmap(_sizePreview.cx, _sizePreview.cy);
 	Graphics graphics(_bmpMonitor);
 
 	// draw monitor
-	int xOff = (_sizePreview.cx / 2) - (monitor->GetWidth() / 2);
-	int yOff = (_sizePreview.cy / 2) - (monitor->GetHeight() / 2);
-	Rect rect(xOff, yOff,
-		monitor->GetWidth(), monitor->GetHeight());
-	graphics.DrawImage(monitor, rect, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
-
-	// set monitor margins
-	_marMonitor = { xOff + 16, 0, yOff + 17, 0 };
+	graphics.DrawImage(monitor, _rcMonitor, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
 
 	delete monitor;
 	return hr;
@@ -393,8 +378,6 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 HRESULT CWindowPreview::_RenderWallpaper()
 {
 	HRESULT hr = S_OK;
-
-	// cache it to improve performance
 	FreeBitmap(&_bmpWallpaper);
 	_bmpWallpaper = Bitmap::FromFile(selectedTheme->wallpaperPath.c_str(), FALSE);
 	return hr;
@@ -489,6 +472,48 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 	return S_OK;
 }
 
+HRESULT CWindowPreview::_CalculateRectsOfElements()
+{
+	// bin
+	_rcBin = { 
+		_sizePreview.cx - ADJUSTDPI(48),
+		_sizePreview.cy - ADJUSTDPI(40),
+		NcGetSystemMetrics(SM_CXICON), 
+		NcGetSystemMetrics(SM_CYICON) 
+	};
+
+	// preview
+	_rcPreview = {
+		0,
+		0,
+		_sizePreview.cx,
+		_sizePreview.cy
+	};
+
+	// monitor margins
+	Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
+	int xOff = (_sizePreview.cx / 2) - (monitor->GetWidth() / 2);
+	int yOff = (_sizePreview.cy / 2) - (monitor->GetHeight() / 2);
+	_rcMonitor = { 
+		xOff, 
+		yOff, 
+		(int)monitor->GetWidth(), 
+		(int)monitor->GetHeight() 
+	};
+
+	_rcMonitorInside = {
+		_rcMonitor.X + 16,
+		_rcMonitor.Y + 17,
+		152,
+		112
+	};
+	delete monitor;
+
+	_rcBounds = (RECT**)malloc(_wndInfoCount * sizeof(RECT*));
+	
+	return S_OK;
+}
+
 HRESULT CWindowPreview::_RenderBin()
 {
 	BOOL bRet = 1;
@@ -497,7 +522,6 @@ HRESULT CWindowPreview::_RenderBin()
 
 	int size = NcGetSystemMetrics(SM_CXICON);
 
-	// cache it to improve performance
 	FreeBitmap(&_bmpBin);
 	_bmpBin = new Bitmap(size, size);
 	Graphics graphics(_bmpBin);
@@ -538,18 +562,14 @@ HRESULT CWindowPreview::_RenderBin()
 
 HRESULT CWindowPreview::_RenderSolidColor()
 {
-	// todo: move selectedTheme to this class
 	COLORREF clr = GetDeskopColor();
 	SolidBrush backgroundBrush(Color(SPLIT_COLORREF(clr)));
 
-	Rect rect(0, 0, GETSIZE(_sizePreview));
-
-	// cache it to improve performance
 	FreeBitmap(&_bmpSolidColor);
-	_bmpSolidColor = new Bitmap(rect.Width, rect.Height);
+	_bmpSolidColor = new Bitmap(_rcPreview.Width, _rcPreview.Height);
 	Graphics graphics(_bmpSolidColor);
 
-	return Ok == graphics.FillRectangle(&backgroundBrush, rect) ? S_OK : E_FAIL;
+	return Ok == graphics.FillRectangle(&backgroundBrush, _rcPreview) ? S_OK : E_FAIL;
 }
 
 HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
