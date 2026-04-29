@@ -20,6 +20,6 @@ The classic themes applet from Windows XP.
 
 ## Images
 
-<img width="465" height="545" alt="image1" src="https://github.com/user-attachments/assets/c65c533d-2b3f-4853-8760-10ded05f53d3" />
+<img width="533" height="547" alt="{61341FC7-B64E-4A86-B384-15BC3182255A}" src="https://github.com/user-attachments/assets/9075e209-fd54-4842-ab1f-cc553151ef11" />
 
 <img width="599" height="646" alt="image2" src="https://github.com/user-attachments/assets/ccc3f955-6220-416d-9c51-7f9cd2cd7c5d" />
