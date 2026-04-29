@@ -199,7 +199,15 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
 	// draw monitor bitmap if it exists
-	hr = DrawBitmapIfNotNull(_bmpMonitor, &graphics, _rcPreview);
+	Color transparentColor(255, 255, 0, 255);
+	ImageAttributes imgAttr;
+	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
+	if (_bmpMonitor != nullptr)
+	{
+		graphics.DrawImage(_bmpMonitor, _rcMonitor, 
+			0, 0, _bmpMonitor->GetWidth(), _bmpMonitor->GetHeight(), 
+			UnitPixel, &imgAttr);
+	}
 
 	Gdiplus::Rect rc = _rcPreview;
 	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER) rc = _rcMonitorInside;
@@ -212,10 +220,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	_AdjustAndDrawWallpaper(&graphics, rc);
 	graphics.ResetClip();
 
-	if (_pageType == PT_SCRSAVER)
-	{
-		hr = _DesktopScreenShooter(&graphics);
-	}
+	if (_pageType == PT_SCRSAVER) hr = _DesktopScreenShooter(&graphics);
 	
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, _rcBin);
 
@@ -300,21 +305,7 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 HRESULT CWindowPreview::_DrawMonitor()
 {
 	HRESULT hr = S_OK;
-	Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
-
-	// pink
-	Color transparentColor(255, 255, 0, 255);
-	ImageAttributes imgAttr;
-	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
-
-	FreeBitmap(&_bmpMonitor);
-	_bmpMonitor = new Bitmap(_sizePreview.cx, _sizePreview.cy);
-	Graphics graphics(_bmpMonitor);
-
-	// draw monitor
-	graphics.DrawImage(monitor, _rcMonitor, 0, 0, monitor->GetWidth(), monitor->GetHeight(), UnitPixel, &imgAttr);
-
-	delete monitor;
+	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
 	return hr;
 }
 
