@@ -2,7 +2,7 @@
 * Window Preview
 *
 * Responsible for rendering the preview
-* 
+*
 ------------------------------------------------------------*/
 #include "pch.h"
 #include "wndprvw.h"
@@ -47,6 +47,9 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	}
 
 	cs_dpi = dpi;
+
+	// keep it loaded
+	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
 }
 
 CWindowPreview::~CWindowPreview()
@@ -75,12 +78,6 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
 	HRESULT hr = S_OK;
 	_CalculateRectsOfElements();
-
-	if (_pageType == PT_BACKGROUND || _pageType == PT_SCRSAVER)
-	{
-		hr = _DrawMonitor();
-		RETURN_IF_FAILED(hr);
-	}
 
 	if (_pageType != PT_SCRSAVER)
 	{
@@ -199,13 +196,12 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	graphics.SetInterpolationMode(InterpolationModeInvalid);
 
 	// draw monitor bitmap if it exists
-	Color transparentColor(255, 255, 0, 255);
-	ImageAttributes imgAttr;
-	imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
-	if (_bmpMonitor != nullptr)
 	{
-		graphics.DrawImage(_bmpMonitor, _rcMonitor, 
-			0, 0, _bmpMonitor->GetWidth(), _bmpMonitor->GetHeight(), 
+		Color transparentColor(255, 255, 0, 255);
+		ImageAttributes imgAttr;
+		imgAttr.SetColorKey(transparentColor, transparentColor, ColorAdjustTypeBitmap);
+		graphics.DrawImage(_bmpMonitor, _rcMonitor,
+			0, 0, _bmpMonitor->GetWidth(), _bmpMonitor->GetHeight(),
 			UnitPixel, &imgAttr);
 	}
 
@@ -221,7 +217,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	graphics.ResetClip();
 
 	if (_pageType == PT_SCRSAVER) hr = _DesktopScreenShooter(&graphics);
-	
+
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, _rcBin);
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
@@ -299,13 +295,6 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	ReleaseDC(0, hScreenDC);
 	DeleteDC(hMemoryDC);
 	delete bm;
-	return hr;
-}
-
-HRESULT CWindowPreview::_DrawMonitor()
-{
-	HRESULT hr = S_OK;
-	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
 	return hr;
 }
 
@@ -458,7 +447,7 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 		}
 		return S_OK;
 	}
-	
+
 	DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
 	return S_OK;
 }
@@ -466,11 +455,11 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 HRESULT CWindowPreview::_CalculateRectsOfElements()
 {
 	// bin
-	_rcBin = { 
+	_rcBin = {
 		_sizePreview.cx - ADJUSTDPI(48),
 		_sizePreview.cy - ADJUSTDPI(40),
-		NcGetSystemMetrics(SM_CXICON), 
-		NcGetSystemMetrics(SM_CYICON) 
+		NcGetSystemMetrics(SM_CXICON),
+		NcGetSystemMetrics(SM_CYICON)
 	};
 
 	// preview
@@ -482,14 +471,13 @@ HRESULT CWindowPreview::_CalculateRectsOfElements()
 	};
 
 	// monitor margins
-	Bitmap* monitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
-	int xOff = (_sizePreview.cx / 2) - (monitor->GetWidth() / 2);
-	int yOff = (_sizePreview.cy / 2) - (monitor->GetHeight() / 2);
-	_rcMonitor = { 
-		xOff, 
-		yOff, 
-		(int)monitor->GetWidth(), 
-		(int)monitor->GetHeight() 
+	int xOff = (_sizePreview.cx / 2) - (_bmpMonitor->GetWidth() / 2);
+	int yOff = (_sizePreview.cy / 2) - (_bmpMonitor->GetHeight() / 2);
+	_rcMonitor = {
+		xOff,
+		yOff,
+		(int)_bmpMonitor->GetWidth(),
+		(int)_bmpMonitor->GetHeight()
 	};
 
 	_rcMonitorInside = {
@@ -498,10 +486,9 @@ HRESULT CWindowPreview::_CalculateRectsOfElements()
 		152,
 		112
 	};
-	delete monitor;
 
 	_rcBounds = (RECT**)malloc(_wndInfoCount * sizeof(RECT*));
-	
+
 	return S_OK;
 }
 
@@ -770,7 +757,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	}
 	else
 	{
-		rc.top += ((NcGetSystemMetrics(SM_CYSIZE) - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME) + NcGetSystemMetrics(SM_CXBORDER) -1;
+		rc.top += ((NcGetSystemMetrics(SM_CYSIZE) - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME) + NcGetSystemMetrics(SM_CXBORDER) - 1;
 		rc.left += NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE);
 	}
 	rc.bottom = rc.top + RECTHEIGHT(rcheight);
@@ -884,7 +871,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		// todo: account for padded borders
 		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) -1; 
+		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) - 1;
 		_marFrame.cyBottomHeight = 0;
 	}
 
@@ -900,7 +887,7 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		{
 			int offset = NcGetSystemMetrics(SM_CXBORDER);
 			InflateRect(&crc, -offset, -offset);
-			crc.bottom += offset -1;
+			crc.bottom += offset - 1;
 			crc.right += offset;
 		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
@@ -1062,7 +1049,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		RECT rcheight = { 0,0,0,0 };
 		DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
-		crc.bottom = crc.top + RECTHEIGHT(rcheight) ;
+		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 		crc.left += _marFrame.cxLeftWidth;
 
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : NcGetSysColor(COLOR_WINDOWTEXT);
@@ -1116,7 +1103,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 			int center = (RECTWIDTH(crc) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
 			crc.bottom -= MulDiv(3, _dpiWindow, 96);
-			crc.left = center - MulDiv(35, _dpiWindow, 96) ;
+			crc.left = center - MulDiv(35, _dpiWindow, 96);
 			crc.right = center + MulDiv(35, _dpiWindow, 96);
 			crc.top = crc.bottom - MulDiv(24, _dpiWindow, 96);
 			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
