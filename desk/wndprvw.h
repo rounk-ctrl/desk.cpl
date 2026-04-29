@@ -45,7 +45,7 @@ IWindowPreview : IUnknown
 MIDL_INTERFACE("E8EABE39-532B-442B-BE2C-E3FBEAD7AECE")
 IWindowConfig : IUnknown
 {
-	STDMETHOD(GetMonitorMargins)(MARGINS* pOut) = 0;
+	STDMETHOD(GetMonitorOffset)(SIZE* pOut) = 0;
 	STDMETHOD(SetClassicPrev)(BOOL fEnable) = 0;
 };
 
@@ -72,7 +72,7 @@ public:
 	//~ End IWindowPreview interface
 
 	//~ Begin IWindowConfig interface
-	STDMETHODIMP GetMonitorMargins(MARGINS* pOut);
+	STDMETHODIMP GetMonitorOffset(SIZE* pOut);
 	STDMETHODIMP SetClassicPrev(BOOL fEnable);
 	//~ End IWindowConfig interface
 
@@ -107,7 +107,6 @@ private:
 	int _wndInfoCount;
 	SIZE _sizePreview;
 	MARGINS _marFrame;
-	MARGINS _marMonitor;
 	PAGETYPE _pageType;
 	void* _hTheme;
 	BOOL _fIsThemed;

@@ -35,7 +35,6 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 
 	// always initialize variables
 	_marFrame = {};
-	_marMonitor = {};
 	_bmpBin = nullptr;
 	_bmpSolidColor = nullptr;
 	_bmpWallpaper = nullptr;
@@ -161,9 +160,9 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	return _ComposePreview(pbOut);
 }
 
-HRESULT CWindowPreview::GetMonitorMargins(MARGINS* pOut)
+HRESULT CWindowPreview::GetMonitorOffset(SIZE* pOut)
 {
-	*pOut = _marMonitor;
+	*pOut = { _rcMonitorInside.X, _rcMonitorInside.Y };
 	return S_OK;
 }
 
@@ -216,8 +215,10 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 	_AdjustAndDrawWallpaper(&graphics, rc);
 	graphics.ResetClip();
 
+	// draw the current screenshot
 	if (_pageType == PT_SCRSAVER) hr = _DesktopScreenShooter(&graphics);
 
+	// draw bin
 	hr = DrawBitmapIfNotNull(_bmpBin, &graphics, _rcBin);
 
 	Rect rect(0, 0, GETSIZE(_sizePreview));
@@ -281,19 +282,14 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	int cx = NcGetSystemMetrics(SM_CXSCREEN);
 	int cy = NcGetSystemMetrics(SM_CYSCREEN);
 
-	HDC hScreenDC = ::GetDC(NULL);
-	HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
-	HBITMAP _hbDesktop = CreateCompatibleBitmap(hScreenDC, cx, cy);
-	HBITMAP oldBmp = (HBITMAP)SelectObject(hMemoryDC, _hbDesktop);
-	BitBlt(hMemoryDC, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
+	Bitmap* bm = new Bitmap(cx, cy);
+	Graphics g(bm);
+	HDC hdc = g.GetHDC();
+	BitBlt(hdc, 0, 0, cx, cy, ::GetDC(NULL), 0, 0, SRCCOPY);
+	g.ReleaseHDC(hdc);
 
-	Bitmap* bm = new Bitmap(_hbDesktop, NULL);
 	hr = pGraphics->DrawImage(bm, _rcMonitorInside) == Ok ? S_OK : E_FAIL;
 
-	SelectObject(hMemoryDC, oldBmp);
-	DeleteBitmap(_hbDesktop);
-	ReleaseDC(0, hScreenDC);
-	DeleteDC(hMemoryDC);
 	delete bm;
 	return hr;
 }
@@ -442,7 +438,7 @@ HRESULT CWindowPreview::_AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gd
 				DrawBitmapIfNotNull(_bmpWallpaper, pGraphics, rc);
 				rc.X += rc.Width;
 			}
-			rc.X = _marMonitor.cxLeftWidth > 0 ? _marMonitor.cxLeftWidth : 0;
+			rc.X = _rcMonitorInside.X;
 			rc.Y += rc.Height;
 		}
 		return S_OK;

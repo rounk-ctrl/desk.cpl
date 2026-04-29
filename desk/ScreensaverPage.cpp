@@ -284,11 +284,11 @@ VOID CScrSaverDlgProc::ScreenPreview(HWND preview)
 		Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
 		pWndPreview.As(&pConfig);
 		
-		MARGINS marMonitor;
-		pConfig->GetMonitorMargins(&marMonitor);
+		SIZE sizeMonitor;
+		pConfig->GetMonitorOffset(&sizeMonitor);
 
 		hWndStatic = CreateWindow(WC_STATIC, 0,
-			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, marMonitor.cxLeftWidth, marMonitor.cyTopHeight, 152, 112,
+			WS_CHILD | WS_VISIBLE | SS_BLACKRECT, sizeMonitor.cx, sizeMonitor.cy, 152, 112,
 			preview, NULL, g_hinst, NULL);
 		::SetWindowLongPtr(hWndStatic, GWLP_WNDPROC, (LONG_PTR)StaticProc);
 	}
