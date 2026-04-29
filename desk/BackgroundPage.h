@@ -59,6 +59,7 @@ private:
     int selCount;
     BOOL fWallpaperApply;
     BOOL fInit;
+    BOOL fRestoringSlideshow = FALSE;
     std::vector<LPWSTR> slideshowWallpapers;
     Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 };

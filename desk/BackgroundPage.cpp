@@ -23,6 +23,7 @@ const COMDLG_FILTERSPEC file_types[] = {
 
 struct SlideshowThreadData {
 	HWND wnd;
+	BOOL* pRestoreSlideshow;
 	IUnknown* iTheme;
 };
 
@@ -54,6 +55,7 @@ void SlideshowWorkerThread(void* lpParam)
 
 			PostMessage(data->wnd, WM_ADD_SLIDESHOW_ITEMS, 0, (LPARAM)path);
 		}
+		*data->pRestoreSlideshow = FALSE;
 	}
 
 	CoUninitialize();
@@ -67,6 +69,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	backPreviewSize = GetClientSIZE(hBackPreview);
 	selCount = 0;
 	fWallpaperApply = TRUE;
+	fRestoringSlideshow = selectedTheme->wallpaperType == WT_SLIDESHOW;
 
 	if (!currentITheme)
 	{
@@ -292,7 +295,10 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 	{
 		::EnableWindow(hPosCombobox, bValid);
 		selectedTheme->wallpaperPath = bValid ? path : L"";
-		selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
+		if (!fRestoringSlideshow)
+		{
+			selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
+		}
 		selCount = 1;
 		fWallpaperApply = FALSE;
 
@@ -395,8 +401,10 @@ BOOL CBackgroundDlgProc::OnApply()
 		{
 			pDesktopWallpaper->SetSlideshow(0);
 		}
-		if (selectedTheme->wallpaperType == WT_PICTURE)
+		else if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
+			pDesktopWallpaper->SetSlideshow(0);
+
 			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
 			fWallpaperApply = TRUE;
 		}
@@ -539,12 +547,13 @@ void CBackgroundDlgProc::SelectCurrentWallpaper()
 	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, index, FALSE);
 	
-	if (selectedTheme->wallpaperType != WT_NOWALL)
+	if (selectedTheme->wallpaperType == WT_SLIDESHOW)
 	{
 		// select slideshow wallpapers on a different thread, since its expensive
 		SlideshowThreadData* data = new SlideshowThreadData();
 		data->wnd = m_hWnd;
 		data->iTheme = currentITheme;
+		data->pRestoreSlideshow = &fRestoringSlideshow;
 		_beginthread(SlideshowWorkerThread, 0, data);
 	}
 
