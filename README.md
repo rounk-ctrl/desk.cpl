@@ -2,14 +2,14 @@
 The classic themes applet from Windows XP.
 
 ## To-do
-- [ ] Themes page
+- [x] Themes page
     - [ ] "Save As" and "Delete" buttons
     - [ ] Loading custom `.theme` files (browse)
-- [ ] Desktop page
+- [x] Desktop page
     - [x] Render wallpaper position in the preview
     - [x] "Customize Desktop" (recreate ?)
 - [x] Screen Saver page
-- [ ] Appearance page
+- [x] Appearance page
     - [ ] Save custom schemes (?)
     - [x] Effects dialog
         - [ ] Detect large icons
