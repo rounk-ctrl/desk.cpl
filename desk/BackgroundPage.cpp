@@ -391,6 +391,10 @@ BOOL CBackgroundDlgProc::OnApply()
 		//selectedTheme->fSlideshowSelection = selectedTheme->wallpaperType == WT_SLIDESHOW;
 		pDesktopWallpaper->Enable(selectedTheme->wallpaperType != WT_NOWALL);
 
+		if (selectedTheme->wallpaperType == WT_NOWALL)
+		{
+			pDesktopWallpaper->SetSlideshow(0);
+		}
 		if (selectedTheme->wallpaperType == WT_PICTURE)
 		{
 			pDesktopWallpaper->SetWallpaper(NULL, selectedTheme->wallpaperPath.c_str());
@@ -535,11 +539,14 @@ void CBackgroundDlgProc::SelectCurrentWallpaper()
 	ListView_SetItemState(hListView, index, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, index, FALSE);
 	
-	// select slideshow wallpapers on a different thread, since its expensive
-	SlideshowThreadData* data = new SlideshowThreadData();
-	data->wnd = m_hWnd;
-	data->iTheme = currentITheme;
-	_beginthread(SlideshowWorkerThread, 0, data);
+	if (selectedTheme->wallpaperType != WT_NOWALL)
+	{
+		// select slideshow wallpapers on a different thread, since its expensive
+		SlideshowThreadData* data = new SlideshowThreadData();
+		data->wnd = m_hWnd;
+		data->iTheme = currentITheme;
+		_beginthread(SlideshowWorkerThread, 0, data);
+	}
 
 	SetModified(FALSE);
 }
