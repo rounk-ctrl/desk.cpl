@@ -367,7 +367,7 @@ BOOL CBackgroundDlgProc::OnAddSlideshowItems(UINT, WPARAM, LPARAM lParam, BOOL&)
 	ListView_SetItemState(hListView, inde, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 	ListView_EnsureVisible(hListView, inde, FALSE);
 
-	free(path);
+	CoTaskMemFree(path);
 	fWallpaperApply = FALSE;
 	SetModified(FALSE);
 	return 0;

@@ -6,14 +6,15 @@ The classic themes applet from Windows XP.
     - [ ] "Save As" and "Delete" buttons
     - [ ] Loading custom `.theme` files (browse)
 - [ ] Desktop page
-    - [ ] Render wallpaper position in the preview
-    - [ ] "Customize Desktop" (recreate ?)
+    - [x] Render wallpaper position in the preview
+    - [x] "Customize Desktop" (recreate ?)
 - [x] Screen Saver page
 - [ ] Appearance page
     - [ ] Save custom schemes (?)
-    - [ ] Effects dialog
+    - [x] Effects dialog
         - [ ] Detect large icons
-    - [ ] Advanced dialog
+    - [x] Advanced dialog
+        - [ ] Detect clicks on the preview, and select item accordingly
 - [ ] Settings page
     - [ ] Implement preview
 
