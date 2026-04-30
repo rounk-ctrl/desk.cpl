@@ -531,7 +531,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.left = 0,
 			.top = 0,
 			.right = RECTWIDTH(_rcMargin),
-			.bottom = _rcMargin.top + _marFrame.cyTopHeight + 1,
+			.bottom = _marFrame.cyTopHeight + 1,
 		};
 	}
 	else
@@ -633,18 +633,22 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			COLORREF clrCaption = NcGetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
 			COLORREF clrGradient = NcGetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
-			TRIVERTEX tex[2]{};
-			tex[0].x = _rcBounds[0].left;
-			tex[0].y = _rcBounds[0].top;
-			tex[0].Red = GetRValue(clrCaption) << 8;
-			tex[0].Green = GetGValue(clrCaption) << 8;
-			tex[0].Blue = GetBValue(clrCaption) << 8;
-
-			tex[1].x = _rcBounds[0].right;
-			tex[1].y = _rcBounds[0].bottom;
-			tex[1].Red = GetRValue(clrGradient) << 8;
-			tex[1].Green = GetGValue(clrGradient) << 8;
-			tex[1].Blue = GetBValue(clrGradient) << 8;
+			TRIVERTEX tex[2] = {
+				{
+					_rcBounds[0].left,
+					_rcBounds[0].top,
+					(COLOR16)(GetRValue(clrCaption) << 8),
+					(COLOR16)(GetGValue(clrCaption) << 8),
+					(COLOR16)(GetBValue(clrCaption) << 8),
+				},
+				{
+					_rcBounds[0].right,
+					_rcBounds[0].bottom,
+					(COLOR16)(GetRValue(clrGradient) << 8),
+					(COLOR16)(GetGValue(clrGradient) << 8),
+					(COLOR16)(GetBValue(clrGradient) << 8),
+				}
+			};
 
 			GRADIENT_RECT rect = { 0,1 };
 			hr = GradientFill(hdc, tex, ARRAYSIZE(tex), &rect, 1, GRADIENT_FILL_RECT_H) == TRUE ? S_OK : E_FAIL;

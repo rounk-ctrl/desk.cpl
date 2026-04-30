@@ -561,6 +561,7 @@ int CAppearanceDlgProc::_FindCurrentIndex()
 			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
 			if (StrCmpI(data, style) == 0)
 			{
+				selectedTheme->szMsstylePath = style;
 				selindex = i;
 				break;
 			}
