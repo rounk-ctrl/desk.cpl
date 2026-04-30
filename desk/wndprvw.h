@@ -12,9 +12,9 @@ enum PAGETYPE
 
 enum WINDOWTYPE
 {
-	WT_ACTIVE = 0,
-	WT_INACTIVE,
-	WT_MESSAGEBOX = 7,
+	WT_ACTIVE = 1,
+	WT_INACTIVE = 2,
+	WT_MESSAGEBOX = 8,
 };
 
 enum UPDATEFLAGS
@@ -94,10 +94,10 @@ private:
 	// render elements
 	HRESULT _RenderBin();
 	HRESULT _RenderSolidColor();
-	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
-	HRESULT _RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
-	HRESULT _RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo);
-	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
+	HRESULT _RenderCaption(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo);
+	HRESULT _RenderCaptionButtons(HDC hdc, MYWINDOWINFO wndInfo);
+	HRESULT _RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo);
+	HRESULT _RenderScrollbar(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo);
 	HRESULT _RenderFrame(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderContent(Gdiplus::Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo);
 	HRESULT _RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo);
@@ -113,6 +113,7 @@ private:
 	PAGETYPE _pageType;
 	void* _hTheme;
 	HTHEME _hWndTheme;
+	HTHEME _hScrlTheme;
 	BOOL _fIsThemed;
 	int _dpiWindow;
 
@@ -122,6 +123,7 @@ private:
 	Gdiplus::Rect _rcMonitorInside;
 
 	// array for each element of a window
+	// 0- caption bar; 1- caption text; 2- close btn; 3- max btn; 4- min btn
 	RECT* _rcBounds;
 	RECT _rcMargin;
 

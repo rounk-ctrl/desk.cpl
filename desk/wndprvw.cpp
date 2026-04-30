@@ -79,6 +79,7 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
 	HRESULT hr = S_OK;
 	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
+	_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
 	_CalculateRectsOfElements();
 
 	if (_pageType != PT_SCRSAVER)
@@ -148,7 +149,9 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	}
 
 	CloseThemeData(_hWndTheme);
+	CloseThemeData(_hScrlTheme);
 	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
+	_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
 	_CalculateRectsOfElements();
 
 
@@ -345,13 +348,13 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	hr = _RenderFrame(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaption(graphics, _hWndTheme, wndInfo);
+	hr = _RenderCaption(graphics, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderContent(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderScrollbar(graphics, _hWndTheme, wndInfo);
+	hr = _RenderScrollbar(graphics, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderMenuBar(graphics, wndInfo);
@@ -573,6 +576,63 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 		_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
 	}
 
+	// caption button
+	// uxtheme.dll _GetNcBtnMetrics
+	int cxEdge = NcGetSystemMetrics(SM_CXEDGE);
+	int cyEdge = NcGetSystemMetrics(SM_CYEDGE);
+
+	SIZE size = { 0 };
+	GetThemePartSize(_hWndTheme, NULL, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
+
+	int cyBtn = _fIsThemed ? GetThemeSysSize(_hWndTheme, SM_CYSIZE) : NcGetSystemMetrics(SM_CYSIZE);
+	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : NcGetSystemMetrics(SM_CYSIZE);
+
+	// remove padding
+	cyBtn -= (cyEdge * 2);
+	cxBtn -= _fIsThemed ? (cyEdge * 2) : cyEdge;
+	if (_fIsThemed)
+	{
+		// close btn
+		_rcBounds[2] = {
+			.left = _rcBounds[0].right - _marFrame.cxRightWidth - cxEdge - cxBtn,
+			.top = _rcBounds[0].top + _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYFRAME) - cyBtn,
+			.right = _rcBounds[0].right - _marFrame.cxRightWidth - cxEdge,
+			.bottom = cyBtn
+		};
+		_rcBounds[2].bottom += _rcBounds[2].top;
+
+		// max btn
+		_rcBounds[3] = _rcBounds[2];
+		_rcBounds[3].left -= cxBtn + cxEdge;
+		_rcBounds[3].right -= cxBtn + cxEdge;
+
+		// min btn
+		_rcBounds[4] = _rcBounds[3];
+		_rcBounds[4].left -= cxBtn + cxEdge;
+		_rcBounds[4].right -= cxBtn + cxEdge;
+	}
+	else
+	{
+		// close btn
+		_rcBounds[2] = {
+			.left = _rcBounds[0].right - cxEdge - cxBtn,
+			.top = _rcBounds[0].top + ((NcGetSystemMetrics(SM_CYSIZE) - cyBtn) / 2),
+			.right = _rcBounds[0].right - cxEdge,
+			.bottom = cyBtn
+		};
+		_rcBounds[2].bottom += _rcBounds[2].top;
+
+		// max btn
+		_rcBounds[3] = _rcBounds[2];
+		_rcBounds[3].left -= cxBtn + cxEdge;
+		_rcBounds[3].right -= cxBtn + cxEdge;
+
+		// min btn
+		_rcBounds[4] = _rcBounds[3];
+		_rcBounds[4].left -= cxBtn;
+		_rcBounds[4].right -= cxBtn;
+	}
+
 	return S_OK;
 }
 
@@ -634,7 +694,7 @@ HRESULT CWindowPreview::_RenderSolidColor()
 	return Ok == graphics.FillRectangle(&backgroundBrush, _rcPreview) ? S_OK : E_FAIL;
 }
 
-HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
+HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
 	HDC hdc = pGraphics->GetHDC();
@@ -645,7 +705,7 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	// caption frame
 	if (_fIsThemed)
 	{
-		hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &_rcBounds[0], NULL);
+		hr = DrawThemeBackground(_hWndTheme, hdc, WP_CAPTION, frameState, &_rcBounds[0], NULL);
 	}
 	else
 	{
@@ -702,74 +762,39 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	}
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaptionText(hdc, hTheme, wndInfo);
+	hr = _RenderCaptionText(hdc, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaptionButtons(hdc, hTheme, wndInfo);
+	hr = _RenderCaptionButtons(hdc, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
+HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
 	CLOSEBUTTONSTATES btnState = wndInfo.wndType == WT_INACTIVE ? (CLOSEBUTTONSTATES)5 : CBS_NORMAL;
 
-	SIZE size = { 0 };
-	GetThemePartSize(hTheme, hdc, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
-
-	// uxtheme.dll _NcGetBtnMetrics 
-	int cxEdge = NcGetSystemMetrics(SM_CXEDGE);
-	int cyEdge = NcGetSystemMetrics(SM_CYEDGE);
-
-	int cyBtn = _fIsThemed ? GetThemeSysSize(hTheme, SM_CYSIZE) : NcGetSystemMetrics(SM_CYSIZE);
-	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : NcGetSystemMetrics(SM_CYSIZE);
-
-	// remove padding
-	cyBtn -= (cyEdge * 2);
-	cxBtn -= _fIsThemed ? (cyEdge * 2) : cyEdge;
-
-	RECT crc = wndInfo.wndPos;
-	crc.right -= _marFrame.cxRightWidth + cxEdge;
-	crc.left = crc.right - cxBtn;
-	crc.top += _fIsThemed ? _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYFRAME) - cyBtn
-		: ((NcGetSystemMetrics(SM_CYSIZE) - cyBtn) / 2) + NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
-	crc.bottom = crc.top + cyBtn;
-
-	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX)
-	{
-		crc.right += NcGetSystemMetrics(SM_CXBORDER);
-		crc.left += NcGetSystemMetrics(SM_CXBORDER);
-	}
-	_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_CLOSEBUTTON, btnState, &crc, NULL)
-		: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 1) == TRUE ? S_OK : E_FAIL;
+	_fIsThemed ? DrawThemeBackground(_hWndTheme, hdc, WP_CLOSEBUTTON, btnState, &_rcBounds[2], NULL)
+		: NcDrawFrameControl(hdc, &_rcBounds[2], DFC_CAPTION, 1) == TRUE ? S_OK : E_FAIL;
 
 	if (wndInfo.wndType != WT_MESSAGEBOX)
 	{
 		// max button
-		int width = cxBtn + cxEdge;
-		crc.left -= width;
-		crc.right -= width;
-		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MAXBUTTON, btnState, &crc, NULL)
-			: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 2) == TRUE ? S_OK : E_FAIL;
+		_fIsThemed ? DrawThemeBackground(_hWndTheme, hdc, WP_MAXBUTTON, btnState, &_rcBounds[3], NULL)
+			: NcDrawFrameControl(hdc, &_rcBounds[3], DFC_CAPTION, 2) == TRUE ? S_OK : E_FAIL;
 
 		// min button
-		if (!_fIsThemed)
-		{
-			width = cxBtn;
-		}
-		crc.left -= width;
-		crc.right -= width;
-		_fIsThemed ? DrawThemeBackground(hTheme, hdc, WP_MINBUTTON, btnState, &crc, NULL)
-			: NcDrawFrameControl(hdc, &crc, DFC_CAPTION, 3) == TRUE ? S_OK : E_FAIL;
+		_fIsThemed ? DrawThemeBackground(_hWndTheme, hdc, WP_MINBUTTON, btnState, &_rcBounds[4], NULL)
+			: NcDrawFrameControl(hdc, &_rcBounds[4], DFC_CAPTION, 3) == TRUE ? S_OK : E_FAIL;
 	}
 
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
+HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
 
@@ -777,7 +802,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	LOGFONT font{};
 	if (_fIsThemed)
 	{
-		GetThemeSysFont(hTheme, TMT_CAPTIONFONT, &font);
+		GetThemeSysFont(_hWndTheme, TMT_CAPTIONFONT, &font);
 	}
 	else
 	{
@@ -798,12 +823,12 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 	SetBkMode(hdc, TRANSPARENT);
 
-	int id = 1450 + (int)wndInfo.wndType;
+	int id = 1449 + (int)wndInfo.wndType;
 	WCHAR szText[20];
 	LoadString(g_hThemeUI, id, szText, ARRAYSIZE(szText));
 
 	// get height
-	RECT rcheight = { 0,0,0,0 };
+	RECT rcheight = { 0 };
 	DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
 	_rcBounds[1].top -= RECTHEIGHT(rcheight);
@@ -812,7 +837,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
 	CAPTIONSTATES frameState = fIsInactive ? CS_INACTIVE : CS_ACTIVE;
 
-	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
+	COLORREF clr = _fIsThemed ? GetThemeSysColor(_hWndTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
 		: NcGetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
@@ -820,7 +845,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 		DTTOPTS dt = { sizeof(dt) };
 		dt.dwFlags = DTT_TEXTCOLOR;
 		dt.crText = clr;
-		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &_rcBounds[1], &dt);
+		hr = DrawThemeTextEx(_hWndTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &_rcBounds[1], &dt);
 	}
 	else
 	{
@@ -834,12 +859,11 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	return hr;
 }
 
-HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYWINDOWINFO wndInfo)
+HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
 	if (wndInfo.wndType != WT_ACTIVE) return hr;
 
-	HTHEME hThemeScrl = OpenNcThemeData(_hTheme, L"Scrollbar");
 	HDC hdc = pGraphics->GetHDC();
 	RETURN_IF_NULL_ALLOC(hdc);
 
@@ -847,10 +871,10 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	crc.top += _marFrame.cyTopHeight;
 
 	SIZE size = { 0 };
-	GetThemePartSize(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
+	GetThemePartSize(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
 
-	int width = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CXVSCROLL), size.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
-	int height = _fIsThemed ? max(GetThemeSysSize(hTheme, SM_CYVSCROLL), size.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
+	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), size.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
+	int height = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CYVSCROLL), size.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
 
 	crc.left = crc.right - _marFrame.cxRightWidth - width;
 	crc.right = crc.left + width;
@@ -863,7 +887,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 
 	if (_fIsThemed)
 	{
-		DrawThemeBackground(hThemeScrl, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
+		DrawThemeBackground(_hScrlTheme, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
 	}
 	else
 	{
@@ -873,12 +897,12 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 	}
 
 	crc.bottom = crc.top + height;
-	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
+	_fIsThemed ? DrawThemeBackground(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
 		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 1) == TRUE ? S_OK : E_FAIL;
 
 	crc.top += height;
 	crc.bottom = crc.top + height;
-	if (_fIsThemed) DrawThemeBackground(hThemeScrl, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
+	if (_fIsThemed) DrawThemeBackground(_hScrlTheme, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
 	crc.top = wndInfo.wndPos.bottom - height;
 	crc.bottom = wndInfo.wndPos.bottom;
@@ -890,10 +914,9 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, HTHEME hTheme, MYW
 		crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
 		crc.top -= NcGetSystemMetrics(SM_CYBORDER) - 1;
 	}
-	_fIsThemed ? DrawThemeBackground(hThemeScrl, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
+	_fIsThemed ? DrawThemeBackground(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 2) == TRUE ? S_OK : E_FAIL;
 
-	CloseThemeData(hThemeScrl);
 	pGraphics->ReleaseHDC(hdc);
 	return hr;
 }
