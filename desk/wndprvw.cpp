@@ -47,7 +47,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	}
 
 	cs_dpi = dpi;
-	_rcBounds = (RECT*)calloc(1, sizeof(RECT));
+	_rcBounds = (RECT*)calloc(5, sizeof(RECT));
 
 	// keep it loaded
 	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -544,8 +544,33 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.bottom = edge + _marFrame.cyTopHeight + 1,
 		};
 
-		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX) 
+		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX)
 			_rcBounds[0].right += NcGetSystemMetrics(SM_CXBORDER);
+	}
+
+	// caption text
+	if (_fIsThemed)
+	{
+		MARGINS mar = { 0 };
+		GetThemeMargins(_hWndTheme, NULL, WP_CAPTION, CS_ACTIVE, TMT_CAPTIONMARGINS, NULL, &mar);
+
+		_rcBounds[1] = {
+			.left = _rcBounds[0].left + _marFrame.cxLeftWidth + mar.cxLeftWidth,
+			.top = _rcBounds[0].bottom - (GetThemeSysSize(_hWndTheme, SM_CYSIZE) / 2) - 2, // remove RECTHEIGHT 
+			.right = _rcBounds[0].right,
+			.bottom = 0
+		};
+		_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
+	}
+	else
+	{
+		_rcBounds[1] = {
+			.left = _rcBounds[0].left + NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE),
+			.top = _rcBounds[0].top + (NcGetSystemMetrics(SM_CYSIZE) / 2), // remove RECTHEIGHT
+			.right = _rcBounds[0].right,
+			.bottom = 0
+		};
+		_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
 	}
 
 	return S_OK;
@@ -747,14 +772,6 @@ HRESULT CWindowPreview::_RenderCaptionButtons(HDC hdc, HTHEME hTheme, MYWINDOWIN
 HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
-	CAPTIONSTATES frameState = wndInfo.wndType == WT_INACTIVE ? CS_INACTIVE : CS_ACTIVE;
-
-	MARGINS mar = { 0 };
-	if (_fIsThemed)
-	{
-		hr = GetThemeMargins(hTheme, hdc, WP_CAPTION, frameState, TMT_CAPTIONMARGINS, NULL, &mar);
-		RETURN_IF_FAILED(hr);
-	}
 
 	// set proper font
 	LOGFONT font{};
@@ -781,47 +798,20 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 	HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 	SetBkMode(hdc, TRANSPARENT);
 
-	int id = 1450;
-	switch (wndInfo.wndType)
-	{
-	case WT_INACTIVE:
-		id += 1;
-		break;
-	case WT_MESSAGEBOX:
-		id += 7;
-		break;
-	}
+	int id = 1450 + (int)wndInfo.wndType;
 	WCHAR szText[20];
 	LoadString(g_hThemeUI, id, szText, ARRAYSIZE(szText));
-
-	RECT rc = wndInfo.wndPos;
-	if (_fIsThemed)
-	{
-		hr = GetThemeTextExtent(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &wndInfo.wndPos, &rc);
-		RETURN_IF_FAILED(hr);
-	}
-
-	rc.left += _marFrame.cxLeftWidth + mar.cxLeftWidth;
-	rc.right += _marFrame.cxLeftWidth + mar.cxLeftWidth;
-	rc.top -= _marFrame.cyBottomHeight;
-	rc.bottom -= _marFrame.cyBottomHeight;
 
 	// get height
 	RECT rcheight = { 0,0,0,0 };
 	DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
-	if (_fIsThemed)
-	{
-		rc.top += _marFrame.cyTopHeight + _marFrame.cyBottomHeight - NcGetSystemMetrics(SM_CYFRAME) - RECTHEIGHT(rcheight);
-	}
-	else
-	{
-		rc.top += ((NcGetSystemMetrics(SM_CYSIZE) - RECTHEIGHT(rcheight)) / 2) + NcGetSystemMetrics(SM_CXFRAME) + NcGetSystemMetrics(SM_CXBORDER) - 1;
-		rc.left += NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE);
-	}
-	rc.bottom = rc.top + RECTHEIGHT(rcheight);
+	_rcBounds[1].top -= RECTHEIGHT(rcheight);
+	_rcBounds[1].bottom += RECTHEIGHT(rcheight);
 
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
+	CAPTIONSTATES frameState = fIsInactive ? CS_INACTIVE : CS_ACTIVE;
+
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
 		: NcGetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
@@ -830,12 +820,12 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, HTHEME hTheme, MYWINDOWINFO 
 		DTTOPTS dt = { sizeof(dt) };
 		dt.dwFlags = DTT_TEXTCOLOR;
 		dt.crText = clr;
-		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &rc, &dt);
+		hr = DrawThemeTextEx(hTheme, hdc, WP_CAPTION, frameState, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &_rcBounds[1], &dt);
 	}
 	else
 	{
 		SetTextColor(hdc, clr);
-		hr = DrawText(hdc, szText, -1, &rc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		hr = DrawText(hdc, szText, -1, &_rcBounds[1], DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 	}
 	RETURN_IF_FAILED(hr);
 
