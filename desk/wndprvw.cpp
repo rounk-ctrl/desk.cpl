@@ -35,6 +35,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 
 	// always initialize variables
 	_marFrame = {};
+	_iCurrentWnd = 0;
 	_bmpBin = nullptr;
 	_bmpSolidColor = nullptr;
 	_bmpWallpaper = nullptr;
@@ -46,6 +47,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	}
 
 	cs_dpi = dpi;
+	_rcBounds = (RECT*)calloc(1, sizeof(RECT));
 
 	// keep it loaded
 	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -76,6 +78,7 @@ CWindowPreview::~CWindowPreview()
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
 	HRESULT hr = S_OK;
+	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
 	_CalculateRectsOfElements();
 
 	if (_pageType != PT_SCRSAVER)
@@ -134,8 +137,6 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags)
 {
-	_CalculateRectsOfElements();
-
 	if (_hTheme) _CleanupUxThemeFile(&_hTheme);
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
@@ -145,6 +146,11 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 		if (selectedTheme->szMsstylePath.compare(L"(classic)") == 0) _fIsThemed = 0;
 		else _fIsThemed = 1;
 	}
+
+	CloseThemeData(_hWndTheme);
+	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
+	_CalculateRectsOfElements();
+
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
 	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
@@ -285,19 +291,22 @@ HRESULT CWindowPreview::_DesktopScreenShooter(Graphics* pGraphics)
 	Bitmap* bm = new Bitmap(cx, cy);
 	Graphics g(bm);
 	HDC hdc = g.GetHDC();
-	BitBlt(hdc, 0, 0, cx, cy, ::GetDC(NULL), 0, 0, SRCCOPY);
+
+	HDC hScreenDC = ::GetDC(NULL);
+	BitBlt(hdc, 0, 0, cx, cy, hScreenDC, 0, 0, SRCCOPY);
 	g.ReleaseHDC(hdc);
 
 	hr = pGraphics->DrawImage(bm, _rcMonitorInside) == Ok ? S_OK : E_FAIL;
 
 	delete bm;
+	ReleaseDC(NULL, hScreenDC);
 	return hr;
 }
 
 HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 {
 	HRESULT hr = S_OK;
-	HTHEME hTheme = OpenNcThemeData(_hTheme, L"Window");
+	_iCurrentWnd = index;
 
 	// my bad
 	// separate this
@@ -326,28 +335,29 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	wndInfo.wndPos.left = 0;
 	wndInfo.wndPos.top = 0;
 
-	// cache it to improve performance
+	_rcMargin = wndInfo.wndPos;
+	_CalculateWindowRects();
+
 	FreeBitmap(&_bmpWindows[index]);
 	_bmpWindows[index] = new Bitmap(RECTWIDTH(wndInfo.wndPos), RECTHEIGHT(wndInfo.wndPos));
 	Graphics* graphics = Gdiplus::Graphics::FromImage(_bmpWindows[index]);
 
-	hr = _RenderFrame(graphics, hTheme, wndInfo);
+	hr = _RenderFrame(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderCaption(graphics, hTheme, wndInfo);
+	hr = _RenderCaption(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderContent(graphics, hTheme, wndInfo);
+	hr = _RenderContent(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
-	hr = _RenderScrollbar(graphics, hTheme, wndInfo);
+	hr = _RenderScrollbar(graphics, _hWndTheme, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	hr = _RenderMenuBar(graphics, wndInfo);
 	RETURN_IF_FAILED(hr);
 
 	delete graphics;
-	CloseThemeData(hTheme);
 	return hr;
 }
 
@@ -466,7 +476,7 @@ HRESULT CWindowPreview::_CalculateRectsOfElements()
 		_sizePreview.cy
 	};
 
-	// monitor margins
+	// monitor
 	int xOff = (_sizePreview.cx / 2) - (_bmpMonitor->GetWidth() / 2);
 	int yOff = (_sizePreview.cy / 2) - (_bmpMonitor->GetHeight() / 2);
 	_rcMonitor = {
@@ -483,7 +493,60 @@ HRESULT CWindowPreview::_CalculateRectsOfElements()
 		112
 	};
 
-	_rcBounds = (RECT**)malloc(_wndInfoCount * sizeof(RECT*));
+	return S_OK;
+}
+
+HRESULT CWindowPreview::_CalculateFrameMargins()
+{
+	// calculate frame margins
+	if (_fIsThemed)
+	{
+		int cxPaddedBorder = GetThemeSysSize(_hWndTheme, SM_CXPADDEDBORDER);
+		int cyCaptionHeight = GetThemeSysSize(_hWndTheme, SM_CYSIZE) + cxPaddedBorder + 2; // i think
+		_marFrame.cxLeftWidth = cxPaddedBorder + NcGetSystemMetrics(SM_CXFRAME);
+		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
+		_marFrame.cyTopHeight = cyCaptionHeight + NcGetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyBottomHeight = NcGetSystemMetrics(SM_CYFRAME) + cxPaddedBorder - 2;
+	}
+	else
+	{
+		// todo: account for padded borders
+		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
+		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
+		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) - 1;
+		_marFrame.cyBottomHeight = 0;
+	}
+
+	return S_OK;
+}
+
+HRESULT CWindowPreview::_CalculateWindowRects()
+{
+	_CalculateFrameMargins();
+
+	// caption
+	if (_fIsThemed)
+	{
+		_rcBounds[0] = {
+			.left = 0,
+			.top = 0,
+			.right = RECTWIDTH(_rcMargin),
+			.bottom = _rcMargin.top + _marFrame.cyTopHeight + 1,
+		};
+	}
+	else
+	{
+		int edge = NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYBORDER) + 1;
+		_rcBounds[0] = {
+			.left = _marFrame.cxLeftWidth,
+			.top = edge,
+			.right = _rcMargin.right - _marFrame.cxLeftWidth,
+			.bottom = edge + _marFrame.cyTopHeight + 1,
+		};
+
+		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX) 
+			_rcBounds[0].right += NcGetSystemMetrics(SM_CXBORDER);
+	}
 
 	return S_OK;
 }
@@ -555,14 +618,9 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	FRAMESTATES frameState = wndInfo.wndType == WT_INACTIVE ? FS_INACTIVE : FS_ACTIVE;
 
 	// caption frame
-	RECT crc = wndInfo.wndPos;
-	if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYBORDER) + 1;
-	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.right += NcGetSystemMetrics(SM_CXBORDER);
-	crc.bottom = crc.top + _marFrame.cyTopHeight + 1;
-
 	if (_fIsThemed)
 	{
-		hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &crc, NULL);
+		hr = DrawThemeBackground(hTheme, hdc, WP_CAPTION, frameState, &_rcBounds[0], NULL);
 	}
 	else
 	{
@@ -576,14 +634,14 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			COLORREF clrGradient = NcGetSysColor(wndInfo.wndType == WT_INACTIVE ? COLOR_GRADIENTINACTIVECAPTION : COLOR_GRADIENTACTIVECAPTION);
 
 			TRIVERTEX tex[2]{};
-			tex[0].x = crc.left + _marFrame.cxLeftWidth;
-			tex[0].y = crc.top;
+			tex[0].x = _rcBounds[0].left;
+			tex[0].y = _rcBounds[0].top;
 			tex[0].Red = GetRValue(clrCaption) << 8;
 			tex[0].Green = GetGValue(clrCaption) << 8;
 			tex[0].Blue = GetBValue(clrCaption) << 8;
 
-			tex[1].x = crc.right - _marFrame.cxRightWidth;
-			tex[1].y = crc.bottom;
+			tex[1].x = _rcBounds[0].right;
+			tex[1].y = _rcBounds[0].bottom;
 			tex[1].Red = GetRValue(clrGradient) << 8;
 			tex[1].Green = GetGValue(clrGradient) << 8;
 			tex[1].Blue = GetBValue(clrGradient) << 8;
@@ -593,9 +651,8 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		}
 		else
 		{
-			RECT rc = { crc.left + _marFrame.cxLeftWidth, crc.top, crc.right - _marFrame.cxRightWidth, crc.bottom };
 			HBRUSH br = NcGetSysColorBrush(wndInfo.wndType == WT_INACTIVE ? COLOR_INACTIVECAPTION : COLOR_ACTIVECAPTION);
-			FillRect(hdc, &rc, br);
+			FillRect(hdc, &_rcBounds[0], br);
 			if (selectedTheme->selectedScheme) DeleteBrush(br);
 		}
 
@@ -604,9 +661,11 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CXBORDER);
-		POINT pt[2]{};
-		pt[0] = { crc.left + _marFrame.cxLeftWidth, crc.top + _marFrame.cyTopHeight };
-		pt[1] = { crc.right - _marFrame.cxRightWidth, crc.top + _marFrame.cyTopHeight };
+
+		POINT pt[2] = {
+			{ _rcBounds[0].left, _rcBounds[0].bottom + NcGetSystemMetrics(SM_CXBORDER) },
+			{ _rcBounds[0].right, _rcBounds[0].bottom + NcGetSystemMetrics(SM_CXBORDER) }
+		};
 		Polyline(hdc, pt, ARRAYSIZE(pt));
 
 		SelectObject(hdc, oldPen);
@@ -850,26 +909,6 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 	HRESULT hr = S_OK;
 	HDC hdc = pGraphics->GetHDC();
 	RETURN_IF_NULL_ALLOC(hdc);
-
-	// calculate frame margins
-	// probably make another function
-	if (_fIsThemed)
-	{
-		int cxPaddedBorder = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
-		int cyCaptionHeight = GetThemeSysSize(hTheme, SM_CYSIZE) + cxPaddedBorder + 2; // i think
-		_marFrame.cxLeftWidth = cxPaddedBorder + NcGetSystemMetrics(SM_CXFRAME);
-		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = cyCaptionHeight + NcGetSystemMetrics(SM_CYFRAME);
-		_marFrame.cyBottomHeight = NcGetSystemMetrics(SM_CYFRAME) + cxPaddedBorder - 2;
-	}
-	else
-	{
-		// todo: account for padded borders
-		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
-		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) - 1;
-		_marFrame.cyBottomHeight = 0;
-	}
 
 	FRAMESTATES frameState = wndInfo.wndType == WT_INACTIVE ? FS_INACTIVE : FS_ACTIVE;
 

@@ -167,6 +167,8 @@ void CThemeDlgProc::UpdateThemeInfo(LPWSTR ws)
 		if (isEn)
 		{
 			selectedTheme->wallpaperType = WT_SLIDESHOW;
+			selectedTheme->fSlideshowSelection = true;
+
 		}
 		else
 		{

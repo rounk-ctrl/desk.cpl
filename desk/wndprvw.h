@@ -88,6 +88,8 @@ private:
 	HRESULT _AdjustAndDrawWallpaper(Gdiplus::Graphics* pGraphics, Gdiplus::Rect rc);
 
 	HRESULT _CalculateRectsOfElements();
+	HRESULT _CalculateFrameMargins();
+	HRESULT _CalculateWindowRects();
 
 	// render elements
 	HRESULT _RenderBin();
@@ -105,10 +107,12 @@ private:
 	// variables
 	MYWINDOWINFO* _pwndInfo;
 	int _wndInfoCount;
+	int  _iCurrentWnd;
 	SIZE _sizePreview;
 	MARGINS _marFrame;
 	PAGETYPE _pageType;
 	void* _hTheme;
+	HTHEME _hWndTheme;
 	BOOL _fIsThemed;
 	int _dpiWindow;
 
@@ -117,9 +121,9 @@ private:
 	Gdiplus::Rect _rcMonitor;
 	Gdiplus::Rect _rcMonitorInside;
 
-	// 2d array for each state window and elements of a window
-	RECT** _rcBounds;
-	RECT* _rcMargin;
+	// array for each element of a window
+	RECT* _rcBounds;
+	RECT _rcMargin;
 
 	// layer bitmaps, compose all for the final preview
 	Gdiplus::Bitmap* _bmpSolidColor;

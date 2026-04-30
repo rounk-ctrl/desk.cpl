@@ -23,7 +23,7 @@ const COMDLG_FILTERSPEC file_types[] = {
 
 struct SlideshowThreadData {
 	HWND wnd;
-	BOOL* pRestoreSlideshow;
+	bool* pRestoreSlideshow;
 	IUnknown* iTheme;
 };
 
@@ -55,7 +55,7 @@ void SlideshowWorkerThread(void* lpParam)
 
 			PostMessage(data->wnd, WM_ADD_SLIDESHOW_ITEMS, 0, (LPARAM)path);
 		}
-		*data->pRestoreSlideshow = FALSE;
+		*data->pRestoreSlideshow = false;
 	}
 
 	CoUninitialize();
@@ -69,7 +69,7 @@ BOOL CBackgroundDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	backPreviewSize = GetClientSIZE(hBackPreview);
 	selCount = 0;
 	fWallpaperApply = TRUE;
-	fRestoringSlideshow = selectedTheme->wallpaperType == WT_SLIDESHOW;
+	selectedTheme->fSlideshowSelection = selectedTheme->wallpaperType == WT_SLIDESHOW;
 
 	if (!currentITheme)
 	{
@@ -289,13 +289,11 @@ BOOL CBackgroundDlgProc::OnWallpaperSelection(WPARAM wParam, LPNMHDR nmhdr, BOOL
 	LPWSTR path = GetWallpaperPath(hListView, pnmv->iItem);
 	BOOL bValid = PathFileExists(path);
 
-	selectedTheme->fSlideshowSelection = FALSE;
-
 	if (pnmv->uChanged & LVIF_STATE && pnmv->uNewState & LVIS_SELECTED && count == 1)
 	{
 		::EnableWindow(hPosCombobox, bValid);
 		selectedTheme->wallpaperPath = bValid ? path : L"";
-		if (!fRestoringSlideshow)
+		if (!selectedTheme->fSlideshowSelection)
 		{
 			selectedTheme->wallpaperType = bValid ? WT_PICTURE : WT_NOWALL;
 		}
@@ -553,7 +551,7 @@ void CBackgroundDlgProc::SelectCurrentWallpaper()
 		SlideshowThreadData* data = new SlideshowThreadData();
 		data->wnd = m_hWnd;
 		data->iTheme = currentITheme;
-		data->pRestoreSlideshow = &fRestoringSlideshow;
+		data->pRestoreSlideshow = &selectedTheme->fSlideshowSelection;
 		_beginthread(SlideshowWorkerThread, 0, data);
 	}
 
