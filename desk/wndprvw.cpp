@@ -47,7 +47,7 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	}
 
 	cs_dpi = dpi;
-	_rcBounds = (RECT*)calloc(5, sizeof(RECT));
+	_rcBounds = (RECT*)calloc(10, sizeof(RECT));
 
 	// keep it loaded
 	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -633,6 +633,41 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 		_rcBounds[4].right -= cxBtn;
 	}
 
+	// window content
+	if (_fIsThemed)
+	{
+		_rcBounds[5] = {
+			.left = _marFrame.cxLeftWidth,
+			.top = _rcBounds[0].bottom - 1,
+			.right = _rcBounds[0].right - _marFrame.cxRightWidth,
+			.bottom = _rcMargin.bottom - _marFrame.cyBottomHeight - 2
+		};
+	}
+	else
+	{
+		_rcBounds[5] = {
+			.left = _marFrame.cxLeftWidth,
+			.top = _rcBounds[0].bottom + 2, // border
+			.right = _rcBounds[0].right,
+			.bottom = _rcMargin.bottom - _marFrame.cyBottomHeight - 2
+		};
+
+		int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
+		_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) + count;
+
+		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX) _rcBounds[5].top -= 1;
+		if (_pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE)
+		{
+			_rcBounds[5].top += NcGetSystemMetrics(SM_CYMENUSIZE);
+			_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
+		}
+	}
+
+	// inner window
+	_rcBounds[6] = _rcBounds[5];
+	if (!_fIsThemed && _pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE) InflateRect(&_rcBounds[6], -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
+
+
 	return S_OK;
 }
 
@@ -752,8 +787,8 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, MYWINDOWINFO wndInfo
 		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CXBORDER);
 
 		POINT pt[2] = {
-			{ _rcBounds[0].left, _rcBounds[0].bottom + NcGetSystemMetrics(SM_CXBORDER) },
-			{ _rcBounds[0].right, _rcBounds[0].bottom + NcGetSystemMetrics(SM_CXBORDER) }
+			{ _rcBounds[0].left, _rcBounds[0].bottom },
+			{ _rcBounds[0].right, _rcBounds[0].bottom }
 		};
 		Polyline(hdc, pt, ARRAYSIZE(pt));
 
@@ -859,6 +894,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo)
 	return hr;
 }
 
+// draw scrollbar before content
 HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
@@ -1010,46 +1046,32 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
 		: NcGetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
-
-	RECT crc = wndInfo.wndPos;
-	crc.left += _marFrame.cxLeftWidth;
-	crc.top += _marFrame.cyTopHeight;
-	if (!_fIsThemed && wndInfo.wndType == WT_MESSAGEBOX) crc.top += NcGetSystemMetrics(SM_CYFRAME);
-	if (!_fIsThemed && wndInfo.wndType == WT_ACTIVE) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE) + NcGetSystemMetrics(SM_CYFRAME);
-
-	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
-	if (!_fIsThemed) crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) + count;
-	crc.right -= _marFrame.cxRightWidth;
-
+	
 	if (!_fIsThemed && !fIsMessageBox)
 	{
-		crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
 		// QUIRK: same behaviour as old desk.cpl
-		if (wndInfo.wndType == WT_ACTIVE) DrawEdge(hdc, &crc, EDGE_SUNKEN, BF_RECT);
-
 		if (wndInfo.wndType == WT_ACTIVE)
 		{
+			DrawEdge(hdc, &_rcBounds[5], EDGE_SUNKEN, BF_RECT);
+
 			// 1px border above edge
 			HPEN pen = CreatePen(PS_SOLID, 1, NcGetSysColor(COLOR_3DFACE));
 			HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
 			POINT pt[2]{};
-			pt[0] = { crc.left, crc.top - 1 };
-			pt[1] = { crc.right, crc.top - 1 };
+			pt[0] = { _rcBounds[5].left, _rcBounds[5].top - 1 };
+			pt[1] = { _rcBounds[5].right, _rcBounds[5].top - 1 };
 			Polyline(hdc, pt, ARRAYSIZE(pt));
 
 			SelectObject(hdc, oldPen);
 			DeletePen(pen);
 		}
 
-		// offset the rect by edge to actually show the inner border
-		InflateRect(&crc, -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
-
+		// todo: remove
 		// update margins
 		_marFrame.cxLeftWidth += NcGetSystemMetrics(SM_CXEDGE);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYFRAME);
+		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYFRAME) + 1;
 		_marFrame.cyBottomHeight += NcGetSystemMetrics(SM_CYFRAME);
 	}
 
@@ -1058,8 +1080,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	if (_fIsThemed || (wndInfo.wndType != WT_INACTIVE && !_fIsThemed))
 	{
 		HBRUSH hbr = CreateSolidBrush(clr);
-		if (wndInfo.wndType == WT_MESSAGEBOX) crc.right += NcGetSystemMetrics(SM_CXBORDER);
-		FillRect(hdc, &crc, hbr);
+		FillRect(hdc, &_rcBounds[6], hbr);
 		DeleteObject(hbr);
 	}
 
@@ -1089,11 +1110,6 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		RECT crc = wndInfo.wndPos;
-		crc.top += _marFrame.cyTopHeight;
-		if (!_fIsThemed) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE);
-
-
 		WCHAR szText[20];
 		LoadString(g_hThemeUI, 1460, szText, ARRAYSIZE(szText));
 
@@ -1101,25 +1117,22 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		RECT rcheight = { 0,0,0,0 };
 		DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
 
+		RECT crc = _rcBounds[6];
 		crc.bottom = crc.top + RECTHEIGHT(rcheight);
-		crc.left += _marFrame.cxLeftWidth;
 
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : NcGetSysColor(COLOR_WINDOWTEXT);
-
 		if (_fIsThemed)
 		{
-
 			DTTOPTS dt = { sizeof(dt) };
 			dt.dwFlags = DTT_TEXTCOLOR;
 			dt.crText = clr;
-			hr = DrawThemeTextEx(hTheme, hdc, 0, 0, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER, &crc, &dt);
+			hr = DrawThemeTextEx(hTheme, hdc, 0, 0, szText, -1, DT_LEFT | DT_TOP | DT_SINGLELINE, &crc, &dt);
 		}
 		else
 		{
-			SetTextColor(hdc, clr);
 			crc.left += 1;
-
-			hr = DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+			SetTextColor(hdc, clr);
+			hr = DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 		}
 		RETURN_IF_FAILED(hr);
 
@@ -1131,6 +1144,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	{
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
+
+		RECT crc = _rcBounds[6];
 
 		// load button theme
 		if (_fIsThemed)
