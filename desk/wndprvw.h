@@ -116,6 +116,7 @@ private:
 	HTHEME _hScrlTheme;
 	BOOL _fIsThemed;
 	int _dpiWindow;
+	SIZE _sizeScrollbar;
 
 	Gdiplus::Rect _rcPreview;
 	Gdiplus::Rect _rcBin;

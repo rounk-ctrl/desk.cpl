@@ -73,6 +73,9 @@ CWindowPreview::~CWindowPreview()
 	{
 		_CleanupUxThemeFile(&_hTheme);
 	}
+
+	CloseThemeData(_hWndTheme);
+	CloseThemeData(_hScrlTheme);
 }
 
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
@@ -673,6 +676,12 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	_rcBounds[8].top += _marFrame.cyTopHeight + NcGetSystemMetrics(SM_CYEDGE);
 	_rcBounds[8].bottom = _rcBounds[8].top + NcGetSystemMetrics(SM_CYMENUSIZE);
 
+	// scroll bar
+	_rcBounds[9] = _rcBounds[6];
+	GetThemePartSize(_hScrlTheme, NULL, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &_sizeScrollbar);
+	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), _sizeScrollbar.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
+	_rcBounds[9].left = _rcBounds[9].right - width;
+
 	return S_OK;
 }
 
@@ -905,18 +914,10 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndIn
 	if (wndInfo.wndType != WT_ACTIVE) return hr;
 
 	HDC hdc = pGraphics->GetHDC();
-	RETURN_IF_NULL_ALLOC(hdc);
+	int height = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CYVSCROLL), _sizeScrollbar.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
 
-
-	SIZE size = { 0 };
-	GetThemePartSize(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
-
-	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), size.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
-	int height = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CYVSCROLL), size.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
-
-	RECT crc = _rcBounds[6];
-	crc.left = crc.right - width;
-
+	// scroll bar background
+	RECT crc = _rcBounds[9];
 	if (_fIsThemed)
 	{
 		DrawThemeBackground(_hScrlTheme, hdc, SBP_LOWERTRACKVERT, SCRBS_NORMAL, &crc, 0);
@@ -928,24 +929,18 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndIn
 		if (selectedTheme->selectedScheme) DeleteBrush(br);
 	}
 
+	// up button
 	crc.bottom = crc.top + height;
 	_fIsThemed ? DrawThemeBackground(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_UPNORMAL, &crc, 0)
 		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 1) == TRUE ? S_OK : E_FAIL;
 
-	crc.top += height;
-	crc.bottom = crc.top + height;
+	// scroll thumb 
+	OffsetRect(&crc, 0, height);
 	if (_fIsThemed) DrawThemeBackground(_hScrlTheme, hdc, SBP_THUMBBTNVERT, SCRBS_NORMAL, &crc, 0);
 
-	crc.top = wndInfo.wndPos.bottom - height;
-	crc.bottom = wndInfo.wndPos.bottom;
-	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	crc.top -= _marFrame.cyBottomHeight + 2;
-
-	if (!_fIsThemed)
-	{
-		crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
-		crc.top -= NcGetSystemMetrics(SM_CYBORDER) - 1;
-	}
+	// down button
+	crc = _rcBounds[9];
+	crc.top = crc.bottom - height;
 	_fIsThemed ? DrawThemeBackground(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_DOWNNORMAL, &crc, 0)
 		: NcDrawFrameControl(hdc, &crc, DFC_SCROLL, 2) == TRUE ? S_OK : E_FAIL;
 
@@ -1062,11 +1057,6 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			SelectObject(hdc, oldPen);
 			DeletePen(pen);
 		}
-
-		// todo: remove
-		_marFrame.cxLeftWidth += NcGetSystemMetrics(SM_CXEDGE);
-		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyBottomHeight += NcGetSystemMetrics(SM_CYFRAME);
 	}
 
 	// idk how it works but u cant use gdi+ to draw a rect, and then use gdi to draw the text on it
