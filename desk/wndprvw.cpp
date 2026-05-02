@@ -563,7 +563,6 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.right = _rcBounds[0].right,
 			.bottom = 0
 		};
-		_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
 	}
 	else
 	{
@@ -573,8 +572,8 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.right = _rcBounds[0].right,
 			.bottom = 0
 		};
-		_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
 	}
+	_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
 
 	// caption button
 	// uxtheme.dll _GetNcBtnMetrics
@@ -599,17 +598,6 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.right = _rcBounds[0].right - _marFrame.cxRightWidth - cxEdge,
 			.bottom = cyBtn
 		};
-		_rcBounds[2].bottom += _rcBounds[2].top;
-
-		// max btn
-		_rcBounds[3] = _rcBounds[2];
-		_rcBounds[3].left -= cxBtn + cxEdge;
-		_rcBounds[3].right -= cxBtn + cxEdge;
-
-		// min btn
-		_rcBounds[4] = _rcBounds[3];
-		_rcBounds[4].left -= cxBtn + cxEdge;
-		_rcBounds[4].right -= cxBtn + cxEdge;
 	}
 	else
 	{
@@ -620,18 +608,16 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.right = _rcBounds[0].right - cxEdge,
 			.bottom = cyBtn
 		};
-		_rcBounds[2].bottom += _rcBounds[2].top;
-
-		// max btn
-		_rcBounds[3] = _rcBounds[2];
-		_rcBounds[3].left -= cxBtn + cxEdge;
-		_rcBounds[3].right -= cxBtn + cxEdge;
-
-		// min btn
-		_rcBounds[4] = _rcBounds[3];
-		_rcBounds[4].left -= cxBtn;
-		_rcBounds[4].right -= cxBtn;
 	}
+	_rcBounds[2].bottom += _rcBounds[2].top;
+
+	// max btn
+	_rcBounds[3] = _rcBounds[2];
+	OffsetRect(&_rcBounds[3], -(cxBtn + cxEdge), 0);
+
+	// min btn
+	_rcBounds[4] = _rcBounds[3];
+	OffsetRect(&_rcBounds[4], -(_fIsThemed ? cxBtn + cxEdge : cxBtn), 0);
 
 	// window content
 	if (_fIsThemed)
@@ -667,6 +653,25 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	_rcBounds[6] = _rcBounds[5];
 	if (!_fIsThemed && _pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE) InflateRect(&_rcBounds[6], -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
 
+	// window button
+	_rcBounds[7] = _rcBounds[6];
+	if (_fIsThemed)
+	{
+		InflateRect(&_rcBounds[7], MulDiv(-30, _dpiWindow, 96), MulDiv(-16, _dpiWindow, 96));
+	}
+	else
+	{
+		int center = (RECTWIDTH(_rcBounds[7]) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
+		_rcBounds[7].bottom -= MulDiv(3, _dpiWindow, 96);
+		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96);
+		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96);
+		_rcBounds[7].top = _rcBounds[7].bottom - MulDiv(24, _dpiWindow, 96);
+	}
+	
+	// menu bar
+	_rcBounds[8] = _rcBounds[0];
+	_rcBounds[8].top += _marFrame.cyTopHeight + NcGetSystemMetrics(SM_CYEDGE);
+	_rcBounds[8].bottom = _rcBounds[8].top + NcGetSystemMetrics(SM_CYMENUSIZE);
 
 	return S_OK;
 }
@@ -894,7 +899,6 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo)
 	return hr;
 }
 
-// draw scrollbar before content
 HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndInfo)
 {
 	HRESULT hr = S_OK;
@@ -903,8 +907,6 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndIn
 	HDC hdc = pGraphics->GetHDC();
 	RETURN_IF_NULL_ALLOC(hdc);
 
-	RECT crc = wndInfo.wndPos;
-	crc.top += _marFrame.cyTopHeight;
 
 	SIZE size = { 0 };
 	GetThemePartSize(_hScrlTheme, hdc, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &size);
@@ -912,14 +914,8 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndIn
 	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), size.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
 	int height = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CYVSCROLL), size.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
 
-	crc.left = crc.right - _marFrame.cxRightWidth - width;
-	crc.right = crc.left + width;
-	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	if (!_fIsThemed)
-	{
-		if (wndInfo.wndType == WT_ACTIVE) crc.top += NcGetSystemMetrics(SM_CYMENUSIZE);
-		crc.bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
-	}
+	RECT crc = _rcBounds[6];
+	crc.left = crc.right - width;
 
 	if (_fIsThemed)
 	{
@@ -1068,10 +1064,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		}
 
 		// todo: remove
-		// update margins
 		_marFrame.cxLeftWidth += NcGetSystemMetrics(SM_CXEDGE);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
-		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYFRAME) + 1;
 		_marFrame.cyBottomHeight += NcGetSystemMetrics(SM_CYFRAME);
 	}
 
@@ -1113,12 +1107,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		WCHAR szText[20];
 		LoadString(g_hThemeUI, 1460, szText, ARRAYSIZE(szText));
 
-		// get height
-		RECT rcheight = { 0,0,0,0 };
-		DrawText(hdc, szText, -1, &rcheight, DT_LEFT | DT_TOP | DT_SINGLELINE | DT_CALCRECT);
-
 		RECT crc = _rcBounds[6];
-		crc.bottom = crc.top + RECTHEIGHT(rcheight);
 
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : NcGetSysColor(COLOR_WINDOWTEXT);
 		if (_fIsThemed)
@@ -1145,15 +1134,11 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 		HFONT fon = CreateFontIndirect(&font);
 		HFONT hOldFont = (HFONT)SelectObject(hdc, fon);
 
-		RECT crc = _rcBounds[6];
-
 		// load button theme
 		if (_fIsThemed)
 		{
-			InflateRect(&crc, MulDiv(-30, _dpiWindow, 96), MulDiv(-16, _dpiWindow, 96));
-
 			HTHEME hThemeBtn = OpenNcThemeData(_hTheme, L"Button");
-			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &crc, NULL);
+			DrawThemeBackground(hThemeBtn, hdc, BP_PUSHBUTTON, PBS_DEFAULTED, &_rcBounds[7], NULL);
 			CloseThemeData(hThemeBtn);
 		}
 		else
@@ -1164,16 +1149,11 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 			WCHAR szText[20];
 			LoadString(g_hThemeUI, 1461, szText, ARRAYSIZE(szText));
 
+			RECT crc = _rcBounds[6];
 			crc.left += NcGetSystemMetrics(SM_CXEDGE) + 1;
-			crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER);
 			DrawText(hdc, szText, -1, &crc, DT_LEFT | DT_TOP | DT_SINGLELINE);
 
-			int center = (RECTWIDTH(crc) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
-			crc.bottom -= MulDiv(3, _dpiWindow, 96);
-			crc.left = center - MulDiv(35, _dpiWindow, 96);
-			crc.right = center + MulDiv(35, _dpiWindow, 96);
-			crc.top = crc.bottom - MulDiv(24, _dpiWindow, 96);
-			NcDrawFrameControl(hdc, &crc, DFC_BUTTON, DFCS_BUTTONPUSH);
+			NcDrawFrameControl(hdc, &_rcBounds[7], DFC_BUTTON, DFCS_BUTTONPUSH);
 		}
 
 		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_BTNTEXT) : NcGetSysColor(COLOR_BTNTEXT);
@@ -1181,8 +1161,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		WCHAR szText[5];
 		LoadString(g_hThemeUI, 1458, szText, ARRAYSIZE(szText));
-
-		DrawText(hdc, szText, -1, &crc, DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		DrawText(hdc, szText, -1, &_rcBounds[7], DT_CENTER | DT_TOP | DT_SINGLELINE | DT_VCENTER);
 
 		SelectObject(hdc, hOldFont);
 		DeleteObject(fon);
@@ -1195,26 +1174,19 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 HRESULT CWindowPreview::_RenderMenuBar(Gdiplus::Graphics* pGraphics, MYWINDOWINFO wndInfo)
 {
 	if (wndInfo.wndType != WT_ACTIVE || _fIsThemed) return S_OK;
-
-	RECT crc = wndInfo.wndPos;
-	crc.left += _marFrame.cxLeftWidth - NcGetSystemMetrics(SM_CXEDGE);
-	crc.top += _marFrame.cyTopHeight - NcGetSystemMetrics(SM_CYEDGE);
-	crc.bottom = crc.top + NcGetSystemMetrics(SM_CYMENUSIZE);
-	crc.right -= NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
-
+	RECT crc = _rcBounds[8];
+	
 	HDC dc = pGraphics->GetHDC();
 	HBRUSH br = NcGetSysColorBrush(COLOR_MENU);
 	FillRect(dc, &crc, br);
 	if (selectedTheme->selectedScheme) DeleteBrush(br);
 
-	crc.top += 1;
-	crc.bottom -= 1;
-	crc.left += 1;
+	InflateRect(&crc, 0, -1);
 	_RenderMenuItem(dc, &crc, 1);
 	_RenderMenuItem(dc, &crc, 2);
 	_RenderMenuItem(dc, &crc, 3);
-	pGraphics->ReleaseHDC(dc);
 
+	pGraphics->ReleaseHDC(dc);
 	return S_OK;
 }
 
