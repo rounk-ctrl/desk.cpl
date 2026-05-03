@@ -115,6 +115,7 @@ private:
 	HTHEME _hWndTheme;
 	HTHEME _hScrlTheme;
 	BOOL _fIsThemed;
+	BOOL _fForceClassic;
 	int _dpiWindow;
 	SIZE _sizeScrollbar;
 

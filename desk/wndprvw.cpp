@@ -45,9 +45,10 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	{
 		_bmpWindows[i] = nullptr;
 	}
+	_fForceClassic = FALSE;
 
 	cs_dpi = dpi;
-	_rcBounds = (RECT*)calloc(10, sizeof(RECT));
+	_rcBounds = (RECT*)calloc(13, sizeof(RECT));
 
 	// keep it loaded
 	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -81,6 +82,8 @@ CWindowPreview::~CWindowPreview()
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 {
 	HRESULT hr = S_OK;
+	if (_fForceClassic) _fIsThemed = 0;
+
 	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
 	_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
 	_CalculateRectsOfElements();
@@ -144,7 +147,7 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	if (_hTheme) _CleanupUxThemeFile(&_hTheme);
 	_hTheme = hTheme;
 	_pwndInfo = pwndInfo;
-	if (hTheme == nullptr) _fIsThemed = 0;
+	if (_fForceClassic) _fIsThemed = 0;
 	else
 	{
 		if (selectedTheme->szMsstylePath.compare(L"(classic)") == 0) _fIsThemed = 0;
@@ -180,7 +183,7 @@ HRESULT CWindowPreview::GetMonitorOffset(SIZE* pOut)
 
 HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
 {
-	_fIsThemed = !fEnable;
+	_fForceClassic = fEnable;
 	return S_OK;
 }
 
@@ -509,6 +512,7 @@ HRESULT CWindowPreview::_CalculateFrameMargins()
 	{
 		int cxPaddedBorder = GetThemeSysSize(_hWndTheme, SM_CXPADDEDBORDER);
 		int cyCaptionHeight = GetThemeSysSize(_hWndTheme, SM_CYSIZE) + cxPaddedBorder + 2; // i think
+
 		_marFrame.cxLeftWidth = cxPaddedBorder + NcGetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight = cyCaptionHeight + NcGetSystemMetrics(SM_CYFRAME);
@@ -682,6 +686,22 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), _sizeScrollbar.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
 	_rcBounds[9].left = _rcBounds[9].right - width;
 
+	/// fix this
+	// frame bottom
+	_rcBounds[10] = _rcMargin;
+	_rcBounds[10].top = _rcBounds[10].bottom - (_marFrame.cyBottomHeight + 2);
+
+	// frame left
+	_rcBounds[11] = {
+		.left = 0,
+		.top = _rcBounds[5].top,
+		.right = _marFrame.cxLeftWidth,
+		.bottom = _rcBounds[5].bottom
+	};
+
+	// frame right
+	_rcBounds[12] = _rcBounds[11];
+	OffsetRect(&_rcBounds[12], _rcMargin.right - _marFrame.cxLeftWidth, 0);
 	return S_OK;
 }
 
@@ -956,7 +976,6 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 	FRAMESTATES frameState = wndInfo.wndType == WT_INACTIVE ? FS_INACTIVE : FS_ACTIVE;
 
-	// todo: split this ??
 	RECT crc = wndInfo.wndPos;
 	if (!_fIsThemed)
 	{
@@ -966,8 +985,6 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		{
 			int offset = NcGetSystemMetrics(SM_CXBORDER);
 			InflateRect(&crc, -offset, -offset);
-			crc.bottom += offset - 1;
-			crc.right += offset;
 		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
 
@@ -978,7 +995,6 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 			for (int i = 0; i < count; i++)
 			{
 				bool fInactiveWnd = wndInfo.wndType == WT_INACTIVE;
-				// framerect draws a 1px border
 				HBRUSH br = NcGetSysColorBrush(fInactiveWnd ? COLOR_INACTIVEBORDER : COLOR_ACTIVEBORDER);
 				FrameRect(hdc, &crc, br);
 				InflateRect(&crc, -1, -1);
@@ -998,29 +1014,15 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		if (selectedTheme->selectedScheme) DeleteBrush(br);
 	}
 
-	crc = wndInfo.wndPos;
-	crc.top = crc.bottom - (_marFrame.cyBottomHeight + 2);
 	if (_fIsThemed)
 	{
-		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &crc, NULL);
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMEBOTTOM, frameState, &_rcBounds[10], NULL);
 		RETURN_IF_FAILED(hr);
-	}
 
-	crc = wndInfo.wndPos;
-	crc.top += _marFrame.cyTopHeight;
-	crc.right = crc.left + _marFrame.cxLeftWidth;
-	crc.bottom -= _marFrame.cyBottomHeight + 2;
-	if (_fIsThemed)
-	{
-		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &crc, NULL);
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMELEFT, frameState, &_rcBounds[11], NULL);
 		RETURN_IF_FAILED(hr);
-	}
 
-	crc.left = wndInfo.wndPos.right - _marFrame.cxRightWidth;
-	crc.right = wndInfo.wndPos.right;
-	if (_fIsThemed)
-	{
-		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &crc, NULL);
+		hr = DrawThemeBackground(hTheme, hdc, WP_FRAMERIGHT, frameState, &_rcBounds[12], NULL);
 		RETURN_IF_FAILED(hr);
 	}
 
@@ -1035,7 +1037,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
+	COLORREF clr = _fIsThemed ? NcGetThemeSysColor(_hTheme, hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
 		: NcGetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
 	
 	if (!_fIsThemed && !fIsMessageBox)
