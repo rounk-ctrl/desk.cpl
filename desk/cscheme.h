@@ -9,4 +9,3 @@ HBRUSH NcGetSysColorBrush(int nIndex);
 BOOL NcDrawFrameControl(HDC hdc, RECT* lprc, UINT uType, int type);
 int NcGetSystemMetrics(int nIndex);
 void NcUpdateSystemMetrics(int nIndex, int value);
-COLORREF NcGetThemeSysColor(HTHEME hTheme, HTHEME wndTheme, int colorId);

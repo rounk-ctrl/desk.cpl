@@ -137,15 +137,3 @@ void NcUpdateSystemMetrics(int nIndex, int value)
 		selectedTheme->selectedScheme->ncm = ncm;
 	}
 }
-
-COLORREF NcGetThemeSysColor(HTHEME hTheme, HTHEME wndTheme, int colorId)
-{
-	if (hTheme)
-	{
-		return GetThemeSysColor(wndTheme, colorId);
-	}
-	else
-	{
-		return NcGetSysColor(colorId);
-	}
-}

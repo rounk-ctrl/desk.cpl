@@ -906,8 +906,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo)
 	bool fIsInactive = wndInfo.wndType == WT_INACTIVE;
 	CAPTIONSTATES frameState = fIsInactive ? CS_INACTIVE : CS_ACTIVE;
 
-	COLORREF clr = _fIsThemed ? GetThemeSysColor(_hWndTheme, fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT)
-		: NcGetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
+	COLORREF clr = NcGetSysColor(fIsInactive ? COLOR_INACTIVECAPTIONTEXT : COLOR_CAPTIONTEXT);
 
 	if (_fIsThemed)
 	{
@@ -1037,9 +1036,6 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	RETURN_IF_NULL_ALLOC(hdc);
 	BOOL fIsMessageBox = wndInfo.wndType == WT_MESSAGEBOX;
 
-	COLORREF clr = _fIsThemed ? NcGetThemeSysColor(_hTheme, hTheme, fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW)
-		: NcGetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
-	
 	if (!_fIsThemed && !fIsMessageBox)
 	{
 		// QUIRK: same behaviour as old desk.cpl
@@ -1065,6 +1061,8 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 	// QUIRK: same behaviour as old desk.cpl
 	if (_fIsThemed || (wndInfo.wndType != WT_INACTIVE && !_fIsThemed))
 	{
+		COLORREF clr = NcGetSysColor(fIsMessageBox ? COLOR_3DFACE : COLOR_WINDOW);
+
 		HBRUSH hbr = CreateSolidBrush(clr);
 		FillRect(hdc, &_rcBounds[6], hbr);
 		DeleteObject(hbr);
@@ -1101,7 +1099,7 @@ HRESULT CWindowPreview::_RenderContent(Graphics* pGraphics, HTHEME hTheme, MYWIN
 
 		RECT crc = _rcBounds[6];
 
-		COLORREF clr = _fIsThemed ? GetThemeSysColor(hTheme, COLOR_WINDOWTEXT) : NcGetSysColor(COLOR_WINDOWTEXT);
+		COLORREF clr = NcGetSysColor(COLOR_WINDOWTEXT);
 		if (_fIsThemed)
 		{
 			DTTOPTS dt = { sizeof(dt) };
