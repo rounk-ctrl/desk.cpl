@@ -242,14 +242,14 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		{
 			if (_pwndInfo[i].wndType == WT_ACTIVE)
 			{
-				rect.X +=  NcGetSystemMetrics(SM_CXBORDER) - 7;
-				rect.Y += 1 + NcGetSystemMetrics(SM_CXBORDER);
+				rect.X +=  NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER) - 7;
+				rect.Y += 1 + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 				rect.Width += 12;
 				rect.Height -= 5;
 			}
 			if (_pwndInfo[i].wndType == WT_MESSAGEBOX)
 			{
-				rect.X = 22 + NcGetSystemMetrics(SM_CXBORDER);
+				rect.X = 22 + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 				rect.Y += 19 + 35;
 				rect.Width += 75;
 				rect.Height -= 31;
@@ -498,8 +498,8 @@ HRESULT CWindowPreview::_CalculateFrameMargins()
 	// calculate frame margins
 	if (_fIsThemed)
 	{
-		int cxPaddedBorder = GetThemeSysSize(_hWndTheme, SM_CXPADDEDBORDER);
-		int cyCaptionHeight = GetThemeSysSize(_hWndTheme, SM_CYSIZE) + cxPaddedBorder + 2; // i think
+		int cxPaddedBorder = NcGetSystemMetrics(SM_CXPADDEDBORDER) + NcGetSystemMetrics(SM_CXBORDER);
+		int cyCaptionHeight = NcGetSystemMetrics(SM_CYSIZE) + cxPaddedBorder + 2; // i think
 
 		_marFrame.cxLeftWidth = cxPaddedBorder + NcGetSystemMetrics(SM_CXFRAME);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
@@ -509,7 +509,7 @@ HRESULT CWindowPreview::_CalculateFrameMargins()
 	else
 	{
 		// todo: account for padded borders
-		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1;
+		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) - 1;
 		_marFrame.cyBottomHeight = 0;
@@ -534,7 +534,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	}
 	else
 	{
-		int edge = NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYBORDER) + 1;
+		int edge = NcGetSystemMetrics(SM_CYEDGE) + NcGetSystemMetrics(SM_CYBORDER) + 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		_rcBounds[0] = {
 			.left = _marFrame.cxLeftWidth,
 			.top = edge,
@@ -543,7 +543,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 		};
 
 		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX)
-			_rcBounds[0].right += NcGetSystemMetrics(SM_CXBORDER);
+			_rcBounds[0].right += NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 	}
 
 	// caption text
@@ -554,7 +554,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 
 		_rcBounds[1] = {
 			.left = _rcBounds[0].left + _marFrame.cxLeftWidth + mar.cxLeftWidth,
-			.top = _rcBounds[0].bottom - (GetThemeSysSize(_hWndTheme, SM_CYSIZE) / 2) - 2, // remove RECTHEIGHT 
+			.top = _rcBounds[0].bottom - (NcGetSystemMetrics(SM_CYSIZE) / 2) - 2, // remove RECTHEIGHT 
 			.right = _rcBounds[0].right,
 			.bottom = 0
 		};
@@ -578,7 +578,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	SIZE size = { 0 };
 	GetThemePartSize(_hWndTheme, NULL, WP_CLOSEBUTTON, CBS_NORMAL, NULL, TS_TRUE, &size);
 
-	int cyBtn = _fIsThemed ? GetThemeSysSize(_hWndTheme, SM_CYSIZE) : NcGetSystemMetrics(SM_CYSIZE);
+	int cyBtn = NcGetSystemMetrics(SM_CYSIZE);
 	int cxBtn = _fIsThemed ? MulDiv(cyBtn, size.cx, size.cy) : NcGetSystemMetrics(SM_CYSIZE);
 
 	// remove padding
@@ -633,24 +633,19 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.bottom = _rcMargin.bottom - _marFrame.cyBottomHeight - 2
 		};
 
-		int count = NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE) - NcGetSystemMetrics(SM_CXBORDER);
-		_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) + count;
-
 		if (_pwndInfo[_iCurrentWnd].wndType == WT_MESSAGEBOX) _rcBounds[5].top -= 1;
 		if (_pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE)
 		{
 			_rcBounds[5].top += NcGetSystemMetrics(SM_CYMENUSIZE);
-			_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1;
+			_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		}
 	}
 
 	// inner window
 	_rcBounds[6] = _rcBounds[5];
-	_rcBounds[6].bottom += 1;
 	if (!_fIsThemed && _pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE)
 	{
 		InflateRect(&_rcBounds[6], -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
-		_rcBounds[6].bottom -= 1;
 	}
 
 	// window button
@@ -663,8 +658,8 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	{
 		int center = (RECTWIDTH(_rcBounds[7]) / 2);
 		_rcBounds[7].bottom -= MulDiv(3, _dpiWindow, 96);
-		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER);
-		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER);
+		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		_rcBounds[7].top = _rcBounds[7].bottom - MulDiv(24, _dpiWindow, 96);
 	}
 	
@@ -676,7 +671,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	// scroll bar
 	_rcBounds[9] = _rcBounds[6];
 	GetThemePartSize(_hScrlTheme, NULL, SBP_ARROWBTN, ABS_UPNORMAL, NULL, TS_TRUE, &_sizeScrollbar);
-	int width = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CXVSCROLL), _sizeScrollbar.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
+	int width = _fIsThemed ? max(NcGetSystemMetrics(SM_CXVSCROLL), _sizeScrollbar.cx) : NcGetSystemMetrics(SM_CXVSCROLL);
 	_rcBounds[9].left = _rcBounds[9].right - width;
 
 	/// fix this
@@ -811,8 +806,6 @@ HRESULT CWindowPreview::_RenderCaption(Graphics* pGraphics, MYWINDOWINFO wndInfo
 		HPEN pen = CreatePen(PS_SOLID, 1, NcGetSysColor(COLOR_3DFACE));
 		HPEN oldPen = (HPEN)SelectObject(hdc, pen);
 
-		_marFrame.cyTopHeight += NcGetSystemMetrics(SM_CXBORDER);
-
 		POINT pt[2] = {
 			{ _rcBounds[0].left, _rcBounds[0].bottom },
 			{ _rcBounds[0].right, _rcBounds[0].bottom }
@@ -926,7 +919,7 @@ HRESULT CWindowPreview::_RenderScrollbar(Graphics* pGraphics, MYWINDOWINFO wndIn
 	if (wndInfo.wndType != WT_ACTIVE) return hr;
 
 	HDC hdc = pGraphics->GetHDC();
-	int height = _fIsThemed ? max(GetThemeSysSize(_hWndTheme, SM_CYVSCROLL), _sizeScrollbar.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
+	int height = _fIsThemed ? max(NcGetSystemMetrics(SM_CYVSCROLL), _sizeScrollbar.cy) : NcGetSystemMetrics(SM_CYVSCROLL);
 
 	// scroll bar background
 	RECT crc = _rcBounds[9];
@@ -975,17 +968,17 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 
 		if (fIsMessageBox)
 		{
-			int offset = NcGetSystemMetrics(SM_CXBORDER);
+			int offset = NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 			InflateRect(&crc, -offset, -offset);
 
-			crc.right += NcGetSystemMetrics(SM_CXBORDER);
-			crc.bottom += NcGetSystemMetrics(SM_CXBORDER);
+			crc.right += NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+			crc.bottom += NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
 
 		if (!fIsMessageBox)
 		{
-			int count = NcGetSystemMetrics(SM_CXBORDER);
+			int count = NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 			InflateRect(&crc, -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CXEDGE));
 			for (int i = 0; i < count; i++)
 			{

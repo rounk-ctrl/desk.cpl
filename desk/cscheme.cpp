@@ -95,8 +95,6 @@ __declspec(noinline) int NcGetSystemMetrics(int nIndex)
 
 			case SM_CXPADDEDBORDER: iValue = selectedTheme->selectedScheme->iPaddedBorderWidth; break;
 
-			//case SM_CXFRAME:	iValue = GetSystemMetrics(SM_CXEDGE) + ncm.iBorderWidth + 1; break;
-            
             default:            iValue = GetSystemMetrics(nIndex); break;
         }
 
