@@ -112,14 +112,12 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 		for (int i = 0; i < _wndInfoCount; ++i)
 		{
 			// adjust size for dpi
-			int width = RECTWIDTH(_pwndInfo[i].wndPos);
-			int height = RECTHEIGHT(_pwndInfo[i].wndPos);
-
-			_pwndInfo[i].wndPos.left = MulDiv(_pwndInfo[i].wndPos.left, _dpiWindow, 96);
-			_pwndInfo[i].wndPos.top = MulDiv(_pwndInfo[i].wndPos.top, _dpiWindow, 96);
-
-			_pwndInfo[i].wndPos.right = _pwndInfo[i].wndPos.left + MulDiv(width, _dpiWindow, 96);
-			_pwndInfo[i].wndPos.bottom = _pwndInfo[i].wndPos.top + MulDiv(height, _dpiWindow, 96);
+			_pwndInfo[i].wndPos = { 
+				.left = ADJUSTDPI(_pwndInfo[i].wndPos.left),
+				.top = ADJUSTDPI(_pwndInfo[i].wndPos.top),
+				.right = ADJUSTDPI(_pwndInfo[i].wndPos.right),
+				.bottom = ADJUSTDPI(_pwndInfo[i].wndPos.bottom)
+			};
 
 			// fix window sizes which are based on preview size
 			if (_pwndInfo[i].wndPos.right < 0)
@@ -159,7 +157,6 @@ HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hT
 	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
 	_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
 	_CalculateRectsOfElements();
-
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
 	if (flags & UPDATE_WALLPAPER) _RenderWallpaper();
@@ -243,24 +240,19 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 
 		if (_pageType == PT_APPEARANCE && !_fIsThemed)
 		{
-			rect.Y += 5;
-			if (_pwndInfo[i].wndType == WT_INACTIVE)
-			{
-				rect.Height += 10;
-			}
 			if (_pwndInfo[i].wndType == WT_ACTIVE)
 			{
-				rect.X -= 6;
-				rect.Y -= 2;
+				rect.X +=  NcGetSystemMetrics(SM_CXBORDER) - 7;
+				rect.Y += 1 + NcGetSystemMetrics(SM_CXBORDER);
 				rect.Width += 12;
 				rect.Height -= 5;
 			}
 			if (_pwndInfo[i].wndType == WT_MESSAGEBOX)
 			{
-				rect.X = 22;
-				rect.Y += 10 + 35;
-				rect.Width += 60;
-				rect.Height -= 30;
+				rect.X = 22 + NcGetSystemMetrics(SM_CXBORDER);
+				rect.Y += 19 + 35;
+				rect.Width += 75;
+				rect.Height -= 31;
 			}
 		}
 		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
@@ -321,10 +313,6 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 	// separate this
 	if (_pageType == PT_APPEARANCE && !_fIsThemed)
 	{
-		if (wndInfo.wndType == WT_INACTIVE)
-		{
-			wndInfo.wndPos.bottom += 10;
-		}
 		if (wndInfo.wndType == WT_ACTIVE)
 		{
 			wndInfo.wndPos.right += 12;
@@ -332,8 +320,8 @@ HRESULT CWindowPreview::_RenderWindow(MYWINDOWINFO wndInfo, int index)
 		}
 		if (wndInfo.wndType == WT_MESSAGEBOX)
 		{
-			wndInfo.wndPos.bottom -= 30;
-			wndInfo.wndPos.right += 60;
+			wndInfo.wndPos.bottom -= 31;
+			wndInfo.wndPos.right += 75;
 		}
 	}
 
@@ -658,7 +646,12 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 
 	// inner window
 	_rcBounds[6] = _rcBounds[5];
-	if (!_fIsThemed && _pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE) InflateRect(&_rcBounds[6], -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
+	_rcBounds[6].bottom += 1;
+	if (!_fIsThemed && _pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE)
+	{
+		InflateRect(&_rcBounds[6], -NcGetSystemMetrics(SM_CXEDGE), -NcGetSystemMetrics(SM_CYEDGE));
+		_rcBounds[6].bottom -= 1;
+	}
 
 	// window button
 	_rcBounds[7] = _rcBounds[6];
@@ -668,10 +661,10 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	}
 	else
 	{
-		int center = (RECTWIDTH(_rcBounds[7]) / 2) + (NcGetSystemMetrics(SM_CXBORDER) * 2);
+		int center = (RECTWIDTH(_rcBounds[7]) / 2);
 		_rcBounds[7].bottom -= MulDiv(3, _dpiWindow, 96);
-		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96);
-		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96);
+		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER);
+		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER);
 		_rcBounds[7].top = _rcBounds[7].bottom - MulDiv(24, _dpiWindow, 96);
 	}
 	
@@ -984,6 +977,9 @@ HRESULT CWindowPreview::_RenderFrame(Graphics* pGraphics, HTHEME hTheme, MYWINDO
 		{
 			int offset = NcGetSystemMetrics(SM_CXBORDER);
 			InflateRect(&crc, -offset, -offset);
+
+			crc.right += NcGetSystemMetrics(SM_CXBORDER);
+			crc.bottom += NcGetSystemMetrics(SM_CXBORDER);
 		}
 		DrawEdge(hdc, &crc, EDGE_RAISED, BF_RECT);
 
