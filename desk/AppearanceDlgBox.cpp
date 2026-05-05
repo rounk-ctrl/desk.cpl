@@ -1,10 +1,32 @@
 #include "pch.h"
 #include "AppearanceDlgBox.h"
-#include "helper.h"
 #include "cscheme.h"
-#include "fms.h"
-
+#include "helper.h"
 using namespace Microsoft::WRL::Details;
+
+LRESULT CALLBACK PreviewSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR dwRefData)
+{
+	CAppearanceDlgBox* pAppearanceDlgBox = (CAppearanceDlgBox*)dwRefData;
+	if (msg == WM_LBUTTONDOWN)
+	{
+		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		pAppearanceDlgBox->OnPreviewClick(pt);
+
+		return 0;
+	}
+	return DefSubclassProc(hwnd, msg, wParam, lParam);
+}
+
+void CAppearanceDlgBox::OnPreviewClick(POINT pt)
+{
+	Microsoft::WRL::ComPtr<IWindowMetrics> pMetrics;
+	pWndPreview.As(&pMetrics);
+
+	RECT rc;
+	pMetrics->GetBoundingRect(0, 0, &rc);
+
+	printf("%d,%d; x:%d, y:%d, cx:%d, cy:%d\n", pt.x, pt.y, rc.left, rc.top, rc.right, rc.bottom);
+}
 
 BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -29,6 +51,7 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	HBITMAP ebmp;
 	pWndPreview->GetPreviewImage(&ebmp);
 	SetBitmap(hPreview, ebmp);
+	SetWindowSubclass(hPreview, PreviewSubclassProc, 0, (DWORD_PTR)this);
 
 	for (int i = 1; i < 28; ++i) // 28
 	{
@@ -348,6 +371,7 @@ LOGFONT* CAppearanceDlgBox::_GetLogFontPtr(SCHEMEINFO* info)
 void CAppearanceDlgBox::OnClose()
 {
 	SetBitmap(hPreview, NULL);
+	RemoveWindowSubclass(hPreview, PreviewSubclassProc, 0);
 
 	EndDialog(1);
 }

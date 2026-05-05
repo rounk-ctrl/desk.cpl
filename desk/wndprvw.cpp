@@ -5,10 +5,10 @@
 *
 ------------------------------------------------------------*/
 #include "pch.h"
-#include "wndprvw.h"
+#include "cscheme.h"
 #include "helper.h"
 #include "uxtheme.h"
-#include "cscheme.h"
+#include "wndprvw.h"
 
 #ifndef _DEBUG
 #undef RETURN_IF_FAILED
@@ -49,6 +49,8 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 
 	cs_dpi = dpi;
 	_rcBounds = (RECT*)calloc(13, sizeof(RECT));
+	_parrBounds = (RECT**)calloc(_wndInfoCount, sizeof(RECT*));
+	_arrMargins = (RECT*)calloc(_wndInfoCount, sizeof(RECT));
 
 	// keep it loaded
 	_bmpMonitor = Gdiplus::Bitmap::FromResource(g_hinst, MAKEINTRESOURCEW(IDB_BITMAP1));
@@ -184,9 +186,13 @@ HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
 	return S_OK;
 }
 
-HRESULT CWindowPreview::GetBoundingRect(int elmId, RECT* pRect)
+HRESULT CWindowPreview::GetBoundingRect(int iType, int elmId, RECT* pRect)
 {
-	return E_NOTIMPL;
+	RECT rc = _parrBounds[iType][elmId];
+	OffsetRect(&rc, _arrMargins[iType].left, _arrMargins[iType].top);
+
+	*pRect = rc;
+	return S_OK;
 }
 
 HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
@@ -255,6 +261,13 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 				rect.Height -= 31;
 			}
 		}
+
+		_arrMargins[i] = {
+			.left = rect.X,
+			.top = rect.Y,
+			.right = rect.X + rect.Width,
+			.bottom = rect.Y + rect.Height
+		};
 		hr = DrawBitmapIfNotNull(_bmpWindows[i], &graphics, rect);
 	}
 
@@ -508,7 +521,6 @@ HRESULT CWindowPreview::_CalculateFrameMargins()
 	}
 	else
 	{
-		// todo: account for padded borders
 		_marFrame.cxLeftWidth = NcGetSystemMetrics(SM_CXEDGE) + NcGetSystemMetrics(SM_CXBORDER) + 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		_marFrame.cxRightWidth = _marFrame.cxLeftWidth;
 		_marFrame.cyTopHeight = NcGetSystemMetrics(SM_CYSIZE) - 1;
@@ -690,6 +702,9 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	// frame right
 	_rcBounds[12] = _rcBounds[11];
 	OffsetRect(&_rcBounds[12], _rcMargin.right - _marFrame.cxLeftWidth, 0);
+
+	_parrBounds[_iCurrentWnd] = (RECT*)malloc(13 * sizeof(RECT));
+	memcpy(_parrBounds[_iCurrentWnd], _rcBounds, 13 * sizeof(RECT));
 	return S_OK;
 }
 

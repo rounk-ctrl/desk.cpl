@@ -6,11 +6,11 @@
 ------------------------------------------------------------*/
 
 #include "pch.h"
-#include "ThemesPage.h"
 #include "desk.h"
-#include "uxtheme.h"
 #include "helper.h"
 #include "theme.h"
+#include "ThemesPage.h"
+#include "uxtheme.h"
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 

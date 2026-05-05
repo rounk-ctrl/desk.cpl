@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "AppearanceDlgBox.h"
 #include "AppearancePage.h"
-#include "EffectsDlg.h"
+#include "cscheme.h"
 #include "desk.h"
+#include "EffectsDlg.h"
 #include "helper.h"
 #include "uxtheme.h"
-#include "cscheme.h"
 
 using namespace Gdiplus;
 using namespace Microsoft::WRL;

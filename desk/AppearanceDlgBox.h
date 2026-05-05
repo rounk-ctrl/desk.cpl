@@ -34,6 +34,7 @@ class CAppearanceDlgBox :
 {
 public:
 	enum {IDD = IDD_APPEARANCEBOX };
+	void OnPreviewClick(POINT pt);
 
 private:
 	BEGIN_MSG_MAP(CAppearanceDlgBox)

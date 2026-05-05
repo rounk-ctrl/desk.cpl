@@ -52,7 +52,7 @@ IWindowConfig : IUnknown
 MIDL_INTERFACE("77BE699F-116A-4354-9B31-1DE029996302")
 IWindowMetrics : IUnknown
 {
-	STDMETHOD(GetBoundingRect)(int elmId, RECT* pRect) = 0;
+	STDMETHOD(GetBoundingRect)(int iType, int elmId, RECT* pRect) = 0;
 };
 
 
@@ -60,6 +60,7 @@ class CWindowPreview final:
 	public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom>
 		, IWindowPreview
 		, IWindowConfig
+		, IWindowMetrics
 	>
 {
 public:
@@ -77,7 +78,7 @@ public:
 	//~ End IWindowConfig interface
 
 	//~ Begin IWindowMetrics interface
-	STDMETHODIMP GetBoundingRect(int elmId, RECT* pRect);
+	STDMETHODIMP GetBoundingRect(int iType, int elmId, RECT* pRect);
 	//~ End IWindowMetrics interface
 
 private:
@@ -128,6 +129,9 @@ private:
 	// 0- caption bar; 1- caption text; 2- close btn; 3- max btn; 4- min btn
 	RECT* _rcBounds;
 	RECT _rcMargin;
+
+	RECT** _parrBounds;
+	RECT* _arrMargins;
 
 	// layer bitmaps, compose all for the final preview
 	Gdiplus::Bitmap* _bmpSolidColor;
