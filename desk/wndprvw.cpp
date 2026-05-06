@@ -248,8 +248,8 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 		{
 			if (_pwndInfo[i].wndType == WT_ACTIVE)
 			{
-				rect.X +=  NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER) - 7;
-				rect.Y += 1 + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+				rect.X = _pwndInfo[0].wndPos.left + NcGetSystemMetrics(SM_CXPADDEDBORDER) + NcGetSystemMetrics(SM_CXBORDER) + 3;
+				rect.Y = _pwndInfo[0].wndPos.top + _marFrame.cyTopHeight + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER) + 3;
 				rect.Width += 12;
 				rect.Height -= 5;
 			}
@@ -577,7 +577,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 			.left = _rcBounds[0].left + NcGetSystemMetrics(SM_CXFRAME) - NcGetSystemMetrics(SM_CXEDGE),
 			.top = _rcBounds[0].top + (NcGetSystemMetrics(SM_CYSIZE) / 2), // remove RECTHEIGHT
 			.right = _rcBounds[0].right,
-			.bottom = 0
+			.bottom = _rcBounds[0].bottom - (NcGetSystemMetrics(SM_CYSIZE) / 2)
 		};
 	}
 	_rcBounds[1].bottom = _rcBounds[1].top; // add RECTHEIGHT
@@ -649,7 +649,7 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 		if (_pwndInfo[_iCurrentWnd].wndType == WT_ACTIVE)
 		{
 			_rcBounds[5].top += NcGetSystemMetrics(SM_CYMENUSIZE);
-			_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) - 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+			_rcBounds[5].bottom -= NcGetSystemMetrics(SM_CYBORDER) + 1 + NcGetSystemMetrics(SM_CXPADDEDBORDER);
 		}
 	}
 
@@ -919,7 +919,7 @@ HRESULT CWindowPreview::_RenderCaptionText(HDC hdc, MYWINDOWINFO wndInfo)
 	else
 	{
 		SetTextColor(hdc, clr);
-		hr = DrawText(hdc, szText, -1, &_rcBounds[1], DT_LEFT | DT_TOP | DT_SINGLELINE | DT_VCENTER);
+		hr = DrawText(hdc, szText, -1, &_rcBounds[1], DT_LEFT | DT_SINGLELINE | DT_VCENTER);
 	}
 	RETURN_IF_FAILED(hr);
 

@@ -48,9 +48,6 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	pWndPreview.As(&pConfig);
 	pConfig->SetClassicPrev(TRUE);
 
-	HBITMAP ebmp;
-	pWndPreview->GetPreviewImage(&ebmp);
-	SetBitmap(hPreview, ebmp);
 	SetWindowSubclass(hPreview, PreviewSubclassProc, 0, (DWORD_PTR)this);
 
 	for (int i = 1; i < 28; ++i) // 28
@@ -80,6 +77,10 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 
 	// create a dummy scheme
 	CreateBlankScheme();
+
+	HBITMAP ebmp;
+	pWndPreview->GetPreviewImage(&ebmp);
+	SetBitmap(hPreview, ebmp);
 	return TRUE;
 }
 

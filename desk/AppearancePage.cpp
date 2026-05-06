@@ -312,7 +312,7 @@ BOOL CAppearanceDlgProc::OnApply()
 		NONCLIENTMETRICS ncm;
 		memcpy(&ncm, &selectedTheme->selectedScheme->ncm, sizeof(NONCLIENTMETRICSW_2k));
 		ncm.cbSize = sizeof(ncm);
-		ncm.iPaddedBorderWidth = selectedTheme->selectedScheme->iPaddedBorderWidth;
+		ncm.iPaddedBorderWidth = MulDiv(selectedTheme->selectedScheme->iPaddedBorderWidth, cs_dpi, 96);
 
 		LOGFONT lfIcon = selectedTheme->selectedScheme->lfIconTitle;
 
