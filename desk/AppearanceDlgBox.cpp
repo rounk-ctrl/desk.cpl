@@ -366,6 +366,7 @@ void CAppearanceDlgBox::_UpdateFont(SCHEMEINFO* info)
 		int index = ComboBox_FindString(hFontCmb, -1, lf->lfFaceName);
 		ComboBox_SetCurSel(hFontCmb, index);
 
+		ComboBox_ResetContent(hFontSize);
 		int fontSize = -MulDiv(lf->lfHeight, 72, 96);
 		for (int i = 6; i < 6 * 4; ++i)
 		{

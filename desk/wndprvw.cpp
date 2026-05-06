@@ -669,15 +669,23 @@ HRESULT CWindowPreview::_CalculateWindowRects()
 	_rcBounds[7] = _rcBounds[6];
 	if (_fIsThemed)
 	{
-		InflateRect(&_rcBounds[7], MulDiv(-30, _dpiWindow, 96), MulDiv(-16, _dpiWindow, 96));
+		//78x28
+		int center = (RECTWIDTH(_rcBounds[7]) / 2);
+		int vcenter = (RECTHEIGHT(_rcBounds[7]) / 2);
+		_rcBounds[7].left = center - ADJUSTDPI(39);
+		_rcBounds[7].right = center + ADJUSTDPI(39);
+		_rcBounds[7].top = vcenter - ADJUSTDPI(14);
+		_rcBounds[7].bottom = vcenter + ADJUSTDPI(14);
+		OffsetRect(&_rcBounds[7], _marFrame.cxLeftWidth, _marFrame.cyTopHeight);
+
 	}
 	else
 	{
 		int center = (RECTWIDTH(_rcBounds[7]) / 2);
-		_rcBounds[7].bottom -= MulDiv(3, _dpiWindow, 96);
-		_rcBounds[7].left = center - MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
-		_rcBounds[7].right = center + MulDiv(35, _dpiWindow, 96) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
-		_rcBounds[7].top = _rcBounds[7].bottom - MulDiv(24, _dpiWindow, 96);
+		_rcBounds[7].bottom -= ADJUSTDPI(4);
+		_rcBounds[7].left = center - ADJUSTDPI(36) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+		_rcBounds[7].right = center + ADJUSTDPI(36) + NcGetSystemMetrics(SM_CXBORDER) + NcGetSystemMetrics(SM_CXPADDEDBORDER);
+		_rcBounds[7].top = _rcBounds[7].bottom - ADJUSTDPI(24);
 	}
 	
 	// menu bar
