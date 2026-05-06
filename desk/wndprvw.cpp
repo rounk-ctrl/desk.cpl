@@ -188,6 +188,11 @@ HRESULT CWindowPreview::SetClassicPrev(BOOL fEnable)
 
 HRESULT CWindowPreview::GetBoundingRect(int iType, int elmId, RECT* pRect)
 {
+	if (elmId == -1)
+	{
+		*pRect = _arrMargins[iType];
+		return S_OK;
+	}
 	RECT rc = _parrBounds[iType][elmId];
 	OffsetRect(&rc, _arrMargins[iType].left, _arrMargins[iType].top);
 

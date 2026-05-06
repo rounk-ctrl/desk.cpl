@@ -479,6 +479,7 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 }
 
+// rewrite this function
 void CAppearanceDlgProc::_FixColorBox()
 {
 	// dont know any better way

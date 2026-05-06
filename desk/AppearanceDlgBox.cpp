@@ -17,15 +17,65 @@ LRESULT CALLBACK PreviewSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM 
 	return DefSubclassProc(hwnd, msg, wParam, lParam);
 }
 
+// I SHALL CLEAN THIS
 void CAppearanceDlgBox::OnPreviewClick(POINT pt)
 {
 	Microsoft::WRL::ComPtr<IWindowMetrics> pMetrics;
 	pWndPreview.As(&pMetrics);
+	//printf("%d,%d; x:%d, y:%d, cx:%d, cy:%d\n", pt.x, pt.y, rc.left, rc.top, rc.right, rc.bottom);
+
+	int index = 6;
 
 	RECT rc;
-	pMetrics->GetBoundingRect(0, 0, &rc);
+	pMetrics->GetBoundingRect(0, -1, &rc);
+	if (PtInRect(&rc, pt)) index = 13;
 
-	printf("%d,%d; x:%d, y:%d, cx:%d, cy:%d\n", pt.x, pt.y, rc.left, rc.top, rc.right, rc.bottom);
+	pMetrics->GetBoundingRect(1, -1, &rc);
+	if (PtInRect(&rc, pt)) index = 2;
+
+	pMetrics->GetBoundingRect(0, 0, &rc);
+	if (PtInRect(&rc, pt)) index = 12;
+
+	pMetrics->GetBoundingRect(1, 0, &rc);
+	if (PtInRect(&rc, pt)) index = 1;
+
+	pMetrics->GetBoundingRect(1, 6, &rc);
+	if (PtInRect(&rc, pt)) index = 20;
+
+	pMetrics->GetBoundingRect(1, 9, &rc);
+	if (PtInRect(&rc, pt)) index = 17;
+
+	pMetrics->GetBoundingRect(2, -1, &rc);
+	if (PtInRect(&rc, pt)) index = 15;
+
+	pMetrics->GetBoundingRect(2, 0, &rc);
+	if (PtInRect(&rc, pt)) index = 1;
+
+	pMetrics->GetBoundingRect(1, 8, &rc);
+	if (PtInRect(&rc, pt)) index = 14;
+
+	pMetrics->GetBoundingRect(2, 7, &rc);
+	if (PtInRect(&rc, pt)) index = 0;
+
+	for (int i = 2; i < 5; ++i)
+	{
+		pMetrics->GetBoundingRect(0, i, &rc);
+		if (PtInRect(&rc, pt)) index = 0;
+
+		pMetrics->GetBoundingRect(1, i, &rc);
+		if (PtInRect(&rc, pt)) index = 0;
+
+		pMetrics->GetBoundingRect(2, 2, &rc);
+		if (PtInRect(&rc, pt)) index = 0;
+	}
+
+	ComboBox_SetCurSel(hElementCombobox, index);
+	SCHEMEINFO* tinfo = (SCHEMEINFO*)ComboBox_GetItemData(hElementCombobox, index);
+
+	_UpdateControls(tinfo);
+	_UpdateBitmaps(tinfo);
+	_UpdateSizeItem(tinfo);
+	_UpdateFont(tinfo);
 }
 
 BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -41,12 +91,6 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	hItalic = GetDlgItem(1132);
 	hPreview = GetDlgItem(1470);
 	size = GetClientSIZE(hPreview);
-
-	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
-
-	Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
-	pWndPreview.As(&pConfig);
-	pConfig->SetClassicPrev(TRUE);
 
 	SetWindowSubclass(hPreview, PreviewSubclassProc, 0, (DWORD_PTR)this);
 
@@ -77,6 +121,11 @@ BOOL CAppearanceDlgBox::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 
 	// create a dummy scheme
 	CreateBlankScheme();
+
+	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
+	Microsoft::WRL::ComPtr<IWindowConfig> pConfig;
+	pWndPreview.As(&pConfig);
+	pConfig->SetClassicPrev(TRUE);
 
 	HBITMAP ebmp;
 	pWndPreview->GetPreviewImage(&ebmp);
