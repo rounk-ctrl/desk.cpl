@@ -11,6 +11,7 @@
 #include "theme.h"
 #include "ThemesPage.h"
 #include "uxtheme.h"
+#include "cscheme.h"
 using namespace Microsoft::WRL;
 using namespace Microsoft::WRL::Details;
 
@@ -48,6 +49,11 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	WCHAR ws[MAX_PATH] = { 0 };
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
 	UpdateThemeInfo(ws);
+
+	if (IsClassicThemeEnabled())
+	{
+		selectedTheme->szMsstylePath = L"(classic)";
+	}
 
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, nullptr, GetDpiForWindow(m_hWnd));
 
@@ -87,13 +93,25 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 		selectedTheme->fMsstyleChanged = true;
 	}
 
-
 	// update THEMEINFO
 	UpdateThemeInfo(ws);
 
+	// update the metrics
+	void* theme = LoadThemeFromFilePath(path);
+	if (selectedTheme->selectedScheme)
+	{
+		if (selectedTheme->selectedScheme->variant == 0x8)
+		{
+			free(selectedTheme->selectedScheme);
+			selectedTheme->selectedScheme = NULL;
+		}
+	}
+	CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+	themeSelected = TRUE;
+
 	// set the preview bitmap to the static control
 	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(path), &ebmp, UPDATE_ALL);
+	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_ALL);
 	SetBitmap(hPreview, ebmp);
 
 	SetModified(TRUE);

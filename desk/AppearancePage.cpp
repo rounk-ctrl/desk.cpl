@@ -267,10 +267,8 @@ BOOL CAppearanceDlgProc::OnSetActive()
 	_TerminateProcess(pi);
 
 	UINT flags = UPDATE_NONE;
-	if (selectedTheme->newColor != 0xB0000000)
-	{
-		flags |= UPDATE_SOLIDCLR;
-	}
+	if (selectedTheme->newColor != 0xB0000000) flags |= UPDATE_SOLIDCLR;
+
 	if (selectedTheme->fMsstyleChanged)
 	{
 		flags |= UPDATE_WINDOW;

@@ -109,3 +109,5 @@ extern PROCESS_INFORMATION pi;
 
 // font list
 extern FONTINFO* fontInfo;
+
+extern BOOL themeSelected;
