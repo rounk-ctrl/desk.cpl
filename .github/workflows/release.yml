@@ -28,10 +28,10 @@ jobs:
         submodules: 'true'
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v2.0.0
+      uses: NuGet/setup-nuget@v4.0
 
     - name: Restore NuGet packages
       run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
@@ -43,7 +43,7 @@ jobs:
       run: Compress-Archive -Path "${{ env.ARCH }}\${{ env.RELEASE_DIR }}\*" -DestinationPath "${{ env.ZIP_NAME }}.zip"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v7.0.0
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: ${{ env.ZIP_NAME }}
         path: ${{ env.ZIP_NAME }}.zip
@@ -53,12 +53,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       with:
         path: artifacts/   # downloads each artifact into artifacts/<name>/
 
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3.0.0
       with:
         generate_release_notes: true
         files: artifacts/**/*.zip

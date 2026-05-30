@@ -29,10 +29,10 @@ jobs:
         submodules: 'true'
 
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
       
     - name: Setup NuGet
-      uses: NuGet/setup-nuget@v2.0.0
+      uses: NuGet/setup-nuget@v4.0
 
     - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
@@ -42,7 +42,7 @@ jobs:
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /p:ReleaseDirectory=..\$env:RELEASE_DIR ${{env.SOLUTION_FILE_PATH}}
     - name: Upload
-      uses: actions/upload-artifact@v7.0.0
+      uses: actions/upload-artifact@v7.0.1
       with:
       # Artifact name
         name:  ${{ env.ZIP_NAME }}
