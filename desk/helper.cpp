@@ -329,6 +329,7 @@ void CreateThemedMetricsScheme(int dpi, void* pTheme)
 	selectedTheme->selectedScheme->lfIconTitle.lfHeight = MulDiv(selectedTheme->selectedScheme->lfIconTitle.lfHeight, 96, dpi);
 
 	selectedTheme->selectedScheme->iPaddedBorderWidth = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
+	CloseThemeData(hTheme);
 }
 
 void SetBitmap(HWND hWnd, HBITMAP hBmp)
