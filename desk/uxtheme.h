@@ -8,6 +8,8 @@ typedef struct _UXTHEMEFILE
 	HANDLE _hSharableSection;
 	LPVOID _pbNonSharableData;
 	HANDLE _hNonSharableSection;
+	DWORD _Debug_Generation;
+	DWORD _Debug_ChangeID;
 	char _szTail[4]; // must be "end"
 } UXTHEMEFILE, * LPUXTHEMEFILE;
 
@@ -100,14 +102,14 @@ typedef HRESULT(WINAPI* EnumThemes_t)(
 	_In_opt_ LPARAM lParam);
 
 typedef HRESULT(WINAPI* EnumThemeColors_t)(
-	_In_ LPWSTR pszThemeFileName, 
-	_In_opt_ LPWSTR pszColorScheme,
+	_In_ LPCWSTR pszThemeFileName,
+	_In_opt_ LPCWSTR pszSizeName,
 	_In_ DWORD dwColorNum,
 	_Out_ _THEMENAMEINFO* ptn);
 
 typedef HRESULT(WINAPI* EnumThemeSize_t)(
-	_In_ LPWSTR pszThemeFileName, 
-	_In_opt_ LPWSTR pszSizeName, 
+	_In_ LPCWSTR pszThemeFileName,
+	_In_opt_ LPCWSTR pszColorScheme,
 	_In_ DWORD dwSizeIndex,
 	_Out_ _THEMENAMEINFO* ptn);
 
@@ -169,4 +171,5 @@ extern EnumThemes_t EnumThemes;
 extern SetSystemVisualStyle_t SetSystemVisualStyle;
 
 void InitUxtheme();
-HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName);
+HANDLE LoadThemeFromFilePath(PCWSTR szThemeFileName, PCWSTR colorName, PCWSTR sizeName);
+void CloseThemeFile(HANDLE theme);

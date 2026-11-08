@@ -39,6 +39,7 @@ private:
 	void _FixColorBox();
 	int _FindCurrentIndex();
 	void _FilterHiddenThemes();
+	BOOL _UpdateThemePreview();
 
 
 	HWND hThemesCombobox;
@@ -47,8 +48,11 @@ private:
 	HWND hPreviewWnd;
 	SIZE size;
 	std::vector<LPWSTR> msstyle;
+	std::vector<std::wstring> colorNames;
+	std::vector<std::wstring> sizeNames;
 	Microsoft::WRL::ComPtr<IWindowPreview> pWndPreview;
 	SCHEMEDATA* schemeMap = NULL;
+	BOOL themePreviewValid = FALSE;
 	ULONG mapSize;
 
 	// -ve sizes are fixed with preview size in wndprvw

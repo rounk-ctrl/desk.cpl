@@ -32,7 +32,8 @@ void ScaleNonClientMetrics(NONCLIENTMETRICSW_2k& ncm, int dpi);
 HRESULT GetSolidBtnBmp(COLORREF clr, int dpi, SIZE size, HBITMAP* pbOut);
 BOOL ColorPicker(COLORREF clr, HWND hWnd, CHOOSECOLOR* clrOut);
 void CreateBlankScheme();
-void CreateThemedMetricsScheme(int dpi, void* pTheme);
+BOOL SelectVisualStyle(PCWSTR path, BOOL useCurrentVariant = FALSE);
+BOOL CreateThemedMetricsScheme(int dpi, void* pTheme);
 void SetBitmap(HWND hWnd, HBITMAP hBmp);
 void UpdateCustomTheme();
 
