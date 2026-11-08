@@ -50,12 +50,26 @@ BOOL CThemeDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& 
 	SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, ws, 0);
 	UpdateThemeInfo(ws);
 
-	if (IsClassicThemeEnabled())
+	if (selectedTheme->szMsstylePath.empty())
 	{
-		selectedTheme->szMsstylePath = L"(classic)";
+		if (IsClassicThemeEnabled()) SelectVisualStyle(L"(classic)");
+		else
+		{
+			auto themeClass = std::make_unique<CTheme>(currentITheme);
+			LPWSTR path = nullptr;
+			themeClass->get_VisualStyle(&path);
+			if (!SelectVisualStyle(path, TRUE)) return FALSE;
+		}
 	}
 
-	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, nullptr, GetDpiForWindow(m_hWnd));
+	HANDLE theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+		selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+	if (!theme && selectedTheme->szMsstylePath != L"(classic)")
+	{
+		MessageBox(L"The selected visual style could not be loaded.", L"Themes", MB_OK | MB_ICONERROR);
+		return FALSE;
+	}
+	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_THEMES, theme, GetDpiForWindow(m_hWnd));
 
 	HBITMAP bmp;
 	pWndPreview->GetPreviewImage(&bmp);
@@ -84,34 +98,32 @@ BOOL CThemeDlgProc::OnThemeComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& b
 	LPWSTR path = nullptr;
 	themeClass->get_VisualStyle(&path);
 
-	// update the string if different
-	if (PathFileExists(path) 
-		&& !IsClassicThemeEnabled()
-		&& selectedTheme->szMsstylePath.compare(path) != 0)
+	if (!SelectVisualStyle(path && PathFileExists(path) ? path : L"(classic)"))
 	{
-		selectedTheme->szMsstylePath = path;
-		selectedTheme->fMsstyleChanged = true;
+		MessageBox(L"The selected visual style could not be loaded.", L"Themes", MB_OK | MB_ICONERROR);
+		return 0;
 	}
 
-	// update THEMEINFO
+	HANDLE theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+		selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+	if (selectedTheme->szMsstylePath != L"(classic)"
+		&& (!theme || !CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme)))
+	{
+		CloseThemeFile(theme);
+		MessageBox(L"The selected visual style could not be loaded.", L"Themes", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+	selectedTheme->fMsstyleChanged = true;
 	UpdateThemeInfo(ws);
-
-	// update the metrics
-	void* theme = LoadThemeFromFilePath(path);
-	if (selectedTheme->selectedScheme)
-	{
-		if (selectedTheme->selectedScheme->variant == 0x8)
-		{
-			free(selectedTheme->selectedScheme);
-			selectedTheme->selectedScheme = NULL;
-		}
-	}
-	CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
 	themeSelected = TRUE;
 
 	// set the preview bitmap to the static control
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_ALL);
+	HBITMAP ebmp = nullptr;
+	if (FAILED(pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_ALL)))
+	{
+		MessageBox(L"The selected visual style could not be previewed.", L"Themes", MB_OK | MB_ICONERROR);
+		return 0;
+	}
 	SetBitmap(hPreview, ebmp);
 
 	SetModified(TRUE);
@@ -130,8 +142,29 @@ BOOL CThemeDlgProc::OnApply()
 	if (selectedTheme->newColor != 0xB0000000)
 		apply_flags |= THEMETOOL_APPLY_FLAG_IGNORE_COLOR;
 
-	// apply the selected theme
-	pThemeManager->SetCurrentTheme(m_hWnd, index, TRUE, apply_flags, 0);
+	if (selectedTheme->szMsstylePath != L"(classic)")
+	{
+		HANDLE theme = nullptr;
+		if (!selectedTheme->szColorName.empty() && !selectedTheme->szSizeName.empty())
+			theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+				selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+		if (!theme)
+		{
+			MessageBox(L"The selected visual style could not be loaded.", L"Themes", MB_OK | MB_ICONERROR);
+			return PSNRET_INVALID_NOCHANGEPAGE;
+		}
+		CloseThemeFile(theme);
+	}
+
+	if (FAILED(pThemeManager->SetCurrentTheme(m_hWnd, index, TRUE, apply_flags, 0))
+		|| (selectedTheme->szMsstylePath != L"(classic)"
+			&& (selectedTheme->szColorName.empty() || selectedTheme->szSizeName.empty()
+				|| !SetSystemVisualStyle || FAILED(SetSystemVisualStyle(selectedTheme->szMsstylePath.c_str(),
+					selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str(), AT_NONE)))))
+	{
+		MessageBox(L"The selected theme could not be applied.", L"Themes", MB_OK | MB_ICONERROR);
+		return PSNRET_INVALID_NOCHANGEPAGE;
+	}
 
 	SetModified(FALSE);
 	return 0;
@@ -154,11 +187,19 @@ BOOL CThemeDlgProc::OnSetActive()
 	}
 	if (selectedTheme->fMsstyleChanged || selectedTheme->fThemePgMsstyleUpdate)
 	{
-		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_WINDOW);
-		SetBitmap(hPreview, ebmp);
-
-		selectedTheme->fThemePgMsstyleUpdate = selectedTheme->fMsstyleChanged = false;
+		HANDLE theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+			selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+		if (!theme && selectedTheme->szMsstylePath != L"(classic)")
+		{
+			MessageBox(L"The selected visual style could not be loaded.", L"Themes", MB_OK | MB_ICONERROR);
+			return 0;
+		}
+		HBITMAP ebmp = nullptr;
+		if (SUCCEEDED(pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_WINDOW)))
+		{
+			SetBitmap(hPreview, ebmp);
+			selectedTheme->fThemePgMsstyleUpdate = false;
+		}
 	}
 
 	_TerminateProcess(pi);

@@ -69,6 +69,8 @@ struct THEMEINFO
 
 	// reduce overhead every time u load appearancepage
 	std::wstring szMsstylePath;
+	std::wstring szColorName;
+	std::wstring szSizeName;
 	bool fMsstyleChanged = false;
 	bool fThemePgMsstyleUpdate = false;		// bruh
 	bool fSlideshowSelection;

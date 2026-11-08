@@ -289,19 +289,47 @@ void CreateBlankScheme()
 	}
 }
 
-void CreateThemedMetricsScheme(int dpi, void* pTheme)
+BOOL SelectVisualStyle(PCWSTR path, BOOL useCurrentVariant)
 {
-	HTHEME hTheme = OpenNcThemeData(pTheme, L"Window");
+	if (!path || !*path) return FALSE;
+	if (StrCmpI(path, selectedTheme->szMsstylePath.c_str()) == 0
+		&& (!selectedTheme->szColorName.empty() && !selectedTheme->szSizeName.empty()
+			|| StrCmpI(path, L"(classic)") == 0)) return TRUE;
 
-	SCHEMEDATA* currentData = (SCHEMEDATA*)malloc(sizeof(SCHEMEDATA));
-	if (currentData)
+	WCHAR color[MAX_PATH + 1] = {};
+	WCHAR size[MAX_PATH + 1] = {};
+	if (StrCmpI(path, L"(classic)") != 0)
 	{
-		ZeroMemory(currentData, sizeof(SCHEMEDATA));
-		currentData->dpiScaled = false;
-		currentData->variant = 0x8;
-
-		selectedTheme->selectedScheme = currentData;
+		WCHAR currentPath[MAX_PATH] = {};
+		BOOL current = useCurrentVariant && SUCCEEDED(GetCurrentThemeName(currentPath,
+			ARRAYSIZE(currentPath), color, ARRAYSIZE(color), size, ARRAYSIZE(size)))
+			&& StrCmpI(currentPath, path) == 0;
+		if (!current && (!GetThemeDefaults || FAILED(GetThemeDefaults(path,
+			color, ARRAYSIZE(color), size, ARRAYSIZE(size))))) return FALSE;
+		if (!*color || !*size) return FALSE;
 	}
+	selectedTheme->szMsstylePath = path;
+	selectedTheme->szColorName = color;
+	selectedTheme->szSizeName = size;
+	return TRUE;
+}
+
+BOOL CreateThemedMetricsScheme(int dpi, void* pTheme)
+{
+	if (!pTheme) return FALSE;
+	HTHEME hTheme = OpenNcThemeData(pTheme, L"Window");
+	if (!hTheme) return FALSE;
+
+	SCHEMEDATA* currentData = (SCHEMEDATA*)calloc(1, sizeof(SCHEMEDATA));
+	if (!currentData)
+	{
+		CloseThemeData(hTheme);
+		return FALSE;
+	}
+	currentData->variant = 0x8;
+	if (selectedTheme->selectedScheme && selectedTheme->selectedScheme->variant == 0x8)
+		free(selectedTheme->selectedScheme);
+	selectedTheme->selectedScheme = currentData;
 
 	for (int i = 0; i < MAX_COLORS; ++i)
 	{
@@ -330,6 +358,7 @@ void CreateThemedMetricsScheme(int dpi, void* pTheme)
 
 	selectedTheme->selectedScheme->iPaddedBorderWidth = GetThemeSysSize(hTheme, SM_CXPADDEDBORDER);
 	CloseThemeData(hTheme);
+	return TRUE;
 }
 
 void SetBitmap(HWND hWnd, HBITMAP hBmp)

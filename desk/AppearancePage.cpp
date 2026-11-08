@@ -16,6 +16,31 @@ using namespace Microsoft::WRL::Details;
 #define HAS_EXTRA_LARGE 0x4
 #define CUSTOM_SCHEME 0x8
 
+static void SelectVariantItem(HWND combo, const std::vector<std::wstring>& names,
+	std::wstring& selected, PCWSTR path, BOOL sizeVariant)
+{
+	if (std::find(names.begin(), names.end(), selected) == names.end())
+	{
+		WCHAR color[MAX_PATH + 1] = {};
+		WCHAR size[MAX_PATH + 1] = {};
+		if (GetThemeDefaults && SUCCEEDED(GetThemeDefaults(path,
+			color, ARRAYSIZE(color), size, ARRAYSIZE(size))))
+			selected = sizeVariant ? size : color;
+		if (std::find(names.begin(), names.end(), selected) == names.end())
+			selected = names.empty() ? L"" : names.front();
+	}
+	for (int i = 0; i < ComboBox_GetCount(combo); ++i)
+	{
+		auto index = (size_t)ComboBox_GetItemData(combo, i);
+		if (index < names.size() && names[index] == selected)
+		{
+			ComboBox_SetCurSel(combo, i);
+			return;
+		}
+	}
+	ComboBox_SetCurSel(combo, -1);
+}
+
 BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	hPreviewWnd = GetDlgItem(1110);
@@ -30,7 +55,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 		pThemeManager->GetCurrentTheme(&cur);
 		pThemeManager->GetTheme(cur, &currentITheme);
 
-		selectedTheme->szMsstylePath = L"(classic)";
+		SelectVisualStyle(L"(classic)");
 		if (!IsClassicThemeEnabled())
 		{
 			auto themeClass = std::make_unique<CTheme>(currentITheme);
@@ -38,7 +63,7 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 			LPWSTR path = nullptr;
 			themeClass->get_VisualStyle(&path);
 
-			selectedTheme->szMsstylePath = path;
+			SelectVisualStyle(path, TRUE);
 		}
 	}
 
@@ -108,14 +133,16 @@ BOOL CAppearanceDlgProc::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 	if (selindex != -1)
 	{
 		ComboBox_SetCurSel(hThemesCombobox, selindex);
-		_UpdateColorBox(msstyle[selindex]);
-		_UpdateFontBox(msstyle[selindex]);
+		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, selindex);
+		_UpdateColorBox(data);
+		_UpdateFontBox(data);
 	}
 
 	HBITMAP ebmp;
 	pWndPreview = Make<CWindowPreview>(size, wnd, (int)ARRAYSIZE(wnd), PAGETYPE::PT_APPEARANCE, nullptr, GetDpiForWindow(m_hWnd));
 	pWndPreview->GetPreviewImage(&ebmp);
 	SetBitmap(hPreviewWnd, ebmp);
+	_UpdateThemePreview();
 
 	return 0;
 }
@@ -136,7 +163,14 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 	CAppearanceDlgBox dlg;
 	int ret = (int)dlg.DoModal();
 
-	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
+	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+		selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+	if (!theme && selectedTheme->szMsstylePath != L"(classic)")
+	{
+		themePreviewValid = FALSE;
+		MessageBox(L"The selected visual style could not be loaded.", L"Appearance", MB_OK | MB_ICONERROR);
+		return 0;
+	}
 
 	if (ret == 1)
 	{
@@ -156,7 +190,13 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 				{
 					if (themeSelected)
 					{
-						CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
+						if (!CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme))
+						{
+							CloseThemeFile(theme);
+							themePreviewValid = FALSE;
+							MessageBox(L"The selected visual style could not be loaded.", L"Appearance", MB_OK | MB_ICONERROR);
+							return 0;
+						}
 						lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
 						selectedTheme->newColor = lastUsedClr;
 					}
@@ -174,9 +214,10 @@ BOOL CAppearanceDlgProc::OnAdvanced(UINT code, UINT id, HWND hWnd, BOOL& bHandle
 		lastUsedClr = NcGetSysColor(COLOR_BACKGROUND);
 	}
 
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	SetBitmap(hPreviewWnd, ebmp);
+	HBITMAP ebmp = nullptr;
+	themePreviewValid = SUCCEEDED(pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW));
+	if (themePreviewValid) SetBitmap(hPreviewWnd, ebmp);
+	else MessageBox(L"The selected visual style could not be previewed.", L"Appearance", MB_OK | MB_ICONERROR);
 	return 0;
 }
 
@@ -187,53 +228,70 @@ BOOL CAppearanceDlgProc::OnEffects(UINT code, UINT id, HWND hWnd, BOOL& bHandled
 	return 0;
 }
 
-BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+BOOL CAppearanceDlgProc::_UpdateThemePreview()
 {
-	themeSelected = TRUE;
-
-	int i = ComboBox_GetCurSel(hThemesCombobox);
-	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-
-	_UpdateColorBox(data);
-	_UpdateFontBox(data);
-
-	selectedTheme->szMsstylePath = data;
-	selectedTheme->fMsstyleChanged = true;
-
-	void* theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str());
-
-	if (StrCmpI(data, L"(classic)") != 0)
+	BOOL classic = selectedTheme->szMsstylePath == L"(classic)";
+	HANDLE theme = nullptr;
+	if (!classic)
 	{
-		if (selectedTheme->selectedScheme)
+		if (selectedTheme->szColorName.empty() || selectedTheme->szSizeName.empty()) goto failed;
+		theme = LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str(),
+			selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str());
+		if (!theme || !CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme))
 		{
-			if (selectedTheme->selectedScheme->variant == 0x8)
-			{
-				free(selectedTheme->selectedScheme);
-				selectedTheme->selectedScheme = NULL;
-			}
+			CloseThemeFile(theme);
+			goto failed;
 		}
-		CreateThemedMetricsScheme(GetDpiForWindow(m_hWnd), theme);
 		selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 	}
+	{
+		HBITMAP bitmap = nullptr;
+		HRESULT hr = pWndPreview->GetUpdatedPreviewImage(wnd, theme, &bitmap, UPDATE_SOLIDCLR | UPDATE_WINDOW);
+		if (FAILED(hr)) goto failed;
+		SetBitmap(hPreviewWnd, bitmap);
+	}
+	themePreviewValid = TRUE;
+	return TRUE;
 
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, theme, &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	SetBitmap(hPreviewWnd, ebmp);
+failed:
+	themePreviewValid = FALSE;
+	MessageBox(L"The selected visual style could not be loaded.", L"Appearance", MB_OK | MB_ICONERROR);
+	return FALSE;
+}
 
+BOOL CAppearanceDlgProc::OnComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
+{
+	int i = ComboBox_GetCurSel(hThemesCombobox);
+	if (i == CB_ERR) return 0;
+	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+	if (!SelectVisualStyle(data))
+	{
+		ComboBox_SetCurSel(hThemesCombobox, _FindCurrentIndex());
+		MessageBox(L"The selected visual style could not be loaded.", L"Appearance", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+	themeSelected = TRUE;
+	_UpdateColorBox(data);
+	_UpdateFontBox(data);
+	selectedTheme->fThemePgMsstyleUpdate = true;
+	_UpdateThemePreview();
 	SetModified(TRUE);
 	return 0;
 }
 
 BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
-	int i = ComboBox_GetCurSel(hThemesCombobox);
-	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-	_UpdateFontBox(data);
-
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	SetBitmap(hPreviewWnd, ebmp);
-
+	int i = ComboBox_GetCurSel(hColorCombobox);
+	if (i == CB_ERR) return 0;
+	if (selectedTheme->szMsstylePath != L"(classic)")
+	{
+		auto index = (size_t)ComboBox_GetItemData(hColorCombobox, i);
+		if (index >= colorNames.size()) return 0;
+		selectedTheme->szColorName = colorNames[index];
+	}
+	_UpdateFontBox(const_cast<LPWSTR>(selectedTheme->szMsstylePath.c_str()));
+	selectedTheme->fThemePgMsstyleUpdate = true;
+	_UpdateThemePreview();
 	SetModified(TRUE);
 	return 0;
 }
@@ -241,23 +299,23 @@ BOOL CAppearanceDlgProc::OnClrComboboxChange(UINT code, UINT id, HWND hWnd, BOOL
 BOOL CAppearanceDlgProc::OnFontComboboxChange(UINT code, UINT id, HWND hWnd, BOOL& bHandled)
 {
 	int i = ComboBox_GetCurSel(hSizeCombobox);
-	SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hSizeCombobox, i);
-
-	if (selectedTheme->selectedScheme)
+	if (i == CB_ERR) return 0;
+	if (selectedTheme->szMsstylePath == L"(classic)")
 	{
-		if (selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
-		{
+		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hSizeCombobox, i);
+		if (selectedTheme->selectedScheme && selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
 			free(selectedTheme->selectedScheme);
-			selectedTheme->selectedScheme = NULL;
-		}
+		selectedTheme->selectedScheme = data;
+		selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 	}
-	selectedTheme->selectedScheme = data;
-	selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
-
-	HBITMAP ebmp;
-	pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, UPDATE_SOLIDCLR | UPDATE_WINDOW);
-	SetBitmap(hPreviewWnd, ebmp);
-
+	else
+	{
+		auto index = (size_t)ComboBox_GetItemData(hSizeCombobox, i);
+		if (index >= sizeNames.size()) return 0;
+		selectedTheme->szSizeName = sizeNames[index];
+	}
+	selectedTheme->fThemePgMsstyleUpdate = true;
+	_UpdateThemePreview();
 	SetModified(TRUE);
 	return 0;
 }
@@ -278,6 +336,8 @@ BOOL CAppearanceDlgProc::OnSetActive()
 			if (StrCmpI(selectedTheme->szMsstylePath.c_str(), data) == 0)
 			{
 				ComboBox_SetCurSel(hThemesCombobox, i);
+				_UpdateColorBox(data);
+				_UpdateFontBox(data);
 				break;
 			}
 		}
@@ -285,9 +345,13 @@ BOOL CAppearanceDlgProc::OnSetActive()
 	}
 	if (flags != UPDATE_NONE)
 	{
-		HBITMAP ebmp;
-		pWndPreview->GetUpdatedPreviewImage(wnd, LoadThemeFromFilePath(selectedTheme->szMsstylePath.c_str()), &ebmp, flags);
-		SetBitmap(hPreviewWnd, ebmp);
+		if (flags & UPDATE_WINDOW) _UpdateThemePreview();
+		else
+		{
+			HBITMAP ebmp = nullptr;
+			if (SUCCEEDED(pWndPreview->GetUpdatedPreviewImage(wnd, nullptr, &ebmp, flags)))
+				SetBitmap(hPreviewWnd, ebmp);
+		}
 	}
 
 	return 0;
@@ -295,17 +359,25 @@ BOOL CAppearanceDlgProc::OnSetActive()
 
 BOOL CAppearanceDlgProc::OnApply()
 {
-	int i = ComboBox_GetCurSel(hThemesCombobox);
-	LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-	if (StrCmpI(data, L"(classic)") != 0)
+	if (selectedTheme->szMsstylePath != L"(classic)")
 	{
-		SetSystemVisualStyle(selectedTheme->szMsstylePath.c_str(), nullptr, nullptr, AT_NONE);
+		if (!themePreviewValid || selectedTheme->szColorName.empty() || selectedTheme->szSizeName.empty()
+			|| !SetSystemVisualStyle || FAILED(SetSystemVisualStyle(selectedTheme->szMsstylePath.c_str(),
+				selectedTheme->szColorName.c_str(), selectedTheme->szSizeName.c_str(), AT_NONE)))
+		{
+			MessageBox(L"The selected visual style could not be applied.", L"Appearance", MB_OK | MB_ICONERROR);
+			return PSNRET_INVALID_NOCHANGEPAGE;
+		}
 	}
 
 	if (selectedTheme->selectedScheme)
 	{ 
 		int elements[29] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28 };
-		SetSysColors(29, elements, selectedTheme->selectedScheme->rgb);
+		if (!SetSysColors(29, elements, selectedTheme->selectedScheme->rgb))
+		{
+			MessageBox(L"The selected colors could not be applied.", L"Appearance", MB_OK | MB_ICONERROR);
+			return PSNRET_INVALID_NOCHANGEPAGE;
+		}
 
 		NONCLIENTMETRICS ncm;
 		memcpy(&ncm, &selectedTheme->selectedScheme->ncm, sizeof(NONCLIENTMETRICSW_2k));
@@ -329,8 +401,12 @@ BOOL CAppearanceDlgProc::OnApply()
 			ScaleLogFont(ncm.lfMessageFont, GetDpiForWindow(m_hWnd));
 		}
 		ScaleLogFont(lfIcon, GetDpiForWindow(m_hWnd));
-		SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-		SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+		if (!SystemParametersInfo(SPI_SETICONTITLELOGFONT, sizeof(LOGFONT), (PVOID)&lfIcon, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE)
+			|| !SystemParametersInfo(SPI_SETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICSW), (PVOID)&ncm, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE))
+		{
+			MessageBox(L"The selected window metrics could not be applied.", L"Appearance", MB_OK | MB_ICONERROR);
+			return PSNRET_INVALID_NOCHANGEPAGE;
+		}
 
 		UpdateCustomTheme();
 		// delete temp scheme on combobox change
@@ -342,6 +418,7 @@ BOOL CAppearanceDlgProc::OnApply()
 void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 {
 	ComboBox_ResetContent(hColorCombobox);
+	colorNames.clear();
 	if (lstrcmp(data, L"(classic)") == 0)
 	{
 		for (ULONG j = 0; j < mapSize; j++)
@@ -355,17 +432,16 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 	}
 	else
 	{
-		HRESULT hr = S_OK;
-		_THEMENAMEINFO name;
-		for (int i = 0; SUCCEEDED(hr); i++)
+		_THEMENAMEINFO name = {};
+		for (DWORD i = 0; EnumThemeColors && SUCCEEDED(EnumThemeColors(data, nullptr, i, &name)); ++i)
 		{
-			hr = EnumThemeColors(data, NULL, i, &name);
-			if (SUCCEEDED(hr))
-			{
-				ComboBox_AddString(hColorCombobox, name.szDisplayName);
-			}
+			int index = ComboBox_AddString(hColorCombobox, *name.szDisplayName ? name.szDisplayName : name.szName);
+			if (index == CB_ERR || index == CB_ERRSPACE) continue;
+			ComboBox_SetItemData(hColorCombobox, index, colorNames.size());
+			colorNames.emplace_back(name.szName);
 		}
-
+		SelectVariantItem(hColorCombobox, colorNames, selectedTheme->szColorName, data, FALSE);
+		return;
 	}
 
 	// todo: detect classic scheme
@@ -423,17 +499,19 @@ void CAppearanceDlgProc::_UpdateColorBox(LPWSTR data)
 		}
 		selectedTheme->selectedScheme = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
 	}
-	else index = 0;
 	ComboBox_SetCurSel(hColorCombobox, index);
 }
 
 void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 {
 	ComboBox_ResetContent(hSizeCombobox);
+	sizeNames.clear();
 	if (lstrcmp(data, L"(classic)") == 0)
 	{
 		int index = ComboBox_GetCurSel(hColorCombobox);
 		SCHEMEDATA* data = (SCHEMEDATA*)ComboBox_GetItemData(hColorCombobox, index);
+		if (selectedTheme->selectedScheme && selectedTheme->selectedScheme->variant == CUSTOM_SCHEME)
+			free(selectedTheme->selectedScheme);
 		selectedTheme->selectedScheme = data;
 		selectedTheme->newColor = NcGetSysColor(COLOR_BACKGROUND);
 
@@ -462,17 +540,17 @@ void CAppearanceDlgProc::_UpdateFontBox(LPWSTR data)
 	}
 	else
 	{
-		HRESULT hr = S_OK;
-		_THEMENAMEINFO name;
-
-		for (int i = 0; SUCCEEDED(hr); i++)
+		_THEMENAMEINFO name = {};
+		for (DWORD i = 0; EnumThemeSize && !selectedTheme->szColorName.empty()
+			&& SUCCEEDED(EnumThemeSize(data, selectedTheme->szColorName.c_str(), i, &name)); ++i)
 		{
-			hr = EnumThemeSize(data, NULL, i, &name);
-			if (SUCCEEDED(hr))
-			{
-				ComboBox_AddString(hSizeCombobox, name.szDisplayName);
-			}
+			int index = ComboBox_AddString(hSizeCombobox, *name.szDisplayName ? name.szDisplayName : name.szName);
+			if (index == CB_ERR || index == CB_ERRSPACE) continue;
+			ComboBox_SetItemData(hSizeCombobox, index, sizeNames.size());
+			sizeNames.emplace_back(name.szName);
 		}
+		SelectVariantItem(hSizeCombobox, sizeNames, selectedTheme->szSizeName, data, TRUE);
+		return;
 	}
 	ComboBox_SetCurSel(hSizeCombobox, 0);
 }
@@ -544,29 +622,12 @@ void CAppearanceDlgProc::_FixColorBox()
 
 int CAppearanceDlgProc::_FindCurrentIndex()
 {
-	int selindex = -1;
-	if (IsClassicThemeEnabled())
+	for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
 	{
-		selindex = ComboBox_FindString(hThemesCombobox, 0, L"Windows Classic style");
+		LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
+		if (data && StrCmpI(data, selectedTheme->szMsstylePath.c_str()) == 0) return i;
 	}
-	else
-	{
-		auto themeClass = std::make_unique<CTheme>(currentITheme);
-
-		LPWSTR style = NULL;
-		themeClass->get_VisualStyle(&style);
-		for (int i = 0; i < ComboBox_GetCount(hThemesCombobox); ++i)
-		{
-			LPWSTR data = (LPWSTR)ComboBox_GetItemData(hThemesCombobox, i);
-			if (StrCmpI(data, style) == 0)
-			{
-				//selectedTheme->szMsstylePath = style;
-				selindex = i;
-				break;
-			}
-		}
-	}
-	return selindex;
+	return CB_ERR;
 }
 
 void CAppearanceDlgProc::_FilterHiddenThemes()

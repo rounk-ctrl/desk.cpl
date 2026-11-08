@@ -30,7 +30,9 @@ CWindowPreview::CWindowPreview(SIZE const& sizePreview, MYWINDOWINFO* pwndInfo, 
 	_sizePreview = sizePreview;
 	_pageType = pageType;
 	_hTheme = hTheme;
-	_fIsThemed = !IsClassicThemeEnabled();
+	_fIsThemed = selectedTheme->szMsstylePath.empty()
+		? !IsClassicThemeEnabled() : selectedTheme->szMsstylePath != L"(classic)";
+	_hWndTheme = _hScrlTheme = nullptr;
 	_dpiWindow = dpi;
 
 	// always initialize variables
@@ -72,13 +74,13 @@ CWindowPreview::~CWindowPreview()
 		free(_bmpWindows);
 	}
 
+	CloseThemeData(_hWndTheme);
+	CloseThemeData(_hScrlTheme);
 	if (_hTheme)
 	{
 		_CleanupUxThemeFile(&_hTheme);
 	}
 
-	CloseThemeData(_hWndTheme);
-	CloseThemeData(_hScrlTheme);
 }
 
 HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
@@ -144,20 +146,22 @@ HRESULT CWindowPreview::GetPreviewImage(HBITMAP* pbOut)
 
 HRESULT CWindowPreview::GetUpdatedPreviewImage(MYWINDOWINFO* pwndInfo, LPVOID hTheme, HBITMAP* pbOut, UINT flags)
 {
-	if (_hTheme) _CleanupUxThemeFile(&_hTheme);
-	_hTheme = hTheme;
-	_pwndInfo = pwndInfo;
-	if (_fForceClassic) _fIsThemed = 0;
-	else
+	*pbOut = nullptr;
+	if (hTheme || (flags & UPDATE_WINDOW))
 	{
-		if (selectedTheme->szMsstylePath.compare(L"(classic)") == 0) _fIsThemed = 0;
-		else _fIsThemed = 1;
+		BOOL themed = !_fForceClassic && selectedTheme->szMsstylePath != L"(classic)";
+		if (themed && !hTheme) return E_FAIL;
+		CloseThemeData(_hWndTheme);
+		CloseThemeData(_hScrlTheme);
+		_hWndTheme = _hScrlTheme = nullptr;
+		if (_hTheme) _CleanupUxThemeFile(&_hTheme);
+		_hTheme = hTheme;
+		_fIsThemed = themed;
+		_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
+		_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
+		if (themed && (!_hWndTheme || !_hScrlTheme)) return E_FAIL;
 	}
-
-	CloseThemeData(_hWndTheme);
-	CloseThemeData(_hScrlTheme);
-	_hWndTheme = OpenNcThemeData(_hTheme, L"Window");
-	_hScrlTheme = OpenNcThemeData(_hTheme, L"Scrollbar");
+	if (pwndInfo) _pwndInfo = pwndInfo;
 	_CalculateRectsOfElements();
 
 	if (flags & UPDATE_SOLIDCLR) _RenderSolidColor();
@@ -285,16 +289,7 @@ HRESULT CWindowPreview::_ComposePreview(HBITMAP* pbOut)
 
 HRESULT CWindowPreview::_CleanupUxThemeFile(void** hFile)
 {
-	UXTHEMEFILE* ltf = (UXTHEMEFILE*)*hFile;
-
-	// unmaps the sections
-	if (ltf->_pbSharableData) UnmapViewOfFile(ltf->_pbSharableData);
-	if (ltf->_pbNonSharableData) UnmapViewOfFile(ltf->_pbNonSharableData);
-
-	// called in CUxThemeFile::CloseFile
-	ClearTheme(ltf->_hSharableSection, ltf->_hNonSharableSection, FALSE);
-
-	free(*hFile);
+	CloseThemeFile(*hFile);
 	*hFile = NULL;
 
 	return S_OK;
